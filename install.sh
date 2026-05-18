@@ -4,6 +4,20 @@ set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
+export HYPRBOLE_INSTALL_LOG_DIR="${HYPRBOLE_INSTALL_LOG_DIR:-$HOME/.local/state/hyprbole/install-logs}"
+export HYPRBOLE_INSTALL_STARTED_AT="${HYPRBOLE_INSTALL_STARTED_AT:-$(date +%Y%m%d-%H%M%S)}"
+export HYPRBOLE_INSTALL_LOG_FILE="${HYPRBOLE_INSTALL_LOG_FILE:-$HYPRBOLE_INSTALL_LOG_DIR/install-$HYPRBOLE_INSTALL_STARTED_AT.log}"
+export HYPRBOLE_INSTALL_DIAGNOSTICS_FILE="${HYPRBOLE_INSTALL_DIAGNOSTICS_FILE:-$HYPRBOLE_INSTALL_LOG_DIR/install-$HYPRBOLE_INSTALL_STARTED_AT.diagnostics.txt}"
+
+mkdir -p "$HYPRBOLE_INSTALL_LOG_DIR"
+ln -sfn "$HYPRBOLE_INSTALL_LOG_FILE" "$HYPRBOLE_INSTALL_LOG_DIR/latest.log"
+ln -sfn "$HYPRBOLE_INSTALL_DIAGNOSTICS_FILE" "$HYPRBOLE_INSTALL_LOG_DIR/latest.diagnostics.txt"
+
+if [[ -z ${HYPRBOLE_INSTALL_LOGGED:-} ]] && [[ -t 1 ]] && command -v script >/dev/null 2>&1; then
+  script_command=$(printf '%q ' "$0" "$@")
+  exec env HYPRBOLE_INSTALL_LOGGED=1 script -qefc "$script_command" "$HYPRBOLE_INSTALL_LOG_FILE"
+fi
+
 export HYPRBOLE_REPO_ROOT="$SCRIPT_DIR"
 export HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
 export HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
@@ -46,9 +60,30 @@ preflight() {
   start_sudo_keepalive
 }
 
+install_exit_trap() {
+  local status="$1"
+
+  trap - EXIT
+  stop_sudo_keepalive
+  write_install_diagnostics "$status"
+
+  if (( status == 0 )); then
+    log_info "install log: $HYPRBOLE_INSTALL_LOG_FILE"
+    log_info "diagnostics: $HYPRBOLE_INSTALL_DIAGNOSTICS_FILE"
+  else
+    printf 'Install failed with status %s.\n' "$status" >&2
+    printf 'Log: %s\n' "$HYPRBOLE_INSTALL_LOG_FILE" >&2
+    printf 'Diagnostics: %s\n' "$HYPRBOLE_INSTALL_DIAGNOSTICS_FILE" >&2
+  fi
+
+  exit "$status"
+}
+
 main() {
+  trap 'install_exit_trap $?' EXIT
+  log_info "install log: $HYPRBOLE_INSTALL_LOG_FILE"
+  log_info "diagnostics: $HYPRBOLE_INSTALL_DIAGNOSTICS_FILE"
   parse_args "$@"
-  trap stop_sudo_keepalive EXIT
   preflight
 
   log_step "Collecting user metadata"
