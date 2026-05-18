@@ -14,6 +14,8 @@ verify_installation() {
   for path in \
     "$HOME/.config/hypr/hyprland.lua" \
     "$HOME/.config/waybar/config.jsonc" \
+    "$HOME/.config/code-flags.conf" \
+    "$HOME/.config/brave-origin-nightly-flags.conf" \
     "$HYPRBOLE_PATH/.git" \
     "$HYPRBOLE_PATH/default" \
     "$HYPRBOLE_PATH/themes"; do
@@ -37,7 +39,17 @@ verify_installation() {
     fi
   done
 
-  for unit in pipewire.service pipewire-pulse.service wireplumber.service swayosd-server.service polkit-gnome-agent.service elephant.service walker.service swaync.service; do
+  if ! grep -Fxq -- '--password-store=gnome-libsecret' "$HOME/.config/code-flags.conf"; then
+    printf 'Code - OSS should use gnome-libsecret password store: %s\n' "$HOME/.config/code-flags.conf" >&2
+    failures=$((failures + 1))
+  fi
+
+  if ! grep -Fxq -- '--password-store=gnome-libsecret' "$HOME/.config/brave-origin-nightly-flags.conf"; then
+    printf 'Brave should use gnome-libsecret password store: %s\n' "$HOME/.config/brave-origin-nightly-flags.conf" >&2
+    failures=$((failures + 1))
+  fi
+
+  for unit in pipewire.service pipewire-pulse.service wireplumber.service swayosd-server.service polkit-gnome-agent.service gnome-keyring-daemon.socket gnome-keyring-daemon.service elephant.service walker.service swaync.service; do
     if ! systemctl --user is-enabled "$unit" >/dev/null 2>&1; then
       printf 'user service is not enabled: %s\n' "$unit" >&2
       failures=$((failures + 1))

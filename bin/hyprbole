@@ -534,7 +534,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Services: user"
-  for unit in pipewire.service pipewire-pulse.service wireplumber.service swayosd-server.service polkit-gnome-agent.service elephant.service walker.service swaync.service; do
+  for unit in pipewire.service pipewire-pulse.service wireplumber.service swayosd-server.service polkit-gnome-agent.service gnome-keyring-daemon.socket gnome-keyring-daemon.service elephant.service walker.service swaync.service; do
     if systemctl --user is-active "$unit" >/dev/null 2>&1; then
       doctor_report ok "$unit active"
     elif systemctl --user is-enabled "$unit" >/dev/null 2>&1; then
@@ -576,6 +576,8 @@ doctor() {
     "$HOME/.config/hypr/hyprland.lua" \
     "$HOME/.config/waybar/config.jsonc" \
     "$HOME/.config/swaync/config.json" \
+    "$HOME/.config/code-flags.conf" \
+    "$HOME/.config/brave-origin-nightly-flags.conf" \
     "$HOME/.config/systemd/user/polkit-gnome-agent.service" \
     "$HOME/.config/systemd/user/swaync.service"; do
     if [[ -e $path ]]; then
@@ -587,6 +589,22 @@ doctor() {
 
   if [[ -f $HOME/.config/hypr/hyprland.conf ]]; then
     doctor_report warn "conflicting Hyprland config: $HOME/.config/hypr/hyprland.conf"
+  fi
+
+  if [[ -f $HOME/.config/code-flags.conf ]]; then
+    if grep -Fxq -- '--password-store=gnome-libsecret' "$HOME/.config/code-flags.conf"; then
+      doctor_report ok "$HOME/.config/code-flags.conf uses gnome-libsecret"
+    else
+      doctor_report warn "$HOME/.config/code-flags.conf does not set --password-store=gnome-libsecret"
+    fi
+  fi
+
+  if [[ -f $HOME/.config/brave-origin-nightly-flags.conf ]]; then
+    if grep -Fxq -- '--password-store=gnome-libsecret' "$HOME/.config/brave-origin-nightly-flags.conf"; then
+      doctor_report ok "$HOME/.config/brave-origin-nightly-flags.conf uses gnome-libsecret"
+    else
+      doctor_report warn "$HOME/.config/brave-origin-nightly-flags.conf does not set --password-store=gnome-libsecret"
+    fi
   fi
   doctor_section_finish
 
