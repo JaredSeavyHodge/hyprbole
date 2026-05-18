@@ -35,4 +35,8 @@ refresh_running_browser() {
 
 set_browser_policy /etc/brave/policies/managed
 set_browser_policy /etc/brave-origin-nightly/policies/managed
+set_browser_policy /etc/brave-nightly/policies/managed
+
 refresh_running_browser brave-origin-nightly brave-origin-nightly -f
+refresh_running_browser brave-nightly brave-origin-nightly -f
+refresh_running_browser brave brave-origin-nightly -f

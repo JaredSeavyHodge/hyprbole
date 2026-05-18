@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# hyprbole:summary=Refresh VS Code theme from current Hyprbole theme
+
+set -euo pipefail
+
+HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
+HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
+
+current_theme="default"
+theme_metadata=""
+theme_name=""
+theme_extension=""
+settings_path="$HOME/.config/Code/User/settings.json"
+tmp_file=""
+
+if [[ -f $HYPRBOLE_CONFIG_PATH/current/theme-name ]]; then
+  current_theme="$(<"$HYPRBOLE_CONFIG_PATH/current/theme-name")"
+fi
+
+theme_metadata="$HYPRBOLE_PATH/themes/$current_theme/vscode.json"
+[[ -f $theme_metadata ]] || exit 0
+
+theme_name="$(jq -r '.name // empty' "$theme_metadata")"
+theme_extension="$(jq -r '.extension // empty' "$theme_metadata")"
+
+[[ -n $theme_name ]] || exit 0
+
+if [[ -n $theme_extension ]] && command -v code >/dev/null 2>&1; then
+  if ! code --list-extensions 2>/dev/null | grep -Fxq "$theme_extension"; then
+    code --install-extension "$theme_extension" --force >/dev/null 2>&1 || true
+  fi
+fi
+
+mkdir -p "$(dirname "$settings_path")"
+
+if [[ -f $settings_path ]]; then
+  tmp_file="$(mktemp)"
+  jq --arg theme "$theme_name" '."workbench.colorTheme" = $theme' "$settings_path" >"$tmp_file"
+  mv "$tmp_file" "$settings_path"
+else
+  printf '{\n  "workbench.colorTheme": %s\n}\n' "$(jq -Rn --arg value "$theme_name" '$value')" >"$settings_path"
+fi

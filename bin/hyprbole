@@ -114,6 +114,7 @@ set_theme() {
   hyprbole-restart-wallpaper >/dev/null 2>&1 || true
   hyprbole-refresh-sddm >/dev/null 2>&1 || true
   hyprbole-refresh-browser >/dev/null 2>&1 || true
+  hyprbole-refresh-vscode >/dev/null 2>&1 || true
   hyprbole-restart-terminal >/dev/null 2>&1 || true
   pkill -x waybar >/dev/null 2>&1 || true
   waybar >/dev/null 2>&1 & disown
