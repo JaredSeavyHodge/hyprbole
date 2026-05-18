@@ -534,7 +534,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Services: user"
-  for unit in pipewire.service pipewire-pulse.service wireplumber.service swayosd-server.service polkit-gnome-agent.service gnome-keyring-daemon.socket gnome-keyring-daemon.service elephant.service walker.service swaync.service; do
+  for unit in pipewire.service pipewire-pulse.service wireplumber.service swayosd-server.service polkit-gnome-agent.service gnome-keyring-daemon.socket elephant.service walker.service swaync.service; do
     if systemctl --user is-active "$unit" >/dev/null 2>&1; then
       doctor_report ok "$unit active"
     elif systemctl --user is-enabled "$unit" >/dev/null 2>&1; then
@@ -543,6 +543,12 @@ doctor() {
       doctor_report miss "$unit service"
     fi
   done
+
+  if systemctl --user is-active gnome-keyring-daemon.service >/dev/null 2>&1; then
+    doctor_report ok "gnome-keyring-daemon.service active"
+  else
+    doctor_report miss "gnome-keyring-daemon.service active"
+  fi
 
   failed_units="$(systemctl --user list-units --state=failed --no-legend --plain 2>/dev/null || true)"
   if [[ -n $failed_units ]]; then

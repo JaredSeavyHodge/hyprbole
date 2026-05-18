@@ -49,7 +49,7 @@ verify_installation() {
     failures=$((failures + 1))
   fi
 
-  for unit in pipewire.service pipewire-pulse.service wireplumber.service swayosd-server.service polkit-gnome-agent.service gnome-keyring-daemon.socket gnome-keyring-daemon.service elephant.service walker.service swaync.service; do
+  for unit in pipewire.service pipewire-pulse.service wireplumber.service swayosd-server.service polkit-gnome-agent.service gnome-keyring-daemon.socket elephant.service walker.service swaync.service; do
     if ! systemctl --user is-enabled "$unit" >/dev/null 2>&1; then
       printf 'user service is not enabled: %s\n' "$unit" >&2
       failures=$((failures + 1))
@@ -58,6 +58,11 @@ verify_installation() {
       failures=$((failures + 1))
     fi
   done
+
+  if ! systemctl --user is-active gnome-keyring-daemon.service >/dev/null 2>&1; then
+    printf 'user service is not active: gnome-keyring-daemon.service\n' >&2
+    failures=$((failures + 1))
+  fi
 
   failed_units="$(systemctl --user list-units --state=failed --no-legend --plain 2>/dev/null || true)"
   if [[ -n $failed_units ]]; then
