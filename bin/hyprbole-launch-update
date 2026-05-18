@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# hyprbole:summary=Launch the update flow in an interactive terminal
+
+set -euo pipefail
+
+exec hyprbole launch update

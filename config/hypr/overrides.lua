@@ -1,0 +1,12 @@
+-- Optional local overrides.
+--
+-- Hyprbole's shipped defaults live under `~/.local/share/hyprbole/default/hypr/core/`.
+-- This file is loaded last, after both the shipped defaults and the other files in `~/.config/hypr/`.
+-- Use it for one-off overrides that do not fit cleanly into the other user config files.
+--
+-- This file is loaded last. Use it for one-off rules or experiments that do not fit
+-- cleanly into the other user config files yet.
+--
+-- Example: add a floating rule for a specific app.
+-- hl.windowrule = hl.windowrule or function(...) end
+-- -- Add your local override helpers or direct Hyprland rules here.

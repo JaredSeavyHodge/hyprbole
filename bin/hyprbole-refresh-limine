@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# hyprbole:summary=Refresh limine snapshot boot entries
+
+set -euo pipefail
+
+status=127
+
+if command -v limine-update >/dev/null 2>&1; then
+  sudo limine-update
+  status=0
+fi
+
+if command -v limine-snapper-sync >/dev/null 2>&1; then
+  sudo limine-snapper-sync
+  status=0
+fi
+
+exit "$status"

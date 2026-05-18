@@ -1,0 +1,16 @@
+-- User bindings live here.
+--
+-- Hyprbole's shipped bindings live under `~/.local/share/hyprbole/default/hypr/core/bindings.lua`.
+-- This file is loaded after those defaults, so use it to add or override local keybinds.
+--
+-- Add personal keybinds here. The shipped Hyprbole bindings load first, then this file.
+-- That means local binds here can extend the defaults without editing vendor files.
+--
+-- Use `hl.bind("KEYS", action)` with the same helper style used in the shipped config.
+-- The keybind cheat sheet menu reads this file too, so new binds added here will show up.
+--
+-- Example: open a terminal file manager.
+-- hl.bind("SUPER + E", hl.dsp.exec_cmd("ghostty -e yazi"))
+--
+-- Example: quick note capture in Obsidian.
+-- hl.bind("SUPER + ALT + N", hl.dsp.exec_cmd("obsidian obsidian://new"))

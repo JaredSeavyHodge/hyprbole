@@ -1,0 +1,30 @@
+@import "../hyprbole/current/theme/swayosd.css";
+
+window#osd {
+  border-radius: 0;
+  opacity: 1;
+  border: 2px solid @border-color;
+  background-color: @background-color;
+}
+
+window#osd #container {
+  background-color: @background-color;
+}
+
+window#osd label {
+  font-family: 'JetBrainsMono Nerd Font';
+  font-size: 11pt;
+  color: @label;
+}
+
+window#osd image {
+  color: @image;
+}
+
+window#osd progressbar {
+  border-radius: 0;
+}
+
+window#osd progress {
+  background-color: @progress;
+}

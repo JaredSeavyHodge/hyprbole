@@ -1,0 +1,18 @@
+name = "hyprbole-wallpaper-settings"
+name_pretty = "Hyprbole Wallpaper Settings"
+hide_from_providerlist = true
+
+[[entries]]
+text = "Theme Wallpaper"
+subtext = "Choose a wallpaper from the current theme"
+actions = { activate = "hyprbole-launch-wallpaper-menu" }
+
+[[entries]]
+text = "My Wallpaper"
+subtext = "Choose a wallpaper from ~/Pictures/Wallpaper"
+actions = { activate = "hyprbole-launch-my-wallpaper-menu" }
+
+[[entries]]
+text = "Cycle Wallpaper"
+subtext = "Choose which wallpaper set to cycle"
+submenu = "hyprbole-cycle-wallpaper"

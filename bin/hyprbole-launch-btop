@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# hyprbole:summary=Launch btop in a floating terminal
+
+set -euo pipefail
+
+exec ghostty --class=com.hyprbole.btop --title=btop -e btop

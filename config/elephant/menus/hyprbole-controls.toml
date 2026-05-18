@@ -1,0 +1,28 @@
+name = "hyprbole-controls"
+name_pretty = "Hyprbole Controls"
+hide_from_providerlist = true
+
+[[entries]]
+text = "Audio"
+subtext = "Open volume controls"
+actions = { activate = "hyprbole-launch-audio" }
+
+[[entries]]
+text = "Network"
+subtext = "Open network controls"
+actions = { activate = "hyprbole-launch-network" }
+
+[[entries]]
+text = "Bluetooth"
+subtext = "Open bluetooth controls"
+actions = { activate = "hyprbole-launch-bluetooth" }
+
+[[entries]]
+text = "Toggle Idle Lock"
+subtext = "Enable or disable hypridle"
+actions = { activate = "hyprbole-toggle-idle" }
+
+[[entries]]
+text = "Toggle Notifications"
+subtext = "Silence or restore notifications"
+actions = { activate = "hyprbole-toggle-notifications" }

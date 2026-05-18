@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# hyprbole:summary=Refresh Chromium-style browser theme policy
+
+set -euo pipefail
+
+HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
+CHROMIUM_THEME="$HYPRBOLE_CONFIG_PATH/current/theme/chromium.theme"
+
+theme_hex="#1c2027"
+
+if [[ -f $CHROMIUM_THEME ]]; then
+  theme_rgb_color="$(<"$CHROMIUM_THEME")"
+  theme_hex="$(printf '#%02x%02x%02x' ${theme_rgb_color//,/ })"
+fi
+
+set_browser_policy() {
+  local policy_dir="$1"
+
+  sudo install -d "$policy_dir"
+  sudo tee "$policy_dir/color.json" >/dev/null <<EOF
+{"BrowserThemeColor":"$theme_hex","BrowserColorScheme":"device"}
+EOF
+}
+
+refresh_running_browser() {
+  local process="$1"
+  local command="$2"
+  local pgrep_args="${3:--x}"
+
+  if command -v "$command" >/dev/null 2>&1 && pgrep $pgrep_args "$process" >/dev/null 2>&1; then
+    "$command" --refresh-platform-policy --no-startup-window >/dev/null 2>&1 || true
+  fi
+}
+
+set_browser_policy /etc/brave/policies/managed
+refresh_running_browser brave-origin-nightly brave-origin-nightly -f

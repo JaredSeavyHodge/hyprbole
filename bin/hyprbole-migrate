@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# hyprbole:summary=Run pending repository migrations
+
+set -euo pipefail
+
+HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
+STATE_DIR="$HOME/.local/state/hyprbole"
+MIGRATIONS_DIR="$HYPRBOLE_PATH/migrations"
+STATE_FILE="$STATE_DIR/applied-migrations"
+
+mkdir -p "$STATE_DIR"
+touch "$STATE_FILE"
+
+[[ -d $MIGRATIONS_DIR ]] || exit 0
+
+while IFS= read -r migration; do
+  [[ -n $migration ]] || continue
+  migration_name=$(basename "$migration")
+  if grep -qx "$migration_name" "$STATE_FILE"; then
+    continue
+  fi
+
+  printf 'Running migration %s\n' "$migration_name"
+  # shellcheck source=/dev/null
+  source "$migration"
+  printf '%s\n' "$migration_name" >>"$STATE_FILE"
+done < <(find "$MIGRATIONS_DIR" -maxdepth 1 -type f | sort)

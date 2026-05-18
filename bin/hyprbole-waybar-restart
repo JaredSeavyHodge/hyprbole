@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# hyprbole:summary=Restart waybar cleanly
+
+set -euo pipefail
+
+pkill -x waybar >/dev/null 2>&1 || true
+waybar >/dev/null 2>&1 & disown

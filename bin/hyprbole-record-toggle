@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# hyprbole:summary=Toggle screen recording
+# hyprbole:args=<region|screen>
+
+set -euo pipefail
+
+STATE_DIR="$HOME/.local/state/hyprbole"
+PID_FILE="$STATE_DIR/wf-recorder.pid"
+MODE_FILE="$STATE_DIR/wf-recorder.mode"
+TARGET_DIR="$HOME/Videos/Screen Recordings"
+mode=${1:-region}
+
+mkdir -p "$STATE_DIR" "$TARGET_DIR"
+
+if [[ -f $PID_FILE ]]; then
+  pid=$(cat "$PID_FILE")
+  if kill -0 "$pid" >/dev/null 2>&1; then
+    kill -INT "$pid"
+    hyprbole-notify "Screen recording stopped" "Saved to $TARGET_DIR" >/dev/null 2>&1 || true
+    rm -f "$PID_FILE" "$MODE_FILE"
+    exit 0
+  fi
+  rm -f "$PID_FILE" "$MODE_FILE"
+fi
+
+target_file="$TARGET_DIR/$(date +%Y-%m-%d_%H-%M-%S).mp4"
+
+case "$mode" in
+  region)
+    wf-recorder -g "$(slurp)" -f "$target_file" >/dev/null 2>&1 &
+    ;;
+  screen)
+    wf-recorder -f "$target_file" >/dev/null 2>&1 &
+    ;;
+  *)
+    printf 'Usage: hyprbole-record-toggle <region|screen>\n' >&2
+    exit 1
+    ;;
+esac
+
+printf '%s\n' "$!" >"$PID_FILE"
+printf '%s\n' "$mode" >"$MODE_FILE"
+printf '%s\n' "$target_file" >"$STATE_DIR/wf-recorder.output"
+
+hyprbole-notify "Screen recording started" "$mode -> $target_file" >/dev/null 2>&1 || true

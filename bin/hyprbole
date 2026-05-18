@@ -1,0 +1,1063 @@
+#!/bin/bash
+
+# hyprbole:summary=Hyprbole command entrypoint
+# hyprbole:args=<command> [args...]
+
+set -euo pipefail
+
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+
+UPDATE_ORPHANS_REMOVED=0
+UPDATE_CACHE_RECLAIMED_BYTES=0
+
+if [[ ${1:-} == "update" ]] && [[ -z ${HYPRBOLE_UPDATE_LOGGED:-} ]] && command -v script >/dev/null 2>&1; then
+  script_command=$(printf '%q ' "$0" "$@")
+  exec env HYPRBOLE_UPDATE_LOGGED=1 script -qefc "$script_command" "/tmp/hyprbole-update.log"
+fi
+
+usage() {
+  cat <<'EOF'
+Hyprbole command center
+
+Usage:
+  hyprbole <command> [args...]
+
+Theme:
+  themes
+  theme list
+  theme current
+  theme set <name>
+  theme wallpaper list [theme]
+  theme wallpaper current
+  theme wallpaper set [theme] <file>
+  theme wallpaper cycle [theme]
+  wallpaper set <file>
+  wallpaper cycle
+  wallpaper timer start <theme|custom> [interval]
+  wallpaper timer interval <value>
+  wallpaper timer stop
+  wallpaper timer status
+
+Packages:
+  pkg installed
+  pkg install
+  pkg aur-install
+  pkg remove
+
+Launch:
+  apps
+  clipboard
+  keybinds
+  lock
+  logout
+  menu [menu] [placeholder]
+  poweroff
+  reboot
+  suspend
+  launch apps
+  launch menu [menu] [placeholder]
+  launch keybinds
+  launch clipboard
+  launch launcher
+  launch my-wallpaper-menu
+  launch themes
+  launch wallpaper-menu
+  launch update
+  launch pkg-installed
+  launch pkg-install
+  launch pkg-aur-install
+  launch pkg-remove
+
+Capture:
+  capture region
+  capture screen
+  capture record-region
+  capture record-screen
+
+System:
+  system lock
+  system logout
+  power suspend
+  power reboot
+  power off
+
+Maintenance:
+  doctor
+  update
+  refresh-limine
+  snapshot <cmd>
+  refresh-config <path>
+  refresh-all
+  refresh-shell
+  migrate
+EOF
+}
+
+update_repo() {
+  if [[ -d $HYPRBOLE_PATH/.git ]]; then
+    git -C "$HYPRBOLE_PATH" pull --autostash
+  fi
+}
+
+set_theme() {
+  local theme_name="$1"
+  local source_theme_dir="$HYPRBOLE_PATH/themes/$theme_name"
+
+  [[ -d $source_theme_dir ]] || {
+    printf 'unknown theme: %s\n' "$theme_name" >&2
+    exit 1
+  }
+
+  hyprbole_sync_theme_assets "$theme_name"
+  hyprbole-refresh-btop >/dev/null 2>&1 || true
+  hyprbole-refresh-gnome >/dev/null 2>&1 || true
+  hyprbole-restart-wallpaper >/dev/null 2>&1 || true
+  hyprbole-refresh-sddm >/dev/null 2>&1 || true
+  hyprbole-refresh-browser >/dev/null 2>&1 || true
+  hyprbole-restart-terminal >/dev/null 2>&1 || true
+  pkill -x waybar >/dev/null 2>&1 || true
+  waybar >/dev/null 2>&1 & disown
+  hyprbole-restart-swayosd >/dev/null 2>&1 || true
+}
+
+list_themes() {
+  hyprbole_list_themes
+}
+
+current_theme() {
+  hyprbole_current_theme
+}
+
+list_theme_wallpapers() {
+  local theme_name="${1:-$(hyprbole_current_theme)}"
+
+  [[ -d $HYPRBOLE_PATH/themes/$theme_name ]] || {
+    printf 'unknown theme: %s\n' "$theme_name" >&2
+    exit 1
+  }
+
+  hyprbole_list_theme_wallpapers "$theme_name"
+}
+
+set_theme_wallpaper() {
+  local theme_name
+  local wallpaper_name
+
+  if [[ -n ${2:-} ]]; then
+    theme_name="$1"
+    wallpaper_name="$2"
+  else
+    theme_name="$(hyprbole_current_theme)"
+    wallpaper_name="$1"
+  fi
+
+  [[ -d $HYPRBOLE_PATH/themes/$theme_name ]] || {
+    printf 'unknown theme: %s\n' "$theme_name" >&2
+    exit 1
+  }
+
+  hyprbole_set_theme_wallpaper "$theme_name" "$wallpaper_name"
+  hyprbole-restart-wallpaper >/dev/null 2>&1 || true
+  hyprbole-refresh-sddm >/dev/null 2>&1 || true
+}
+
+cycle_theme_wallpaper() {
+  local theme_name="${1:-$(hyprbole_current_theme)}"
+  local current_wallpaper
+  local wallpaper_names=()
+  local wallpaper_name
+  local current_index=-1
+  local next_index=0
+  local i
+
+  [[ -d $HYPRBOLE_PATH/themes/$theme_name ]] || {
+    printf 'unknown theme: %s\n' "$theme_name" >&2
+    exit 1
+  }
+
+  while IFS= read -r wallpaper_name; do
+    [[ -n $wallpaper_name ]] || continue
+    wallpaper_names+=("$wallpaper_name")
+  done < <(hyprbole_list_theme_wallpapers "$theme_name")
+
+  ((${#wallpaper_names[@]} > 0)) || {
+    printf 'no wallpapers available for theme: %s\n' "$theme_name" >&2
+    exit 1
+  }
+
+  current_wallpaper="$(hyprbole_current_wallpaper)"
+
+  for i in "${!wallpaper_names[@]}"; do
+    if [[ ${wallpaper_names[$i]} == "$current_wallpaper" ]]; then
+      current_index=$i
+      break
+    fi
+  done
+
+  if (( current_index >= 0 )); then
+    next_index=$(((current_index + 1) % ${#wallpaper_names[@]}))
+  fi
+
+  set_theme_wallpaper "$theme_name" "${wallpaper_names[$next_index]}"
+}
+
+current_theme_wallpaper() {
+  hyprbole_current_wallpaper
+}
+
+set_custom_wallpaper() {
+  local wallpaper_path="$1"
+
+  hyprbole_set_custom_wallpaper "$wallpaper_path"
+  hyprbole-restart-wallpaper >/dev/null 2>&1 || true
+  hyprbole-refresh-sddm >/dev/null 2>&1 || true
+}
+
+cycle_custom_wallpaper() {
+  local wallpaper_paths=()
+  local wallpaper_path
+  local current_wallpaper_path
+  local current_index=-1
+  local next_index=0
+  local i
+
+  while IFS= read -r wallpaper_path; do
+    [[ -n $wallpaper_path ]] || continue
+    wallpaper_paths+=("$wallpaper_path")
+  done < <(hyprbole_list_custom_wallpapers)
+
+  ((${#wallpaper_paths[@]} > 0)) || {
+    printf 'no wallpapers available in %s\n' "$HOME/Pictures/Wallpaper" >&2
+    exit 1
+  }
+
+  current_wallpaper_path="$(hyprbole_current_wallpaper_path || true)"
+
+  for i in "${!wallpaper_paths[@]}"; do
+    if [[ ${wallpaper_paths[$i]} == "$current_wallpaper_path" ]]; then
+      current_index=$i
+      break
+    fi
+  done
+
+  if (( current_index >= 0 )); then
+    next_index=$(((current_index + 1) % ${#wallpaper_paths[@]}))
+  fi
+
+  set_custom_wallpaper "${wallpaper_paths[$next_index]}"
+}
+
+wallpaper_timer_mode_file() {
+  printf '%s\n' "$HYPRBOLE_CONFIG_PATH/current/wallpaper-cycle-mode"
+}
+
+wallpaper_timer_interval_file() {
+  printf '%s\n' "$HYPRBOLE_CONFIG_PATH/current/wallpaper-cycle-interval"
+}
+
+wallpaper_timer_default_interval() {
+  printf '10min\n'
+}
+
+wallpaper_timer_current_interval() {
+  local interval_file
+
+  interval_file="$(wallpaper_timer_interval_file)"
+  if [[ -f $interval_file ]]; then
+    <"$interval_file" tr -d '\n'
+  else
+    wallpaper_timer_default_interval
+  fi
+}
+
+wallpaper_timer_validate_interval() {
+  local interval="$1"
+
+  [[ -n $interval ]] || return 1
+  systemd-analyze timespan "$interval" >/dev/null 2>&1
+}
+
+wallpaper_timer_write_interval_override() {
+  local interval="$1"
+  local override_dir="$HOME/.config/systemd/user/hyprbole-wallpaper-cycle.timer.d"
+  local override_path="$override_dir/override.conf"
+
+  mkdir -p "$override_dir"
+  cat >"$override_path" <<EOF
+[Timer]
+OnBootSec=
+OnUnitActiveSec=
+OnBootSec=$interval
+OnUnitActiveSec=$interval
+EOF
+}
+
+wallpaper_timer_set_interval() {
+  local interval="$1"
+  local interval_file
+
+  wallpaper_timer_validate_interval "$interval" || {
+    printf 'invalid wallpaper timer interval: %s\n' "$interval" >&2
+    exit 1
+  }
+
+  interval_file="$(wallpaper_timer_interval_file)"
+  mkdir -p "$(dirname "$interval_file")"
+  printf '%s\n' "$interval" >"$interval_file"
+  wallpaper_timer_write_interval_override "$interval"
+
+  command -v systemctl >/dev/null 2>&1 || return 0
+  systemctl --user daemon-reload
+
+  if systemctl --user is-enabled --quiet hyprbole-wallpaper-cycle.timer; then
+    systemctl --user restart hyprbole-wallpaper-cycle.timer >/dev/null 2>&1 || true
+  fi
+}
+
+wallpaper_timer_start() {
+  local mode="$1"
+  local interval="${2:-}"
+  local mode_file
+
+  case "$mode" in
+    theme)
+      cycle_theme_wallpaper
+      ;;
+    custom)
+      cycle_custom_wallpaper
+      ;;
+    *)
+      printf 'unknown wallpaper timer mode: %s\n' "$mode" >&2
+      exit 1
+      ;;
+  esac
+
+  command -v systemctl >/dev/null 2>&1 || {
+    printf 'missing required command: systemctl\n' >&2
+    exit 1
+  }
+
+  mode_file="$(wallpaper_timer_mode_file)"
+  mkdir -p "$(dirname "$mode_file")"
+  printf '%s\n' "$mode" >"$mode_file"
+
+  if [[ -n $interval ]]; then
+    wallpaper_timer_set_interval "$interval"
+  else
+    wallpaper_timer_set_interval "$(wallpaper_timer_current_interval)"
+  fi
+
+  systemctl --user daemon-reload
+  systemctl --user enable --now hyprbole-wallpaper-cycle.timer >/dev/null 2>&1
+}
+
+wallpaper_timer_stop() {
+  local mode_file
+
+  mode_file="$(wallpaper_timer_mode_file)"
+  rm -f "$mode_file"
+
+  command -v systemctl >/dev/null 2>&1 || return 0
+
+  systemctl --user disable --now hyprbole-wallpaper-cycle.timer >/dev/null 2>&1 || true
+  systemctl --user stop hyprbole-wallpaper-cycle.service >/dev/null 2>&1 || true
+}
+
+wallpaper_timer_status() {
+  local mode_file
+  local mode="stopped"
+  local interval
+
+  interval="$(wallpaper_timer_current_interval)"
+
+  mode_file="$(wallpaper_timer_mode_file)"
+  if [[ -f $mode_file ]]; then
+    mode="$(<"$mode_file")"
+  fi
+
+  if command -v systemctl >/dev/null 2>&1 && systemctl --user is-active --quiet hyprbole-wallpaper-cycle.timer; then
+    printf 'active mode=%s interval=%s\n' "$mode" "$interval"
+  else
+    printf 'stopped interval=%s\n' "$interval"
+  fi
+}
+
+wallpaper_timer_tick() {
+  local mode_file
+  local mode
+
+  mode_file="$(wallpaper_timer_mode_file)"
+  [[ -f $mode_file ]] || exit 0
+
+  mode="$(<"$mode_file")"
+
+  case "$mode" in
+    theme)
+      cycle_theme_wallpaper
+      ;;
+    custom)
+      cycle_custom_wallpaper
+      ;;
+    *)
+      printf 'unknown wallpaper timer mode: %s\n' "$mode" >&2
+      exit 1
+      ;;
+  esac
+}
+
+doctor() {
+  local binary
+  local path
+
+  for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper wf-recorder grim slurp satty mise walker elephant; do
+    if command -v "$binary" >/dev/null 2>&1; then
+      printf 'ok   %s\n' "$binary"
+    else
+      printf 'miss %s\n' "$binary"
+    fi
+  done
+
+  for path in \
+    "$HOME/.config/hypr/hyprland.lua" \
+    "$HOME/.config/waybar/config.jsonc" \
+    "$HYPRBOLE_CONFIG_PATH/current/theme/waybar.css"; do
+    if [[ -e $path ]]; then
+      printf 'ok   %s\n' "$path"
+    else
+      printf 'miss %s\n' "$path"
+    fi
+  done
+}
+
+refresh_config() {
+  hyprbole_refresh_config_path "$1"
+}
+
+launch_menu() {
+  local menu_name="${1:-hyprbole}"
+  local placeholder="${2:-Hyprbole menu}"
+
+  command -v walker >/dev/null 2>&1 || {
+    printf 'missing required command: walker\n' >&2
+    exit 1
+  }
+
+  command -v elephant >/dev/null 2>&1 || {
+    printf 'missing required command: elephant\n' >&2
+    exit 1
+  }
+
+  exec walker --width 460 --minheight 1 --maxheight 520 --provider "menus:${menu_name}" --placeholder "$placeholder"
+}
+
+launch_apps() {
+  launch_menu "hyprbole-apps" "Apps"
+}
+
+launch_clipboard() {
+  command -v walker >/dev/null 2>&1 || {
+    printf 'missing required command: walker\n' >&2
+    exit 1
+  }
+
+  command -v elephant >/dev/null 2>&1 || {
+    printf 'missing required command: elephant\n' >&2
+    exit 1
+  }
+
+  exec walker --width 980 --maxheight 520 --minheight 520 --provider clipboard --placeholder "Clipboard history"
+}
+
+launch_keybinds() {
+  launch_menu "hyprbole-keybinds" "Keybinds"
+}
+
+launch_launcher() {
+  command -v walker >/dev/null 2>&1 || {
+    printf 'missing required command: walker\n' >&2
+    exit 1
+  }
+
+  command -v elephant >/dev/null 2>&1 || {
+    printf 'missing required command: elephant\n' >&2
+    exit 1
+  }
+
+  exec walker --width 980 --maxheight 520 --minheight 520
+}
+
+launch_themes() {
+  command -v walker >/dev/null 2>&1 || {
+    printf 'missing required command: walker\n' >&2
+    exit 1
+  }
+
+  command -v elephant >/dev/null 2>&1 || {
+    printf 'missing required command: elephant\n' >&2
+    exit 1
+  }
+
+  exec walker --width 900 --minheight 300 --maxheight 560 --provider menus:hyprbolethemes --placeholder "Select theme"
+}
+
+launch_wallpaper_menu() {
+  exec walker --width 900 --minheight 300 --maxheight 560 --provider menus:hyprbolewallpapers --placeholder "Select wallpaper"
+}
+
+launch_my_wallpaper_menu() {
+  exec walker --width 900 --minheight 300 --maxheight 560 --provider menus:hyprbolemywallpapers --placeholder "Select custom wallpaper"
+}
+
+launch_update() {
+  exec ghostty -e bash -lc 'hyprbole update; status=$?; if (( status != 0 )); then printf "\nUpdate failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
+}
+
+launch_pkg_installed() {
+  exec ghostty -e bash -lc 'hyprbole pkg installed; status=$?; if (( status != 0 )); then printf "\nInstalled package browser exited with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
+}
+
+launch_pkg_install() {
+  exec ghostty -e bash -lc 'hyprbole pkg install; status=$?; if (( status != 0 )); then printf "\nPackage install failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
+}
+
+launch_pkg_aur_install() {
+  exec ghostty -e bash -lc 'hyprbole pkg aur-install; status=$?; if (( status != 0 )); then printf "\nAUR package install failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
+}
+
+launch_pkg_remove() {
+  exec ghostty -e bash -lc 'hyprbole pkg remove; status=$?; if (( status != 0 )); then printf "\nPackage removal failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
+}
+
+pkg_install() {
+  command -v fzf >/dev/null 2>&1 || {
+    printf 'missing required command: fzf\n' >&2
+    exit 1
+  }
+
+  local fzf_args=(
+    --multi
+    --preview 'pacman -Sii {1}'
+    --preview-label='alt-p: toggle description, alt-j/k: scroll, tab: multi-select'
+    --preview-label-pos='bottom'
+    --preview-window 'down:65%:wrap'
+    --bind 'alt-p:toggle-preview'
+    --bind 'alt-d:preview-half-page-down,alt-u:preview-half-page-up'
+    --bind 'alt-k:preview-up,alt-j:preview-down'
+    --color 'pointer:green,marker:green'
+  )
+
+  local pkg_names
+  pkg_names=$(pacman -Slq | fzf "${fzf_args[@]}")
+
+  if [[ -n $pkg_names ]]; then
+    printf '%s\n' "$pkg_names" | tr '\n' ' ' | xargs sudo pacman -S --noconfirm
+  fi
+}
+
+pkg_installed() {
+  command -v fzf >/dev/null 2>&1 || {
+    printf 'missing required command: fzf\n' >&2
+    exit 1
+  }
+
+  command -v yay >/dev/null 2>&1 || {
+    printf 'missing required command: yay\n' >&2
+    exit 1
+  }
+
+  local fzf_args=(
+    --preview 'yay -Qi {1}'
+    --preview-label='alt-p: toggle description, alt-j/k: scroll'
+    --preview-label-pos='bottom'
+    --preview-window 'down:65%:wrap'
+    --bind 'alt-p:toggle-preview'
+    --bind 'alt-d:preview-half-page-down,alt-u:preview-half-page-up'
+    --bind 'alt-k:preview-up,alt-j:preview-down'
+    --color 'pointer:blue'
+  )
+
+  yay -Qqe | fzf "${fzf_args[@]}" >/dev/null
+}
+
+pkg_aur_install() {
+  command -v fzf >/dev/null 2>&1 || {
+    printf 'missing required command: fzf\n' >&2
+    exit 1
+  }
+
+  command -v yay >/dev/null 2>&1 || {
+    printf 'missing required command: yay\n' >&2
+    exit 1
+  }
+
+  local fzf_args=(
+    --multi
+    --preview 'yay -Siia {1}'
+    --preview-label='alt-p: toggle description, alt-b/B: toggle PKGBUILD, alt-j/k: scroll, tab: multi-select'
+    --preview-label-pos='bottom'
+    --preview-window 'down:65%:wrap'
+    --bind 'alt-p:toggle-preview'
+    --bind 'alt-d:preview-half-page-down,alt-u:preview-half-page-up'
+    --bind 'alt-k:preview-up,alt-j:preview-down'
+    --bind 'alt-b:change-preview:yay -Gpa {1} | tail -n +5'
+    --bind 'alt-B:change-preview:yay -Siia {1}'
+    --color 'pointer:green,marker:green'
+  )
+
+  local pkg_names
+  pkg_names=$(yay -Slqa | fzf "${fzf_args[@]}")
+
+  if [[ -n $pkg_names ]]; then
+    printf '%s\n' "$pkg_names" | sed 's/^/aur\//g' | tr '\n' ' ' | xargs yay -S --noconfirm
+  fi
+}
+
+pkg_remove() {
+  command -v fzf >/dev/null 2>&1 || {
+    printf 'missing required command: fzf\n' >&2
+    exit 1
+  }
+
+  command -v yay >/dev/null 2>&1 || {
+    printf 'missing required command: yay\n' >&2
+    exit 1
+  }
+
+  local fzf_args=(
+    --multi
+    --preview 'yay -Qi {1}'
+    --preview-label='alt-p: toggle description, alt-j/k: scroll, tab: multi-select'
+    --preview-label-pos='bottom'
+    --preview-window 'down:65%:wrap'
+    --bind 'alt-p:toggle-preview'
+    --bind 'alt-d:preview-half-page-down,alt-u:preview-half-page-up'
+    --bind 'alt-k:preview-up,alt-j:preview-down'
+    --color 'pointer:red,marker:red'
+  )
+
+  local pkg_names
+  pkg_names=$(yay -Qqe | fzf "${fzf_args[@]}")
+
+  if [[ -n $pkg_names ]]; then
+    printf '%s\n' "$pkg_names" | tr '\n' ' ' | xargs sudo pacman -Rns --noconfirm
+  fi
+}
+
+capture_region() {
+  exec hyprbole-screenshot region
+}
+
+capture_screen() {
+  exec hyprbole-screenshot screen
+}
+
+capture_record_region() {
+  exec hyprbole-record-toggle region
+}
+
+capture_record_screen() {
+  exec hyprbole-record-toggle screen
+}
+
+system_lock() {
+  if pgrep -x 1password >/dev/null 2>&1; then
+    1password --lock >/dev/null 2>&1 || true
+  fi
+
+  if ! pgrep -x hyprlock >/dev/null 2>&1; then
+    exec hyprlock
+  fi
+}
+
+system_logout() {
+  if command -v uwsm >/dev/null 2>&1; then
+    exec uwsm stop
+  fi
+
+  local session_id="${XDG_SESSION_ID:-}"
+
+  if [[ -n $session_id ]] && command -v loginctl >/dev/null 2>&1; then
+    exec loginctl terminate-session "$session_id"
+  fi
+
+  exec pkill -KILL -u "$USER"
+}
+
+power_suspend() {
+  system_lock || true
+  sleep 1
+  exec systemctl suspend
+}
+
+power_reboot() {
+  exec systemctl reboot
+}
+
+power_off() {
+  exec systemctl poweroff
+}
+
+current_pacman_log_lines() {
+  if [[ -f /var/log/pacman.log ]]; then
+    wc -l < /var/log/pacman.log
+  else
+    printf '0\n'
+  fi
+}
+
+package_cache_size_bytes() {
+  local size=0
+
+  if [[ -d /var/cache/pacman/pkg ]]; then
+    read -r size _ < <(du -sb /var/cache/pacman/pkg 2>/dev/null || printf '0 -\n')
+  fi
+
+  printf '%s\n' "$size"
+}
+
+format_bytes() {
+  if command -v numfmt >/dev/null 2>&1; then
+    numfmt --to=iec-i --suffix=B "$1"
+  else
+    printf '%s bytes\n' "$1"
+  fi
+}
+
+cleanup_orphan_packages() {
+  local orphans
+
+  orphans=$(pacman -Qtdq || true)
+  if [[ -n $orphans ]]; then
+    printf '\nRemove orphan system packages\n'
+    for pkg in $orphans; do
+      if sudo pacman -Rs --noconfirm "$pkg"; then
+        ((UPDATE_ORPHANS_REMOVED += 1))
+      fi
+    done
+  fi
+}
+
+cleanup_package_cache() {
+  local cache_size_before
+  local cache_size_after
+
+  if command -v paccache >/dev/null 2>&1; then
+    printf '\nTrim package cache\n'
+    cache_size_before=$(package_cache_size_bytes)
+    sudo paccache -rk2 || true
+    cache_size_after=$(package_cache_size_bytes)
+
+    if (( cache_size_after < cache_size_before )); then
+      UPDATE_CACHE_RECLAIMED_BYTES=$((cache_size_before - cache_size_after))
+    fi
+  fi
+}
+
+print_update_summary() {
+  local pacman_log_start_line="$1"
+  local upgraded=0
+  local installed=0
+  local removed=0
+
+  if [[ -f /var/log/pacman.log ]]; then
+    upgraded=$(sed -n "$((pacman_log_start_line + 1)),\$p" /var/log/pacman.log | grep -c '\[ALPM\] upgraded ' || true)
+    installed=$(sed -n "$((pacman_log_start_line + 1)),\$p" /var/log/pacman.log | grep -c '\[ALPM\] installed ' || true)
+    removed=$(sed -n "$((pacman_log_start_line + 1)),\$p" /var/log/pacman.log | grep -c '\[ALPM\] removed ' || true)
+  fi
+
+  printf '\nUpdate summary\n'
+  printf 'Upgraded packages: %s\n' "$upgraded"
+  printf 'Installed packages: %s\n' "$installed"
+  printf 'Removed packages: %s\n' "$removed"
+  printf 'Orphan packages removed: %s\n' "$UPDATE_ORPHANS_REMOVED"
+  printf 'Package cache reclaimed: %s\n' "$(format_bytes "$UPDATE_CACHE_RECLAIMED_BYTES")"
+  printf 'Update log: /tmp/hyprbole-update.log\n'
+}
+
+update_all() {
+  local pacman_log_start_line
+
+  trap 'printf "\nUpdate failed. Review the output above and retry after fixing the issue.\nLog: /tmp/hyprbole-update.log\n" >&2' ERR
+
+  UPDATE_ORPHANS_REMOVED=0
+  UPDATE_CACHE_RECLAIMED_BYTES=0
+  pacman_log_start_line=$(current_pacman_log_lines)
+
+  # Prevent idle/suspend from interrupting long-running updates.
+  hyprctl dispatch tagwindow +noidle >/dev/null 2>&1 || true
+
+  trap 'hyprctl dispatch tagwindow -- -noidle >/dev/null 2>&1 || true' RETURN
+
+  if command -v pacman >/dev/null 2>&1; then
+    sudo pacman -Sy --noconfirm archlinux-keyring >/dev/null 2>&1 || true
+  fi
+
+  update_repo
+  hyprbole-snapshot create || [[ $? -eq 127 ]]
+  sudo pacman -Syyu --noconfirm
+  hyprbole-migrate
+  yay -Sua --cleanafter --noconfirm --answerclean None --answerdiff None --answeredit None --answerupgrade None
+  cleanup_orphan_packages
+  cleanup_package_cache
+  hyprbole-refresh-all
+  hyprbole-refresh-limine >/dev/null 2>&1 || true
+  print_update_summary "$pacman_log_start_line"
+}
+
+main() {
+  case "${1:-}" in
+    theme)
+      case "${2:-}" in
+        list)
+          list_themes
+          ;;
+        current)
+          current_theme
+          ;;
+        set)
+          [[ -n ${3:-} ]] || usage
+          set_theme "$3"
+          ;;
+        wallpaper)
+          case "${3:-}" in
+            current)
+              current_theme_wallpaper
+              ;;
+            list)
+              list_theme_wallpapers "${4:-}"
+              ;;
+            cycle)
+              cycle_theme_wallpaper "${4:-}"
+              ;;
+            set)
+              [[ -n ${4:-} ]] || usage
+              set_theme_wallpaper "${4:-}" "${5:-}"
+              ;;
+            *)
+              usage
+              ;;
+          esac
+          ;;
+        *)
+          usage
+          ;;
+      esac
+      ;;
+    wallpaper)
+      case "${2:-}" in
+        cycle)
+          cycle_custom_wallpaper
+          ;;
+        set)
+          [[ -n ${3:-} ]] || usage
+          set_custom_wallpaper "$3"
+          ;;
+        timer)
+          case "${3:-}" in
+            start)
+              [[ -n ${4:-} ]] || usage
+              wallpaper_timer_start "$4" "${5:-}"
+              ;;
+            interval)
+              [[ -n ${4:-} ]] || usage
+              wallpaper_timer_set_interval "$4"
+              ;;
+            status)
+              wallpaper_timer_status
+              ;;
+            stop)
+              wallpaper_timer_stop
+              ;;
+            tick)
+              wallpaper_timer_tick
+              ;;
+            *)
+              usage
+              ;;
+          esac
+          ;;
+        *)
+          usage
+          ;;
+      esac
+      ;;
+    themes)
+      launch_themes
+      ;;
+    doctor)
+      doctor
+      ;;
+    update)
+      update_all
+      ;;
+    apps)
+      launch_apps
+      ;;
+    clipboard)
+      launch_clipboard
+      ;;
+    keybinds)
+      launch_keybinds
+      ;;
+    lock)
+      system_lock
+      ;;
+    logout)
+      system_logout
+      ;;
+    menu)
+      launch_menu "${2:-hyprbole}" "${3:-Hyprbole menu}"
+      ;;
+    suspend)
+      power_suspend
+      ;;
+    reboot)
+      power_reboot
+      ;;
+    poweroff)
+      power_off
+      ;;
+    pkg)
+      case "${2:-}" in
+        installed)
+          pkg_installed
+          ;;
+        install)
+          pkg_install
+          ;;
+        aur-install)
+          pkg_aur_install
+          ;;
+        remove)
+          pkg_remove
+          ;;
+        *)
+          usage
+          ;;
+      esac
+      ;;
+    launch)
+      case "${2:-}" in
+        apps)
+          launch_apps
+          ;;
+        menu)
+          launch_menu "${3:-hyprbole}" "${4:-Hyprbole menu}"
+          ;;
+        keybinds)
+          launch_keybinds
+          ;;
+        clipboard)
+          launch_clipboard
+          ;;
+        launcher)
+          launch_launcher
+          ;;
+        themes)
+          launch_themes
+          ;;
+        my-wallpaper-menu)
+          launch_my_wallpaper_menu
+          ;;
+        wallpaper-menu)
+          launch_wallpaper_menu
+          ;;
+        update)
+          launch_update
+          ;;
+        pkg-installed)
+          launch_pkg_installed
+          ;;
+        pkg-install)
+          launch_pkg_install
+          ;;
+        pkg-aur-install)
+          launch_pkg_aur_install
+          ;;
+        pkg-remove)
+          launch_pkg_remove
+          ;;
+        *)
+          usage
+          ;;
+      esac
+      ;;
+    capture)
+      case "${2:-}" in
+        region)
+          capture_region
+          ;;
+        screen)
+          capture_screen
+          ;;
+        record-region)
+          capture_record_region
+          ;;
+        record-screen)
+          capture_record_screen
+          ;;
+        *)
+          usage
+          ;;
+      esac
+      ;;
+    power)
+      case "${2:-}" in
+        suspend)
+          power_suspend
+          ;;
+        reboot)
+          power_reboot
+          ;;
+        off|poweroff)
+          power_off
+          ;;
+        *)
+          usage
+          ;;
+      esac
+      ;;
+    system)
+      case "${2:-}" in
+        lock)
+          system_lock
+          ;;
+        logout)
+          system_logout
+          ;;
+        *)
+          usage
+          ;;
+      esac
+      ;;
+    refresh-limine)
+      hyprbole-refresh-limine
+      ;;
+    snapshot)
+      [[ -n ${2:-} ]] || usage
+      hyprbole-snapshot "$2"
+      ;;
+    refresh-config)
+      [[ -n ${2:-} ]] || usage
+      refresh_config "$2"
+      ;;
+    refresh-all)
+      hyprbole-refresh-all
+      ;;
+    refresh-shell)
+      hyprbole-refresh-shell
+      ;;
+    migrate)
+      hyprbole-migrate
+      ;;
+    ""|--help|-h)
+      usage
+      ;;
+    *)
+      usage
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"

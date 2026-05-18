@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/ErikReider/SwayNotificationCenter/main/schema/configSchema.json",
+  "notification-icon-size": 48,
+  "notification-body-image-height": 100,
+  "notification-body-image-width": 200,
+  "timeout": 6,
+  "timeout-low": 3,
+  "timeout-critical": 0,
+  "fit-to-screen": true,
+  "control-center-width": 420,
+  "control-center-height": 720,
+  "control-center-margin-top": 8,
+  "control-center-margin-right": 8,
+  "positionX": "right",
+  "positionY": "top",
+  "layer": "overlay",
+  "widgets": ["title", "dnd", "notifications"]
+}

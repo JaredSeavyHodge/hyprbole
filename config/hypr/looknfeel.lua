@@ -1,0 +1,24 @@
+-- User look-and-feel overrides live here.
+--
+-- Hyprbole's shipped look-and-feel defaults live under `~/.local/share/hyprbole/default/hypr/core/`.
+-- This file is loaded after those defaults, so use it to override or extend them locally.
+--
+-- Use this file for gaps, borders, blur, opacity, animations, and decoration tweaks.
+-- Theme-driven defaults still apply; add local overrides only where you want custom behavior.
+--
+-- Example: change gaps and border size.
+-- hl.general({
+--   gaps_in = 6,
+--   gaps_out = 12,
+--   border_size = 2,
+-- })
+--
+-- Example: tune decoration and blur.
+-- hl.decoration({
+--   rounding = 10,
+--   blur = {
+--     enabled = true,
+--     size = 6,
+--     passes = 2,
+--   },
+-- })

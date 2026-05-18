@@ -1,0 +1,23 @@
+name = "hyprbole-capture"
+name_pretty = "Hyprbole Capture"
+hide_from_providerlist = true
+
+[[entries]]
+text = "Screenshot Region"
+subtext = "Capture and annotate a region"
+actions = { activate = "hyprbole-screenshot region" }
+
+[[entries]]
+text = "Screenshot Screen"
+subtext = "Capture and annotate the current screen"
+actions = { activate = "hyprbole-screenshot screen" }
+
+[[entries]]
+text = "Record Region"
+subtext = "Toggle regional screen recording"
+actions = { activate = "hyprbole-record-toggle region" }
+
+[[entries]]
+text = "Record Screen"
+subtext = "Toggle fullscreen recording"
+actions = { activate = "hyprbole-record-toggle screen" }

@@ -1,0 +1,134 @@
+_hyprbole_complete_menu_names() {
+  local hyprbole_path="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
+  local menu_dir="$hyprbole_path/config/elephant/menus"
+
+  [[ -d $menu_dir ]] || return 0
+
+  local menu
+  for menu in "$menu_dir"/*.lua; do
+    [[ -f $menu ]] || continue
+    basename "$menu" .lua
+  done
+}
+
+_hyprbole_complete_refresh_config_paths() {
+  local hyprbole_path="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
+  local config_dir="$hyprbole_path/config"
+
+  [[ -d $config_dir ]] || return 0
+
+  local path
+  while IFS= read -r -d '' path; do
+    printf '%s\n' "${path#"$config_dir/"}"
+  done < <(find "$config_dir" -type f -print0)
+}
+
+_hyprbole_complete() {
+  COMPREPLY=()
+
+  local cur="${COMP_WORDS[COMP_CWORD]}"
+
+  case "${COMP_WORDS[1]:-}" in
+    "")
+      COMPREPLY=($(compgen -W 'theme themes wallpaper pkg apps clipboard keybinds lock logout menu suspend reboot poweroff launch capture power system doctor update refresh-limine snapshot refresh-config refresh-all refresh-shell migrate' -- "$cur"))
+      return 0
+      ;;
+    theme)
+      case "${COMP_WORDS[2]:-}" in
+        "")
+          COMPREPLY=($(compgen -W 'list current set wallpaper' -- "$cur"))
+          return 0
+          ;;
+        set)
+          if (( COMP_CWORD == 3 )); then
+            COMPREPLY=($(compgen -W "$(hyprbole theme list 2>/dev/null)" -- "$cur"))
+          fi
+          return 0
+          ;;
+        wallpaper)
+          case "${COMP_WORDS[3]:-}" in
+            "")
+              COMPREPLY=($(compgen -W 'list current set cycle' -- "$cur"))
+              ;;
+            list)
+              if (( COMP_CWORD == 4 )); then
+                COMPREPLY=($(compgen -W "$(hyprbole theme list 2>/dev/null)" -- "$cur"))
+              fi
+              ;;
+            cycle)
+              if (( COMP_CWORD == 4 )); then
+                COMPREPLY=($(compgen -W "$(hyprbole theme list 2>/dev/null)" -- "$cur"))
+              fi
+              ;;
+            set)
+              if (( COMP_CWORD == 4 )); then
+                COMPREPLY=($(compgen -W "$(hyprbole theme list 2>/dev/null) $(hyprbole theme wallpaper list 2>/dev/null)" -- "$cur"))
+              elif (( COMP_CWORD == 5 )); then
+                COMPREPLY=($(compgen -W "$(hyprbole theme wallpaper list "${COMP_WORDS[4]}" 2>/dev/null)" -- "$cur"))
+              fi
+              ;;
+          esac
+          return 0
+          ;;
+      esac
+      ;;
+    wallpaper)
+      if (( COMP_CWORD == 2 )); then
+        COMPREPLY=($(compgen -W 'set cycle timer' -- "$cur"))
+      elif (( COMP_CWORD == 3 )) && [[ ${COMP_WORDS[2]:-} == "timer" ]]; then
+        COMPREPLY=($(compgen -W 'start interval stop status' -- "$cur"))
+      elif (( COMP_CWORD == 4 )) && [[ ${COMP_WORDS[2]:-} == "timer" ]] && [[ ${COMP_WORDS[3]:-} == "start" ]]; then
+        COMPREPLY=($(compgen -W 'theme custom' -- "$cur"))
+      elif (( COMP_CWORD == 5 )) && [[ ${COMP_WORDS[2]:-} == "timer" ]] && [[ ${COMP_WORDS[3]:-} == "start" ]]; then
+        COMPREPLY=($(compgen -W '5min 10min 30min 1h' -- "$cur"))
+      elif (( COMP_CWORD == 4 )) && [[ ${COMP_WORDS[2]:-} == "timer" ]] && [[ ${COMP_WORDS[3]:-} == "interval" ]]; then
+        COMPREPLY=($(compgen -W '5min 10min 30min 1h' -- "$cur"))
+      fi
+      return 0
+      ;;
+    pkg)
+      if (( COMP_CWORD == 2 )); then
+        COMPREPLY=($(compgen -W 'installed install aur-install remove' -- "$cur"))
+      fi
+      return 0
+      ;;
+    launch)
+      if (( COMP_CWORD == 2 )); then
+        COMPREPLY=($(compgen -W 'apps menu keybinds clipboard launcher themes my-wallpaper-menu wallpaper-menu update pkg-installed pkg-install pkg-aur-install pkg-remove' -- "$cur"))
+      elif (( COMP_CWORD == 3 )) && [[ ${COMP_WORDS[2]:-} == "menu" ]]; then
+        COMPREPLY=($(compgen -W "$(_hyprbole_complete_menu_names)" -- "$cur"))
+      fi
+      return 0
+      ;;
+    capture)
+      if (( COMP_CWORD == 2 )); then
+        COMPREPLY=($(compgen -W 'region screen record-region record-screen' -- "$cur"))
+      fi
+      return 0
+      ;;
+    power)
+      if (( COMP_CWORD == 2 )); then
+        COMPREPLY=($(compgen -W 'suspend reboot off poweroff' -- "$cur"))
+      fi
+      return 0
+      ;;
+    system)
+      if (( COMP_CWORD == 2 )); then
+        COMPREPLY=($(compgen -W 'lock logout' -- "$cur"))
+      fi
+      return 0
+      ;;
+    snapshot)
+      if (( COMP_CWORD == 2 )); then
+        COMPREPLY=($(compgen -W 'create restore' -- "$cur"))
+      fi
+      return 0
+      ;;
+  esac
+
+  if [[ ${COMP_WORDS[1]:-} == "refresh-config" && $COMP_CWORD -eq 2 ]]; then
+    COMPREPLY=($(compgen -W "$(_hyprbole_complete_refresh_config_paths)" -- "$cur"))
+  fi
+}
+
+complete -o default -F _hyprbole_complete hyprbole hb

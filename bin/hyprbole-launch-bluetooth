@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# hyprbole:summary=Launch bluetooth controls
+
+set -euo pipefail
+
+if command -v blueman-manager >/dev/null 2>&1; then
+  exec blueman-manager
+fi
+
+exit 0

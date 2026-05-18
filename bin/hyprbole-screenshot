@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# hyprbole:summary=Take a screenshot
+# hyprbole:args=<region|screen>
+
+set -euo pipefail
+
+mode=${1:-region}
+target_dir="$HOME/Pictures/Screenshots"
+target_file="$target_dir/$(date +%Y-%m-%d_%H-%M-%S).png"
+
+mkdir -p "$target_dir"
+
+command -v satty >/dev/null 2>&1 || {
+  printf 'missing required command: satty\n' >&2
+  exit 1
+}
+
+case "$mode" in
+  region)
+    grim -g "$(slurp)" "$target_file"
+    ;;
+  screen)
+    grim "$target_file"
+    ;;
+  *)
+    printf 'Usage: hyprbole-screenshot <region|screen>\n' >&2
+    exit 1
+    ;;
+esac
+
+satty \
+  --filename "$target_file" \
+  --output-filename "$target_file" \
+  --actions-on-enter save-to-clipboard \
+  --save-after-copy \
+  --copy-command 'wl-copy'
+
+if command -v wl-copy >/dev/null 2>&1; then
+  wl-copy <"$target_file"
+fi
+
+hyprbole-notify "Screenshot saved" "$target_file" >/dev/null 2>&1 || true
+
+printf '%s\n' "$target_file"

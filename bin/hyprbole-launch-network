@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# hyprbole:summary=Launch network controls
+
+set -euo pipefail
+
+exec nm-connection-editor

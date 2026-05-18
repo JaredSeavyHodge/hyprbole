@@ -1,0 +1,38 @@
+name = "hyprbole"
+name_pretty = "Hyprbole"
+hide_from_providerlist = false
+
+[[entries]]
+text = "Apps"
+subtext = "Browser, files, passwords"
+actions = { activate = "hyprbole apps" }
+
+[[entries]]
+text = "Keybinds"
+subtext = "Browse current keyboard shortcuts"
+actions = { activate = "hyprbole keybinds" }
+
+[[entries]]
+text = "Theme"
+subtext = "Themes and wallpapers"
+submenu = "hyprbole-theme"
+
+[[entries]]
+text = "Install"
+subtext = "Install or remove packages"
+submenu = "hyprbole-install"
+
+[[entries]]
+text = "Controls"
+subtext = "Audio, network, bluetooth, toggles"
+submenu = "hyprbole-controls"
+
+[[entries]]
+text = "Capture"
+subtext = "Screenshots and recordings"
+submenu = "hyprbole-capture"
+
+[[entries]]
+text = "System"
+subtext = "Refresh, update, lock, logout, power"
+submenu = "hyprbole-system"

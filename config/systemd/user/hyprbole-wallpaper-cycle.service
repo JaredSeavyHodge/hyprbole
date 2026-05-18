@@ -1,0 +1,8 @@
+[Unit]
+Description=Hyprbole wallpaper cycle tick
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env bash -lc 'exec "$HOME/.local/bin/hyprbole" wallpaper timer tick'

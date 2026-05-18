@@ -1,0 +1,12 @@
+[Unit]
+Description=Hyprbole wallpaper cycle timer
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=10min
+Unit=hyprbole-wallpaper-cycle.service
+
+[Install]
+WantedBy=timers.target

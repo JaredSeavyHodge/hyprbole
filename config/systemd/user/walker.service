@@ -1,0 +1,13 @@
+[Unit]
+Description=Walker application service
+PartOf=graphical-session.target
+After=graphical-session.target elephant.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/uwsm-app -- env GSK_RENDERER=cairo walker --gapplication-service
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

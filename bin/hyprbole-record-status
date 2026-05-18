@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# hyprbole:summary=Print recording status for Waybar
+
+set -euo pipefail
+
+STATE_DIR="$HOME/.local/state/hyprbole"
+PID_FILE="$STATE_DIR/wf-recorder.pid"
+MODE_FILE="$STATE_DIR/wf-recorder.mode"
+
+if [[ -f $PID_FILE ]]; then
+  pid=$(cat "$PID_FILE")
+  if kill -0 "$pid" >/dev/null 2>&1; then
+    mode="recording"
+    if [[ -f $MODE_FILE ]]; then
+      mode=$(cat "$MODE_FILE")
+    fi
+    printf '{"text":"●","class":"active","tooltip":"Stop recording (%s)"}\n' "$mode"
+    exit 0
+  fi
+  rm -f "$PID_FILE" "$MODE_FILE" "$STATE_DIR/wf-recorder.output"
+fi
+
+printf '{"text":"●","class":"inactive","tooltip":"Start region recording"}\n'

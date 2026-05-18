@@ -1,0 +1,21 @@
+-- User monitor config lives here.
+--
+-- Hyprbole's shipped monitor defaults live under `~/.local/share/hyprbole/default/hypr/core/`.
+-- This file is loaded after those defaults, so use it to override or extend them locally.
+--
+-- Add `hl.monitor(...)` calls here to override or extend the shipped monitor setup.
+-- Keep only the monitor rules you actually want to own locally.
+--
+-- Example: set a preferred monitor mode and position.
+-- hl.monitor("DP-1", {
+--   mode = "2560x1440@144",
+--   position = "0x0",
+--   scale = 1,
+-- })
+--
+-- Example: place a second display to the right of the primary display.
+-- hl.monitor("HDMI-A-1", {
+--   mode = "1920x1080@60",
+--   position = "2560x0",
+--   scale = 1,
+-- })

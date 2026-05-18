@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# hyprbole:summary=Launch the default browser
+
+set -euo pipefail
+
+exec brave-origin-nightly "$@"

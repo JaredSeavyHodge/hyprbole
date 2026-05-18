@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# hyprbole:summary=Show a fuzzy-finder TUI for browsing installed packages
+
+set -euo pipefail
+
+exec hyprbole pkg installed

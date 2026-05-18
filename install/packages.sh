@@ -1,0 +1,70 @@
+HYPRBOLE_OFFICIAL_PACKAGES=(
+  hyprland
+  uwsm
+  waybar
+  sddm
+  swaync
+  swayosd
+  pipewire
+  wireplumber
+  xdg-desktop-portal
+  xdg-desktop-portal-hyprland
+  polkit-gnome
+  qt5-wayland
+  qt6-wayland
+  hypridle
+  hyprlock
+  awww
+  wf-recorder
+  nautilus
+  nautilus-python
+  imv
+  mpv
+  ghostty
+  btop
+  bash-completion
+  mise
+  starship
+  zoxide
+  fzf
+  bat
+  obsidian
+  code
+  neovim
+  polkit
+  wl-clipboard
+  grim
+  slurp
+  satty
+  pavucontrol
+  nm-connection-editor
+  network-manager-applet
+  blueman
+  gnome-keyring
+  playerctl
+  brightnessctl
+  xdg-user-dirs
+  xdg-utils
+  gvfs
+  gvfs-mtp
+  libsecret
+  git
+  curl
+  jq
+  imagemagick
+  pacman-contrib
+  limine
+  noto-fonts
+  noto-fonts-emoji
+  rust
+  ttf-jetbrains-mono-nerd
+  ttf-nerd-fonts-symbols
+  base-devel
+  snapper
+)
+
+install_official_packages() {
+  local pacman_args=(-Syu --needed --noconfirm)
+
+  sudo pacman "${pacman_args[@]}" "${HYPRBOLE_OFFICIAL_PACKAGES[@]}"
+}

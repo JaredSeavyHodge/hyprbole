@@ -1,0 +1,8 @@
+# Hyprbole snapshots root only for pre-update recovery.
+SUBVOLUME="/"
+FSTYPE="btrfs"
+
+NUMBER_LIMIT="5"
+NUMBER_LIMIT_IMPORTANT="5"
+
+TIMELINE_CREATE="no"

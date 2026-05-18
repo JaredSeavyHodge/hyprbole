@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# hyprbole:summary=Toggle hypridle user service
+
+set -euo pipefail
+
+if systemctl --user is-active hypridle.service >/dev/null 2>&1; then
+  systemctl --user stop hypridle.service
+else
+  systemctl --user start hypridle.service
+fi

@@ -1,0 +1,13 @@
+[Unit]
+Description=Elephant provider service
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/uwsm-app -- elephant
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

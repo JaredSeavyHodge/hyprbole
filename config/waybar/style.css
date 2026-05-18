@@ -1,0 +1,113 @@
+@import "../../.config/hyprbole/current/theme/waybar.css";
+
+* {
+  background-color: @background;
+  color: @foreground;
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+  font-family: "JetBrainsMono Nerd Font";
+  font-size: 12px;
+}
+
+window#waybar {
+  background-color: alpha(@background, 0.94);
+}
+
+.modules-left {
+  margin-left: 8px;
+}
+
+.modules-center {
+  margin: 0 10px;
+}
+
+.modules-right {
+  margin-right: 8px;
+}
+
+#workspaces button {
+  all: initial;
+  padding: 0 7px;
+  margin: 0 1.5px;
+  min-width: 9px;
+  color: @muted;
+}
+
+#workspaces button.active {
+  color: @accent;
+}
+
+#workspaces button:hover {
+  color: @foreground;
+}
+
+#custom-hyprbole,
+#custom-btop,
+#battery,
+#pulseaudio,
+#custom-update,
+#bluetooth,
+#custom-recording-indicator,
+#clock {
+  min-width: 12px;
+  margin: 0 7px;
+}
+
+#tray {
+  margin-right: 10px;
+}
+
+#clock {
+  padding: 0 10px;
+  border-bottom: 1px solid alpha(@accent, 0.45);
+  color: @accent;
+}
+
+#custom-idle-indicator,
+#custom-notification-indicator {
+  min-width: 12px;
+  margin-left: 6px;
+  margin-right: 0;
+  font-size: 10px;
+}
+
+#custom-update {
+  font-size: 10px;
+}
+
+#custom-recording-indicator {
+  font-size: 12px;
+  margin-left: 4px;
+  margin-right: 0;
+}
+
+window#waybar #custom-recording-indicator.inactive {
+  color: @muted;
+}
+
+window#waybar #custom-recording-indicator.inactive label {
+  color: @muted;
+}
+
+#custom-idle-indicator.active,
+#custom-notification-indicator.active,
+window#waybar #custom-recording-indicator.active {
+  color: #ff4d5a;
+}
+
+window#waybar #custom-recording-indicator.active label {
+  color: #ff4d5a;
+}
+
+window#waybar #custom-recording-indicator.active * {
+  color: #ff4d5a;
+}
+
+tooltip {
+  padding: 4px 6px;
+}
+
+.hidden {
+  opacity: 0;
+}

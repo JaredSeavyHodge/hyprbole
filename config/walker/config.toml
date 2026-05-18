@@ -1,0 +1,59 @@
+force_keyboard_focus = true
+selection_wrap = true
+theme = "hyprbole"
+additional_theme_location = "~/.config/walker/themes/"
+hide_action_hints = true
+
+[placeholders]
+"default" = { input = "Search", list = "No Results" }
+calc = { input = "Calculate", list = "Enter expression" }
+desktopapplications = { input = "Launch App", list = "No Applications" }
+clipboard = { input = "Clipboard history", list = "Clipboard is empty" }
+files = { input = "Browse files", list = "No Files Found" }
+"1password" = { input = "1Password", list = "No matching items" }
+runner = { input = "Run command", list = "No Commands" }
+symbols = { input = "Search symbols", list = "No Symbols" }
+
+[keybinds]
+close = ["Escape"]
+quick_activate = []
+
+[providers]
+max_results = 256
+default = [
+  "desktopapplications",
+  "websearch",
+]
+empty = ["desktopapplications"]
+
+[[providers.prefixes]]
+prefix = ";"
+provider = "providerlist"
+
+[[providers.prefixes]]
+prefix = "="
+provider = "calc"
+
+[[providers.prefixes]]
+prefix = ">"
+provider = "runner"
+
+[[providers.prefixes]]
+prefix = "/"
+provider = "files"
+
+[[providers.prefixes]]
+prefix = "."
+provider = "symbols"
+
+[[providers.prefixes]]
+prefix = "@"
+provider = "websearch"
+
+[[providers.prefixes]]
+prefix = ":"
+provider = "clipboard"
+
+[[providers.prefixes]]
+prefix = "1p"
+provider = "1password"

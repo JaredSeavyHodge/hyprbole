@@ -1,0 +1,4 @@
+for function_path in "$HYPRBOLE_PATH"/default/bash/fns/*; do
+  [[ -f $function_path ]] || continue
+  source "$function_path"
+done

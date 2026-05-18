@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# hyprbole:summary=Refresh core configs from shipped defaults
+
+set -euo pipefail
+
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+
+hyprbole_sync_theme_assets "$(hyprbole_current_theme)"
+
+for relative_path in \
+  hypr/hyprland.lua \
+  hypr/bindings.lua \
+  hypr/monitors.lua \
+  hypr/input.lua \
+  hypr/looknfeel.lua \
+  hypr/autostart.lua \
+  hypr/hypridle.conf \
+  hypr/hyprlock.conf \
+  waybar/config.jsonc \
+  waybar/style.css \
+  ghostty/config \
+  elephant/menus/hyprbole-apps.lua \
+  elephant/menus/hyprbole-capture.toml \
+  elephant/menus/hyprbole-controls.toml \
+  elephant/menus/hyprbole-cycle-wallpaper.toml \
+  elephant/menus/hyprbole-install.toml \
+  elephant/menus/hyprbole-keybinds.lua \
+  elephant/menus/hyprbole-power.toml \
+  elephant/menus/hyprbole-system.toml \
+  elephant/menus/hyprbole-theme.toml \
+  elephant/menus/hyprbole-wallpaper-settings.toml \
+  elephant/menus/hyprbole.toml \
+  elephant/menus/hyprbolemywallpapers.lua \
+  elephant/menus/hyprbolethemes.lua \
+  elephant/menus/hyprbolewallpapers.lua \
+  walker/config.toml \
+  walker/themes/hyprbole/layout.xml \
+  walker/themes/hyprbole/style.css \
+  satty/config.toml \
+  nvim/init.lua \
+  nvim/lua/options.lua \
+  swayosd/config.toml \
+  swayosd/style.css \
+  systemd/user/hyprbole-wallpaper-cycle.service \
+  systemd/user/hyprbole-wallpaper-cycle.timer \
+  systemd/user/elephant.service \
+  systemd/user/polkit-gnome-agent.service \
+  systemd/user/swayosd-server.service \
+  systemd/user/walker.service \
+  swaync/config.json; do
+  hyprbole_refresh_config_path "$relative_path" 0
+done
+
+hyprbole-refresh-btop >/dev/null 2>&1 || true
+hyprbole-refresh-gnome >/dev/null 2>&1 || true
+hyprbole-refresh-shell >/dev/null 2>&1 || true
+systemctl --user daemon-reload >/dev/null 2>&1 || true
+hyprbole-restart-terminal >/dev/null 2>&1 || true

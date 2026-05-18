@@ -1,0 +1,28 @@
+name = "hyprbole-system"
+name_pretty = "Hyprbole System"
+hide_from_providerlist = true
+
+[[entries]]
+text = "Refresh Desktop"
+subtext = "Reapply shipped configs and theme assets"
+actions = { activate = "hyprbole-refresh-all" }
+
+[[entries]]
+text = "Update System"
+subtext = "Run Hyprbole update flow"
+actions = { activate = "hyprbole-launch-update" }
+
+[[entries]]
+text = "Power"
+subtext = "Suspend, reboot, or power off"
+submenu = "hyprbole-power"
+
+[[entries]]
+text = "Lock"
+subtext = "Lock the current session"
+actions = { activate = "hyprbole-system-lock" }
+
+[[entries]]
+text = "Logout"
+subtext = "Log out to the display manager"
+actions = { activate = "hyprbole-system-logout" }

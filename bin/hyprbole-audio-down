@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# hyprbole:summary=Lower output volume
+
+set -euo pipefail
+
+wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
+swayosd-client --output-volume lower >/dev/null 2>&1 || true

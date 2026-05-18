@@ -1,0 +1,123 @@
+{
+  "reload_style_on_change": true,
+  "layer": "top",
+  "position": "top",
+  "spacing": 0,
+  "height": 26,
+  "modules-left": ["custom/hyprbole", "hyprland/workspaces"],
+  "modules-center": ["clock#horizontal", "custom/recording-indicator"],
+  "modules-right": ["tray", "custom/update", "custom/idle-indicator", "custom/notification-indicator", "bluetooth", "pulseaudio", "battery", "custom/btop"],
+  "custom/hyprbole": {
+    "format": "HB",
+    "tooltip-format": "Hyprbole",
+    "on-click": "hyprsysteminfo"
+  },
+  "custom/update": {
+    "format": "{}",
+    "exec": "$HOME/.local/share/hyprbole/bin/hyprbole-package-updates",
+    "interval": 21600,
+    "tooltip-format": "Updates available",
+    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-launch-terminal -e $HOME/.local/share/hyprbole/bin/hyprbole update"
+  },
+  "custom/recording-indicator": {
+    "exec": "$HOME/.local/share/hyprbole/bin/hyprbole-record-status",
+    "return-type": "json",
+    "interval": 2,
+    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-record-toggle region"
+  },
+  "hyprland/workspaces": {
+    "format": "{icon}",
+    "move-to-monitor": true,
+    "sort-by": "number",
+    "format-icons": {
+      "default": "•",
+      "1": "1",
+      "2": "2",
+      "3": "3",
+      "4": "4",
+      "5": "5",
+      "6": "6",
+      "7": "7",
+      "8": "8",
+      "9": "9",
+      "10": "0",
+      "active": "◉"
+    },
+    "persistent-workspaces": {
+      "*": 5
+    }
+  },
+  "clock#horizontal": {
+    "format": "{:L%d %B %Y %H:%M}",
+    "tooltip-format": "<span font='JetBrainsMono Nerd Font 13'><tt>{calendar}</tt></span>",
+    "calendar": {
+      "mode": "month",
+      "weeks-pos": "right",
+      "on-scroll": 1,
+      "format": {
+        "months": "<span color='#ffffff'><b>{}</b></span>",
+        "days": "<span color='#c5cad3'>{}</span>",
+        "weeks": "<span color='#8b91a0'>W{}</span>",
+        "weekdays": "<span color='#9bb1ff'><b>{}</b></span>",
+        "today": "<span color='#9bb1ff'><b><u>{}</u></b></span>"
+      }
+    },
+    "actions": {
+      "on-scroll-up": "shift_up",
+      "on-scroll-down": "shift_down"
+    }
+  },
+  "custom/idle-indicator": {
+    "exec": "$HYPRBOLE_PATH/default/waybar/indicator-idle.sh",
+    "return-type": "json",
+    "interval": 10,
+    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-toggle-idle"
+  },
+  "custom/notification-indicator": {
+    "exec": "$HYPRBOLE_PATH/default/waybar/indicator-notifications.sh",
+    "return-type": "json",
+    "interval": 10,
+    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-toggle-notifications"
+  },
+  "custom/btop": {
+    "format": "",
+    "tooltip-format": "btop",
+    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-launch-btop"
+  },
+  "battery": {
+    "format": "{icon} {capacity}%",
+    "format-discharging": "{icon} {capacity}%",
+    "format-charging": " {capacity}%",
+    "format-plugged": "",
+    "format-full": "󰂅 100",
+    "tooltip-format": "{timeTo}",
+    "states": {
+      "warning": 30,
+      "critical": 15
+    }
+  },
+  "bluetooth": {
+    "format": "",
+    "format-off": "󰂲",
+    "format-disabled": "󰂲",
+    "format-connected": "󰂱",
+    "format-no-controller": "",
+    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-launch-bluetooth"
+  },
+  "pulseaudio": {
+    "format": "{icon} {volume}%",
+    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-launch-audio",
+    "on-click-right": "$HOME/.local/share/hyprbole/bin/hyprbole-audio-mute",
+    "format-muted": "",
+    "format-icons": {
+      "headphone": "",
+      "headset": "",
+      "default": ["", "", ""]
+    },
+    "scroll-step": 5
+  },
+  "tray": {
+    "icon-size": 12,
+    "spacing": 12
+  }
+}

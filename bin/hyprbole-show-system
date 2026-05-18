@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# hyprbole:summary=Show system summary in terminal
+
+set -euo pipefail
+
+if command -v fastfetch >/dev/null 2>&1; then
+  exec ghostty --class=com.hyprbole.system --title=system -e bash -lc 'fastfetch; exec bash'
+fi
+
+if command -v neofetch >/dev/null 2>&1; then
+  exec ghostty --class=com.hyprbole.system --title=system -e bash -lc 'neofetch; exec bash'
+fi
+
+exec ghostty --class=com.hyprbole.system --title=system -e bash -lc 'printf "fastfetch/neofetch not installed\n"; exec bash'

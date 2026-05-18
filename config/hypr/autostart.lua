@@ -1,0 +1,17 @@
+-- User autostart additions live here.
+--
+-- Hyprbole's shipped autostart defaults live under `~/.local/share/hyprbole/default/hypr/core/`.
+-- This file is loaded after those defaults, so use it to add or override local session startup behavior.
+--
+-- Add personal session-start commands here.
+-- Keep long-running or critical services in systemd user units when possible.
+--
+-- Example: launch a tray app at session start.
+-- hl.on("hyprland.start", function()
+--   hl.exec_cmd("copyq")
+-- end)
+--
+-- Example: delay-start an app that needs the desktop session to settle first.
+-- hl.on("hyprland.start", function()
+--   hl.exec_cmd("bash -lc 'sleep 2; localsend_app'")
+-- end)

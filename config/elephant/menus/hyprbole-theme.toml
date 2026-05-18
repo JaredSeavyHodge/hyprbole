@@ -1,0 +1,13 @@
+name = "hyprbole-theme"
+name_pretty = "Hyprbole Theme"
+hide_from_providerlist = true
+
+[[entries]]
+text = "Themes"
+subtext = "Select and preview themes"
+actions = { activate = "hyprbole themes" }
+
+[[entries]]
+text = "Wallpaper Settings"
+subtext = "Theme, custom, and cycling wallpaper options"
+submenu = "hyprbole-wallpaper-settings"

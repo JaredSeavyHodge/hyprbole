@@ -1,0 +1,23 @@
+name = "hyprbole-install"
+name_pretty = "Hyprbole Install"
+hide_from_providerlist = true
+
+[[entries]]
+text = "Install Arch Package"
+subtext = "Pick official repository packages with fzf"
+actions = { activate = "hyprbole-launch-pkg-install" }
+
+[[entries]]
+text = "Browse Installed Packages"
+subtext = "Inspect installed packages with fzf"
+actions = { activate = "hyprbole-launch-pkg-installed" }
+
+[[entries]]
+text = "Install AUR Package"
+subtext = "Pick AUR packages with fzf"
+actions = { activate = "hyprbole-launch-pkg-aur-install" }
+
+[[entries]]
+text = "Remove Package"
+subtext = "Pick installed packages to remove with fzf"
+actions = { activate = "hyprbole-launch-pkg-remove" }

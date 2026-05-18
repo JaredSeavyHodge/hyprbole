@@ -1,0 +1,7 @@
+.cache/
+build/
+dist/
+*.log
+*.swp
+*.swo
+*.bak

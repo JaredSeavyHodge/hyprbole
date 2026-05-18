@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# hyprbole:summary=Toggle audio mute
+
+set -euo pipefail
+
+wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+swayosd-client --output-volume mute-toggle >/dev/null 2>&1 || true

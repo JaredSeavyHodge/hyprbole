@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# hyprbole:summary=Power off the system
+
+set -euo pipefail
+
+exec hyprbole power off

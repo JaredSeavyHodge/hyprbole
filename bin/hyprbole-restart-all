@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# hyprbole:summary=Restart primary desktop components
+
+set -euo pipefail
+
+hyprbole-restart-waybar >/dev/null 2>&1 & disown
+hyprbole-restart-swaync >/dev/null 2>&1 & disown
+hyprbole-restart-swayosd >/dev/null 2>&1 & disown
+hyprbole-restart-wallpaper >/dev/null 2>&1 & disown
+hyprbole-restart-hypridle >/dev/null 2>&1 || true
+
+hyprctl reload >/dev/null 2>&1 || true

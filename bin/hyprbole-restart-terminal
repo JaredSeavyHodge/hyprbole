@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# hyprbole:summary=Reload supported terminal emulators after config changes
+
+set -euo pipefail
+
+if pgrep -x ghostty >/dev/null 2>&1; then
+  killall -SIGUSR2 ghostty >/dev/null 2>&1 || true
+fi

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# hyprbole:summary=Restart wallpaper daemon
+
+set -euo pipefail
+
+HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
+HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
+WALLPAPER_PATH="$HYPRBOLE_CONFIG_PATH/current/background"
+
+[[ -f "$WALLPAPER_PATH" ]] || exit 0
+
+if ! pgrep -x awww-daemon >/dev/null 2>&1; then
+  awww-daemon >/dev/null 2>&1 & disown
+  sleep 1
+fi
+
+awww img "$(readlink -f "$WALLPAPER_PATH")" >/dev/null 2>&1
