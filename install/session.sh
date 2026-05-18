@@ -8,6 +8,8 @@ QT_QPA_PLATFORMTHEME=qt6ct
 GDK_BACKEND=wayland,x11
 SDL_VIDEODRIVER=wayland
 MOZ_ENABLE_WAYLAND=1
+TERMINAL=ghostty
+TERM_PROGRAM=ghostty
 HYPRBOLE_PATH=$HYPRBOLE_PATH
 PATH=$HOME/.local/bin:$HYPRBOLE_PATH/bin:/usr/local/sbin:/usr/local/bin:/usr/bin
 EOF
@@ -49,6 +51,8 @@ setup_shell_environment() {
   mkdir -p "$shell_env_dir"
   cat >"$shell_env_file" <<EOF
 export HYPRBOLE_PATH="${HYPRBOLE_PATH}"
+export TERMINAL="ghostty"
+export TERM_PROGRAM="ghostty"
 hyprbole_prepend_path() {
   case ":\$PATH:" in
     *":\$1:"*) ;;
@@ -111,6 +115,8 @@ setup_sddm() {
 }
 
 setup_snapper_limine() {
+  local limine_config=""
+
   if ! command -v snapper >/dev/null 2>&1; then
     return 0
   fi
@@ -127,10 +133,24 @@ setup_snapper_limine() {
     sudo cp "$HYPRBOLE_PATH/default/snapper/root" /etc/snapper/configs/root
   fi
 
+  if [[ -f /boot/EFI/arch-limine/limine.conf ]]; then
+    limine_config="/boot/EFI/arch-limine/limine.conf"
+  elif [[ -f /boot/EFI/BOOT/limine.conf ]]; then
+    limine_config="/boot/EFI/BOOT/limine.conf"
+  elif [[ -f /boot/EFI/limine/limine.conf ]]; then
+    limine_config="/boot/EFI/limine/limine.conf"
+  elif [[ -f /boot/limine/limine.conf ]]; then
+    limine_config="/boot/limine/limine.conf"
+  elif [[ -f /boot/limine.conf ]]; then
+    limine_config="/boot/limine.conf"
+  fi
+
   if [[ -f $HYPRBOLE_PATH/default/limine/default.conf ]]; then
     local cmdline
 
-    if [[ -f /etc/kernel/cmdline ]]; then
+    if [[ -n $limine_config ]]; then
+      cmdline=$(sudo grep "^[[:space:]]*cmdline:" "$limine_config" | head -1 | sed 's/^[[:space:]]*cmdline:[[:space:]]*//')
+    elif [[ -f /etc/kernel/cmdline ]]; then
       cmdline=$(</etc/kernel/cmdline)
     else
       cmdline=$(</proc/cmdline)
@@ -139,6 +159,14 @@ setup_snapper_limine() {
 
     sudo cp "$HYPRBOLE_PATH/default/limine/default.conf" /etc/default/limine
     sudo sed -i "s|@@CMDLINE@@|$cmdline|g" /etc/default/limine
+  fi
+
+  if [[ -n $limine_config ]] && [[ $limine_config != "/boot/limine.conf" ]]; then
+    sudo rm -f "$limine_config"
+  fi
+
+  if [[ -f $HYPRBOLE_PATH/default/limine/limine.conf ]]; then
+    sudo cp "$HYPRBOLE_PATH/default/limine/limine.conf" /boot/limine.conf
   fi
 
   if [[ -f /boot/limine.conf ]]; then
@@ -166,12 +194,13 @@ configure_limine_menu_defaults() {
   local tmp_file
   tmp_file=$(mktemp)
 
-  sudo grep -vE '^(timeout|default_entry|remember_last_entry):' /boot/limine.conf >"$tmp_file"
+  sudo grep -vE '^(timeout|default_entry|remember_last_entry|interface_branding_color):' /boot/limine.conf >"$tmp_file"
 
   cat <<'EOF' | sudo tee /boot/limine.conf >/dev/null
 timeout: 3
-default_entry: Hyprbole/linux
+default_entry: 2
 remember_last_entry: no
+interface_branding_color: 9bb1ff
 
 EOF
 
