@@ -1,1 +1,5 @@
-# Hyprbole user settings placeholder.
+# Hyprbole user settings.
+#
+# Set a value to true to keep Hyprbole theme changes from mutating that app.
+# skip_browser_theme_changes = true
+# skip_vscode_theme_changes = true

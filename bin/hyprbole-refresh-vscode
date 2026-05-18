@@ -6,19 +6,112 @@ set -euo pipefail
 
 HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
 HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
+HYPRBOLE_SETTINGS_PATH="$HYPRBOLE_CONFIG_PATH/settings.toml"
 
 current_theme="default"
 theme_metadata=""
 theme_name=""
 theme_extension=""
-settings_path="$HOME/.config/Code/User/settings.json"
-tmp_file=""
+colors_path=""
+background=""
+foreground=""
+accent=""
+muted=""
+
+setting_enabled() {
+  local key="$1"
+
+  [[ -f $HYPRBOLE_SETTINGS_PATH ]] || return 1
+  grep -Eq "^[[:space:]]*${key}[[:space:]]*=[[:space:]]*true([[:space:]]*(#.*)?)?$" "$HYPRBOLE_SETTINGS_PATH"
+}
+
+set_editor_theme() {
+  local command_name="$1"
+  local settings_path="$2"
+  local force_create="${3:-0}"
+  local tmp_file=""
+
+  command -v "$command_name" >/dev/null 2>&1 || return 0
+
+  if [[ -n $theme_extension ]]; then
+    if ! "$command_name" --list-extensions 2>/dev/null | grep -Fxq "$theme_extension"; then
+      if ! "$command_name" --install-extension "$theme_extension" --force >/dev/null 2>&1; then
+        printf 'warning: could not install VS Code theme extension: %s\n' "$theme_extension" >&2
+      fi
+    fi
+  fi
+
+  if [[ $force_create != "1" && ! -e $settings_path ]]; then
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$settings_path")"
+
+  if [[ -f $settings_path ]]; then
+    tmp_file="$(mktemp)"
+    if jq \
+      --arg theme "$theme_name" \
+      --arg background "$background" \
+      --arg foreground "$foreground" \
+      --arg accent "$accent" \
+      --arg muted "$muted" \
+      '."workbench.colorTheme" = $theme
+      | if $background != "" then ."workbench.colorCustomizations"."editor.background" = $background else . end
+      | if $foreground != "" then ."workbench.colorCustomizations"."editor.foreground" = $foreground else . end
+      | if $background != "" then ."workbench.colorCustomizations"."sideBar.background" = $background else . end
+      | if $background != "" then ."workbench.colorCustomizations"."activityBar.background" = $background else . end
+      | if $accent != "" then ."workbench.colorCustomizations"."activityBarBadge.background" = $accent else . end
+      | if $accent != "" then ."workbench.colorCustomizations"."statusBar.background" = $accent else . end
+      | if $muted != "" then ."workbench.colorCustomizations"."tab.inactiveForeground" = $muted else . end' \
+      "$settings_path" >"$tmp_file"; then
+      mv "$tmp_file" "$settings_path"
+    else
+      rm -f "$tmp_file"
+      printf 'invalid VS Code settings JSON: %s\n' "$settings_path" >&2
+      return 1
+    fi
+  else
+    jq -n \
+      --arg theme "$theme_name" \
+      --arg background "$background" \
+      --arg foreground "$foreground" \
+      --arg accent "$accent" \
+      --arg muted "$muted" \
+      '{"workbench.colorTheme": $theme}
+      | if $background != "" then ."workbench.colorCustomizations"."editor.background" = $background else . end
+      | if $foreground != "" then ."workbench.colorCustomizations"."editor.foreground" = $foreground else . end
+      | if $background != "" then ."workbench.colorCustomizations"."sideBar.background" = $background else . end
+      | if $background != "" then ."workbench.colorCustomizations"."activityBar.background" = $background else . end
+      | if $accent != "" then ."workbench.colorCustomizations"."activityBarBadge.background" = $accent else . end
+      | if $accent != "" then ."workbench.colorCustomizations"."statusBar.background" = $accent else . end
+      | if $muted != "" then ."workbench.colorCustomizations"."tab.inactiveForeground" = $muted else . end' \
+      >"$settings_path"
+  fi
+}
+
+read_theme_color() {
+  local key="$1"
+  local path="$2"
+
+  sed -n "s/^${key}[[:space:]]*=[[:space:]]*\"\([^\"]*\)\".*/\1/p" "$path"
+}
+
+reload_editor_window() {
+  local command_name="$1"
+
+  command -v "$command_name" >/dev/null 2>&1 || return 0
+  pgrep -f "[c]ode.mjs|[C]ode - OSS|[c]ode-oss|[c]ode" >/dev/null 2>&1 || return 0
+  "$command_name" --reuse-window --command workbench.action.reloadWindow >/dev/null 2>&1 || true
+}
 
 if [[ -f $HYPRBOLE_CONFIG_PATH/current/theme-name ]]; then
   current_theme="$(<"$HYPRBOLE_CONFIG_PATH/current/theme-name")"
 fi
 
-theme_metadata="$HYPRBOLE_PATH/themes/$current_theme/vscode.json"
+theme_metadata="$HYPRBOLE_CONFIG_PATH/current/theme/vscode.json"
+if [[ ! -f $theme_metadata ]]; then
+  theme_metadata="$HYPRBOLE_PATH/themes/$current_theme/vscode.json"
+fi
 [[ -f $theme_metadata ]] || exit 0
 
 theme_name="$(jq -r '.name // empty' "$theme_metadata")"
@@ -26,18 +119,19 @@ theme_extension="$(jq -r '.extension // empty' "$theme_metadata")"
 
 [[ -n $theme_name ]] || exit 0
 
-if [[ -n $theme_extension ]] && command -v code >/dev/null 2>&1; then
-  if ! code --list-extensions 2>/dev/null | grep -Fxq "$theme_extension"; then
-    code --install-extension "$theme_extension" --force >/dev/null 2>&1 || true
-  fi
+setting_enabled skip_vscode_theme_changes && exit 0
+
+colors_path="$HYPRBOLE_CONFIG_PATH/current/theme/colors.toml"
+if [[ -f $colors_path ]]; then
+  background="$(read_theme_color background "$colors_path")"
+  foreground="$(read_theme_color foreground "$colors_path")"
+  accent="$(read_theme_color accent "$colors_path")"
+  muted="$(read_theme_color color8 "$colors_path")"
 fi
 
-mkdir -p "$(dirname "$settings_path")"
+set_editor_theme code "$HOME/.config/Code - OSS/User/settings.json" 1
+set_editor_theme code "$HOME/.config/Code/User/settings.json" 0
+set_editor_theme code-oss "$HOME/.config/Code - OSS/User/settings.json" 1
 
-if [[ -f $settings_path ]]; then
-  tmp_file="$(mktemp)"
-  jq --arg theme "$theme_name" '."workbench.colorTheme" = $theme' "$settings_path" >"$tmp_file"
-  mv "$tmp_file" "$settings_path"
-else
-  printf '{\n  "workbench.colorTheme": %s\n}\n' "$(jq -Rn --arg value "$theme_name" '$value')" >"$settings_path"
-fi
+reload_editor_window code
+reload_editor_window code-oss

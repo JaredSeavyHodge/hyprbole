@@ -12,18 +12,40 @@ Hyprbole is intentionally split into two layers:
    - owned by `hyprbole`
    - packages, AUR tooling, defaults, theming, session behavior, shell commands, user-facing CLI
 
-## Config Ownership
+## Checkout And Config Ownership
 
 Hyprbole follows a vendor-defaults plus user-config model.
 
-- Vendor-owned files live under `~/.local/share/hyprbole`
+- Vendor-owned files live in a full git checkout at `~/.local/share/hyprbole`
 - User-owned editable files live under `~/.config`
+- Generated runtime state lives under `~/.config/hyprbole/current`
 
 Repository mapping:
 
-- `config/` -> `~/.config/...`
-- `default/` -> `~/.local/share/hyprbole/...`
-- `themes/` -> `~/.local/share/hyprbole/themes/...`
+- `~/.local/share/hyprbole` is the whole repository checkout, not a partial copy
+- `config/` is copied to `~/.config/...` only when the destination is missing
+- `default/` remains vendor-owned inside the checkout
+- `themes/` remains vendor-owned inside the checkout
+- user theme overlays live under `~/.config/hyprbole/themes/<theme>`
+- generated current theme files live under `~/.config/hyprbole/current/theme`
+
+The installer should not overwrite existing user-owned files in `~/.config`. Refresh commands may regenerate files under `~/.config/hyprbole/current` because that directory is Hyprbole-owned runtime state.
+
+## Update Model
+
+Hyprbole updates are git-checkout based.
+
+- `HYPRBOLE_PATH` defaults to `~/.local/share/hyprbole`
+- `HYPRBOLE_PATH` should contain `.git`
+- `hyprbole update` pulls that checkout before running migrations and refreshes
+- install should convert older partial deployments by moving them aside and cloning a full checkout
+- install should not create a separate checkout from a dirty source tree because uncommitted changes would be lost
+
+Do not reintroduce partial deployment of only `bin/`, `config/`, `default/`, `themes/`, or `migrations/` into `HYPRBOLE_PATH`.
+
+## Verification Rule
+
+When encoding package names, command names, service names, policy paths, config paths, or external behavior, verify them from the repo manifests, installed files, command output, or upstream documentation first. Do not guess.
 
 ## Command Model
 
@@ -62,6 +84,7 @@ Current examples include:
 - Walker
 - Elephant
 - SwayOSD
+- SwayNC
 - polkit agent
 
 Short-lived tray-style applications can still be launched from Hyprland autostart when they do not need service supervision.

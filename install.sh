@@ -8,6 +8,7 @@ export HYPRBOLE_REPO_ROOT="$SCRIPT_DIR"
 export HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
 export HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
 export HYPRBOLE_ASSUME_YES=0
+export HYPRBOLE_SUDO_KEEPALIVE_PID=""
 
 source "$SCRIPT_DIR/install/lib.sh"
 
@@ -35,15 +36,19 @@ parse_args() {
 }
 
 preflight() {
-  [[ $EUID -ne 0 ]] || die "run this as your regular user, not root"
+  [[ $EUID -ne 0 ]] || die "run this as your regular user, not with sudo. The installer will ask for sudo when needed."
   require_command sudo
   require_command pacman
   require_command git
+  warn_faillock
+  require_interactive_terminal
   require_sudo
+  start_sudo_keepalive
 }
 
 main() {
   parse_args "$@"
+  trap stop_sudo_keepalive EXIT
   preflight
 
   log_step "Collecting user metadata"

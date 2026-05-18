@@ -6,15 +6,35 @@ set -euo pipefail
 
 source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
 
+force=0
+
+case "${1:-}" in
+  --force)
+    force=1
+    ;;
+  "")
+    ;;
+  *)
+    printf 'Usage: hyprbole-refresh-all [--force]\n' >&2
+    exit 1
+    ;;
+esac
+
 hyprbole_sync_theme_assets "$(hyprbole_current_theme)"
 
+if (( force == 1 )); then
+  for relative_path in \
+    hypr/hyprland.lua \
+    hypr/bindings.lua \
+    hypr/monitors.lua \
+    hypr/input.lua \
+    hypr/looknfeel.lua \
+    hypr/autostart.lua; do
+    hyprbole_refresh_config_path "$relative_path" 1
+  done
+fi
+
 for relative_path in \
-  hypr/hyprland.lua \
-  hypr/bindings.lua \
-  hypr/monitors.lua \
-  hypr/input.lua \
-  hypr/looknfeel.lua \
-  hypr/autostart.lua \
   hypr/hypridle.conf \
   hypr/hyprlock.conf \
   waybar/config.jsonc \
@@ -49,7 +69,7 @@ for relative_path in \
   systemd/user/swayosd-server.service \
   systemd/user/walker.service \
   swaync/config.json; do
-  hyprbole_refresh_config_path "$relative_path" 0
+  hyprbole_refresh_config_path "$relative_path" 1
 done
 
 hyprbole-refresh-btop >/dev/null 2>&1 || true

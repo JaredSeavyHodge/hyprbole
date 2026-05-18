@@ -5,9 +5,19 @@
 set -euo pipefail
 
 HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
+HYPRBOLE_SETTINGS_PATH="$HYPRBOLE_CONFIG_PATH/settings.toml"
 CHROMIUM_THEME="$HYPRBOLE_CONFIG_PATH/current/theme/chromium.theme"
+USER_BROWSER_POLICY="$HYPRBOLE_CONFIG_PATH/current/browser-policy.json"
 
 theme_hex="#1c2027"
+warned_policy_write=0
+
+setting_enabled() {
+  local key="$1"
+
+  [[ -f $HYPRBOLE_SETTINGS_PATH ]] || return 1
+  grep -Eq "^[[:space:]]*${key}[[:space:]]*=[[:space:]]*true([[:space:]]*(#.*)?)?$" "$HYPRBOLE_SETTINGS_PATH"
+}
 
 if [[ -f $CHROMIUM_THEME ]]; then
   theme_rgb_color="$(<"$CHROMIUM_THEME")"
@@ -16,11 +26,34 @@ fi
 
 set_browser_policy() {
   local policy_dir="$1"
+  local policy_path="$policy_dir/color.json"
+  local policy_json
 
-  sudo install -d "$policy_dir"
-  sudo tee "$policy_dir/color.json" >/dev/null <<EOF
-{"BrowserThemeColor":"$theme_hex","BrowserColorScheme":"device"}
-EOF
+  policy_json="{\"BrowserThemeColor\":\"$theme_hex\",\"BrowserColorScheme\":\"device\"}"
+
+  if [[ ! -d $policy_dir ]]; then
+    if [[ -t 0 && -t 1 ]]; then
+      sudo install -d "$policy_dir"
+    else
+      return 0
+    fi
+  fi
+
+  if [[ -w $policy_path || ( ! -e $policy_path && -w $policy_dir ) ]]; then
+    printf '%s\n' "$policy_json" >"$policy_path"
+  elif [[ -t 0 && -t 1 ]]; then
+    printf '%s\n' "$policy_json" | sudo tee "$policy_path" >/dev/null
+  else
+    if (( warned_policy_write == 0 )); then
+      printf 'browser theme policy is not writable; rerun install.sh or refresh from a terminal\n' >&2
+      warned_policy_write=1
+    fi
+  fi
+}
+
+write_user_browser_policy() {
+  mkdir -p "$(dirname "$USER_BROWSER_POLICY")"
+  printf '{"BrowserThemeColor":"%s","BrowserColorScheme":"device"}\n' "$theme_hex" >"$USER_BROWSER_POLICY"
 }
 
 refresh_running_browser() {
@@ -33,10 +66,11 @@ refresh_running_browser() {
   fi
 }
 
+setting_enabled skip_browser_theme_changes && exit 0
+
+write_user_browser_policy
+
 set_browser_policy /etc/brave/policies/managed
-set_browser_policy /etc/brave-origin-nightly/policies/managed
-set_browser_policy /etc/brave-nightly/policies/managed
 
 refresh_running_browser brave-origin-nightly brave-origin-nightly -f
-refresh_running_browser brave-nightly brave-origin-nightly -f
-refresh_running_browser brave brave-origin-nightly -f
+refresh_running_browser brave-origin brave-origin-nightly -f

@@ -40,8 +40,20 @@ EOF
   xdg-mime default mpv.desktop application/ogg || true
 
   setup_shell_environment
+  setup_browser_theme_policy
   setup_sddm
   setup_snapper_limine
+  reload_hyprland_after_install
+}
+
+setup_browser_theme_policy() {
+  "$HYPRBOLE_PATH/bin/hyprbole-setup-browser-policy" >/dev/null 2>&1 || true
+}
+
+reload_hyprland_after_install() {
+  if command -v hyprctl >/dev/null 2>&1; then
+    hyprctl reload >/dev/null 2>&1 || true
+  fi
 }
 
 setup_shell_environment() {
@@ -76,7 +88,7 @@ EOF
 ensure_bashrc_source() {
   local source_line='[ -f "$HOME/.local/share/hyprbole/default/bash/rc" ] && source "$HOME/.local/share/hyprbole/default/bash/rc"'
 
-  if copy_if_missing "$HYPRBOLE_REPO_ROOT/default/bashrc" "$HOME/.bashrc"; then
+  if copy_if_missing "$HYPRBOLE_PATH/default/bashrc" "$HOME/.bashrc"; then
     return 0
   fi
 

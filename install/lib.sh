@@ -24,7 +24,41 @@ require_command() {
 }
 
 require_sudo() {
-  sudo -v || die "sudo access is required"
+  if ! sudo -v; then
+    die "sudo access is required. If your correct password is rejected, wait for faillock to expire or reset it from a root shell."
+  fi
+}
+
+require_interactive_terminal() {
+  [[ -t 0 && -t 1 ]] || die "run this installer from an interactive terminal, not through a pipe or non-interactive shell"
+}
+
+warn_faillock() {
+  cmd_present faillock || return 0
+
+  local failures
+  failures=$(faillock --user "$USER" 2>/dev/null || true)
+
+  if printf '%s\n' "$failures" | grep -Eq '[[:space:]]V$'; then
+    printf 'warning: valid authentication failures are recorded for %s\n' "$USER" >&2
+    printf '%s\n' "$failures" >&2
+    printf 'warning: Arch defaults lock PAM auth after 3 failures for 10 minutes. This affects sudo, SDDM, and hyprlock.\n' >&2
+  fi
+}
+
+start_sudo_keepalive() {
+  while true; do
+    sudo -n -v >/dev/null 2>&1 || exit 0
+    sleep 60
+  done &
+
+  HYPRBOLE_SUDO_KEEPALIVE_PID=$!
+}
+
+stop_sudo_keepalive() {
+  if [[ -n ${HYPRBOLE_SUDO_KEEPALIVE_PID:-} ]]; then
+    kill "$HYPRBOLE_SUDO_KEEPALIVE_PID" >/dev/null 2>&1 || true
+  fi
 }
 
 prompt_value() {

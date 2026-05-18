@@ -376,67 +376,92 @@ hyprbole_sync_theme_assets() {
   local theme_name="$1"
   local previous_theme_name
   local source_theme_dir="$HYPRBOLE_PATH/themes/$theme_name"
+  local user_theme_dir="$HYPRBOLE_CONFIG_PATH/themes/$theme_name"
   local default_theme_dir="$HYPRBOLE_PATH/themes/default"
   local current_config_dir="$HYPRBOLE_CONFIG_PATH/current"
   local current_config_theme_dir="$HYPRBOLE_CONFIG_PATH/current/theme"
   local current_config_background_link="$HYPRBOLE_CONFIG_PATH/current/background"
+  local next_config_theme_dir="$HYPRBOLE_CONFIG_PATH/current/next-theme"
+  local selected_background_path=""
   local selected_background_name=""
   local first_background_path=""
+  local first_background_name=""
+  local source_backgrounds_dir=""
+  local user_backgrounds_dir=""
+  local asset
 
   previous_theme_name="$(hyprbole_current_theme)"
 
-  [[ -d $source_theme_dir ]] || {
+  [[ -d $source_theme_dir || -d $user_theme_dir ]] || {
     printf 'unknown theme: %s\n' "$theme_name" >&2
     return 1
   }
 
-  rm -rf "$current_config_dir"
-  mkdir -p "$current_config_theme_dir"
+  if [[ -L $current_config_background_link || -e $current_config_background_link ]]; then
+    selected_background_path="$(readlink -f "$current_config_background_link" 2>/dev/null || true)"
+    selected_background_name="$(basename "$selected_background_path")"
+  fi
+
+  rm -rf "$next_config_theme_dir"
+  mkdir -p "$next_config_theme_dir"
+
+  if [[ -d $source_theme_dir ]]; then
+    cp -a "$source_theme_dir/." "$next_config_theme_dir/"
+  fi
+
+  if [[ -d $user_theme_dir ]]; then
+    cp -a "$user_theme_dir/." "$next_config_theme_dir/"
+  fi
 
   for asset in waybar.css walker.css ghostty.conf hyprlock.conf swayosd.css chromium.theme btop.theme icons.theme light.mode; do
-    if [[ -f $source_theme_dir/$asset ]]; then
-      cp "$source_theme_dir/$asset" "$current_config_theme_dir/$asset"
-    elif [[ $asset == "waybar.css" ]] && hyprbole_theme_generate_waybar "$source_theme_dir" "$current_config_theme_dir/$asset"; then
+    if [[ -f $next_config_theme_dir/$asset ]]; then
       :
-    elif [[ $asset == "walker.css" ]] && hyprbole_theme_generate_waybar "$source_theme_dir" "$current_config_theme_dir/$asset"; then
+    elif [[ $asset == "waybar.css" ]] && hyprbole_theme_generate_waybar "$next_config_theme_dir" "$next_config_theme_dir/$asset"; then
       :
-    elif [[ $asset == "ghostty.conf" ]] && hyprbole_theme_generate_ghostty "$source_theme_dir" "$current_config_theme_dir/$asset"; then
+    elif [[ $asset == "walker.css" ]] && hyprbole_theme_generate_waybar "$next_config_theme_dir" "$next_config_theme_dir/$asset"; then
       :
-    elif [[ $asset == "hyprlock.conf" ]] && hyprbole_theme_generate_hyprlock "$source_theme_dir" "$current_config_theme_dir/$asset"; then
+    elif [[ $asset == "ghostty.conf" ]] && hyprbole_theme_generate_ghostty "$next_config_theme_dir" "$next_config_theme_dir/$asset"; then
       :
-    elif [[ $asset == "chromium.theme" ]] && hyprbole_theme_generate_chromium "$source_theme_dir" "$current_config_theme_dir/$asset"; then
+    elif [[ $asset == "hyprlock.conf" ]] && hyprbole_theme_generate_hyprlock "$next_config_theme_dir" "$next_config_theme_dir/$asset"; then
+      :
+    elif [[ $asset == "chromium.theme" ]] && hyprbole_theme_generate_chromium "$next_config_theme_dir" "$next_config_theme_dir/$asset"; then
       :
     elif [[ -f $default_theme_dir/$asset ]]; then
-      cp "$default_theme_dir/$asset" "$current_config_theme_dir/$asset"
+      cp "$default_theme_dir/$asset" "$next_config_theme_dir/$asset"
     fi
   done
 
-  if [[ -d $source_theme_dir/backgrounds ]]; then
-    cp -a "$source_theme_dir/backgrounds" "$current_config_theme_dir/backgrounds"
-  elif [[ -f $default_theme_dir/wallpaper.jpg ]]; then
-    mkdir -p "$current_config_theme_dir/backgrounds"
-    cp "$default_theme_dir/wallpaper.jpg" "$current_config_theme_dir/backgrounds/default.jpg"
+  if [[ ! -d $next_config_theme_dir/backgrounds && -f $default_theme_dir/wallpaper.jpg ]]; then
+    mkdir -p "$next_config_theme_dir/backgrounds"
+    cp "$default_theme_dir/wallpaper.jpg" "$next_config_theme_dir/backgrounds/default.jpg"
   fi
 
-  if [[ -f $source_theme_dir/wallpaper.jpg ]]; then
-    mkdir -p "$current_config_theme_dir/backgrounds"
-    cp "$source_theme_dir/wallpaper.jpg" "$current_config_theme_dir/backgrounds/default.jpg"
+  if [[ -f $next_config_theme_dir/wallpaper.jpg ]]; then
+    mkdir -p "$next_config_theme_dir/backgrounds"
+    cp "$next_config_theme_dir/wallpaper.jpg" "$next_config_theme_dir/backgrounds/default.jpg"
   fi
 
-  if [[ $previous_theme_name == "$theme_name" ]] && [[ -L $current_config_background_link ]]; then
-    selected_background_name="$(basename "$(readlink -f "$current_config_background_link" 2>/dev/null || true)")"
-  fi
+  for first_background_path in "$next_config_theme_dir/backgrounds"/*; do
+    [[ -f $first_background_path ]] || continue
+    hyprbole_is_background_asset "$first_background_path" || continue
+    first_background_name="$(basename "$first_background_path")"
+    break
+  done
 
-  first_background_path="$(hyprbole_theme_first_background "$theme_name" 2>/dev/null || true)"
+  rm -rf "$current_config_theme_dir"
+  mv "$next_config_theme_dir" "$current_config_theme_dir"
 
-  if [[ -n $selected_background_name ]] && [[ -f $current_config_theme_dir/backgrounds/$selected_background_name ]]; then
+  if [[ $previous_theme_name == "$theme_name" && -n $selected_background_name && -f $current_config_theme_dir/backgrounds/$selected_background_name ]]; then
+    rm -f "$current_config_background_link"
     ln -sfn "$current_config_theme_dir/backgrounds/$selected_background_name" "$current_config_background_link"
-  elif [[ -n $first_background_path ]]; then
-    ln -sfn "$current_config_theme_dir/backgrounds/$(basename "$first_background_path")" "$current_config_background_link"
+  elif [[ -n $first_background_name && -f $current_config_theme_dir/backgrounds/$first_background_name ]]; then
+    rm -f "$current_config_background_link"
+    ln -sfn "$current_config_theme_dir/backgrounds/$first_background_name" "$current_config_background_link"
   fi
 
   if [[ -L $current_config_background_link ]]; then
     mkdir -p "$current_config_dir"
+    rm -f "$current_config_theme_dir/wallpaper.jpg"
     ln -sfn ../background "$current_config_theme_dir/wallpaper.jpg"
   fi
 

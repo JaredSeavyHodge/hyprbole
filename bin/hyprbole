@@ -38,6 +38,9 @@ Theme:
   wallpaper timer stop
   wallpaper timer status
 
+Browser:
+  browser setup-theme-policy
+
 Packages:
   pkg installed
   pkg install
@@ -82,7 +85,7 @@ System:
   power off
 
 Maintenance:
-  doctor
+  doctor [--verbose]
   update
   refresh-limine
   snapshot <cmd>
@@ -406,28 +409,219 @@ wallpaper_timer_tick() {
   esac
 }
 
-doctor() {
-  local binary
-  local path
+doctor_section_start() {
+  local section="$1"
 
+  DOCTOR_SECTION="$section"
+  DOCTOR_SECTION_OK=0
+  DOCTOR_SECTION_WARN=0
+  DOCTOR_SECTION_MISS=0
+
+  if (( DOCTOR_VERBOSE == 1 )); then
+    if (( DOCTOR_SECTION_COUNT > 0 )); then
+      printf '\n'
+    fi
+    printf '%s\n' "$section"
+  fi
+
+  DOCTOR_SECTION_COUNT=$((DOCTOR_SECTION_COUNT + 1))
+}
+
+doctor_section_finish() {
+  if (( DOCTOR_VERBOSE == 1 )); then
+    return 0
+  fi
+
+  if (( DOCTOR_SECTION_WARN == 0 && DOCTOR_SECTION_MISS == 0 )); then
+    printf 'ok   %s (%d checked)\n' "$DOCTOR_SECTION" "$DOCTOR_SECTION_OK"
+  else
+    printf 'warn %s (%d ok, %d warn, %d miss)\n' "$DOCTOR_SECTION" "$DOCTOR_SECTION_OK" "$DOCTOR_SECTION_WARN" "$DOCTOR_SECTION_MISS"
+  fi
+}
+
+doctor_report() {
+  local status="$1"
+  local message="$2"
+
+  case "$status" in
+    ok) DOCTOR_SECTION_OK=$((DOCTOR_SECTION_OK + 1)) ;;
+    warn) DOCTOR_SECTION_WARN=$((DOCTOR_SECTION_WARN + 1)) ;;
+    miss) DOCTOR_SECTION_MISS=$((DOCTOR_SECTION_MISS + 1)) ;;
+  esac
+
+  if (( DOCTOR_VERBOSE == 1 )) || [[ $status != "ok" ]]; then
+    printf '%-4s %s\n' "$status" "$message"
+  fi
+}
+
+doctor() {
+  local arg="${1:-}"
+  local binary
+  local failed_units
+  local package
+  local path
+  local policy_path
+  local unit
+
+  case "$arg" in
+    "") DOCTOR_VERBOSE=0 ;;
+    --verbose|-v) DOCTOR_VERBOSE=1 ;;
+    *) usage ;;
+  esac
+
+  local DOCTOR_SECTION=""
+  local DOCTOR_SECTION_OK=0
+  local DOCTOR_SECTION_WARN=0
+  local DOCTOR_SECTION_MISS=0
+  local DOCTOR_SECTION_COUNT=0
+
+  doctor_section_start "Checkout"
+  if [[ -d $HYPRBOLE_PATH/.git ]]; then
+    doctor_report ok "$HYPRBOLE_PATH git checkout"
+  else
+    doctor_report miss "$HYPRBOLE_PATH/.git"
+  fi
+  doctor_section_finish
+
+  doctor_section_start "Packages: core desktop"
+  for package in hyprland uwsm waybar sddm swaync swayosd pipewire wireplumber xdg-desktop-portal xdg-desktop-portal-hyprland polkit-gnome qt5-wayland qt6-wayland hypridle hyprlock awww polkit; do
+    if pacman -Q "$package" >/dev/null 2>&1; then
+      doctor_report ok "$package"
+    else
+      doctor_report miss "$package"
+    fi
+  done
+  doctor_section_finish
+
+  doctor_section_start "Packages: apps"
+  for package in wf-recorder nautilus nautilus-python imv mpv ghostty btop obsidian code neovim 1password-beta 1password-cli brave-origin-nightly-bin; do
+    if pacman -Q "$package" >/dev/null 2>&1; then
+      doctor_report ok "$package"
+    else
+      doctor_report miss "$package"
+    fi
+  done
+  doctor_section_finish
+
+  doctor_section_start "Packages: launcher"
+  for package in walker-bin elephant-bin elephant-clipboard-bin elephant-calc-bin elephant-desktopapplications-bin elephant-files-bin elephant-1password-bin elephant-menus-bin elephant-providerlist-bin elephant-runner-bin elephant-symbols-bin elephant-websearch-bin; do
+    if pacman -Q "$package" >/dev/null 2>&1; then
+      doctor_report ok "$package"
+    else
+      doctor_report miss "$package"
+    fi
+  done
+  doctor_section_finish
+
+  doctor_section_start "Packages: system tools"
+  for package in yay-bin bash-completion mise starship zoxide fzf bat wl-clipboard grim slurp satty pavucontrol nm-connection-editor network-manager-applet blueman gnome-keyring playerctl brightnessctl xdg-user-dirs xdg-utils gvfs gvfs-mtp libsecret git curl jq imagemagick pacman-contrib limine noto-fonts noto-fonts-emoji rust ttf-jetbrains-mono-nerd ttf-nerd-fonts-symbols base-devel snapper limine-snapper-sync limine-mkinitcpio-hook hyprsysteminfo; do
+    if pacman -Q "$package" >/dev/null 2>&1; then
+      doctor_report ok "$package"
+    else
+      doctor_report miss "$package"
+    fi
+  done
+  doctor_section_finish
+
+  doctor_section_start "Commands"
   for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper wf-recorder grim slurp satty mise walker elephant; do
     if command -v "$binary" >/dev/null 2>&1; then
-      printf 'ok   %s\n' "$binary"
+      doctor_report ok "$binary"
     else
-      printf 'miss %s\n' "$binary"
+      doctor_report miss "$binary"
+    fi
+  done
+  doctor_section_finish
+
+  doctor_section_start "Services: user"
+  for unit in pipewire.service pipewire-pulse.service wireplumber.service swayosd-server.service polkit-gnome-agent.service elephant.service walker.service swaync.service; do
+    if systemctl --user is-active "$unit" >/dev/null 2>&1; then
+      doctor_report ok "$unit active"
+    elif systemctl --user is-enabled "$unit" >/dev/null 2>&1; then
+      doctor_report warn "$unit enabled but inactive"
+    else
+      doctor_report miss "$unit service"
     fi
   done
 
+  failed_units="$(systemctl --user list-units --state=failed --no-legend --plain 2>/dev/null || true)"
+  if [[ -n $failed_units ]]; then
+    doctor_report warn "failed user services present"
+    printf '%s\n' "$failed_units"
+  fi
+  doctor_section_finish
+
+  doctor_section_start "Services: system"
+  for unit in sddm.service polkit.service; do
+    if systemctl is-active "$unit" >/dev/null 2>&1; then
+      doctor_report ok "$unit active"
+    elif systemctl is-enabled "$unit" >/dev/null 2>&1; then
+      doctor_report warn "$unit enabled but inactive"
+    else
+      doctor_report miss "$unit service"
+    fi
+  done
+
+  if command -v limine-snapper-sync >/dev/null 2>&1; then
+    if systemctl is-enabled limine-snapper-sync.service >/dev/null 2>&1; then
+      doctor_report ok "limine-snapper-sync.service enabled"
+    else
+      doctor_report warn "limine-snapper-sync.service not enabled"
+    fi
+  fi
+  doctor_section_finish
+
+  doctor_section_start "Configs"
   for path in \
     "$HOME/.config/hypr/hyprland.lua" \
     "$HOME/.config/waybar/config.jsonc" \
-    "$HYPRBOLE_CONFIG_PATH/current/theme/waybar.css"; do
+    "$HOME/.config/swaync/config.json" \
+    "$HOME/.config/systemd/user/polkit-gnome-agent.service" \
+    "$HOME/.config/systemd/user/swaync.service"; do
     if [[ -e $path ]]; then
-      printf 'ok   %s\n' "$path"
+      doctor_report ok "$path"
     else
-      printf 'miss %s\n' "$path"
+      doctor_report miss "$path"
     fi
   done
+
+  if [[ -f $HOME/.config/hypr/hyprland.conf ]]; then
+    doctor_report warn "conflicting Hyprland config: $HOME/.config/hypr/hyprland.conf"
+  fi
+  doctor_section_finish
+
+  doctor_section_start "Theme State"
+  for path in \
+    "$HYPRBOLE_CONFIG_PATH/current/theme-name" \
+    "$HYPRBOLE_CONFIG_PATH/current/background" \
+    "$HYPRBOLE_CONFIG_PATH/current/theme/waybar.css" \
+    "$HYPRBOLE_CONFIG_PATH/current/theme/ghostty.conf" \
+    "$HYPRBOLE_CONFIG_PATH/current/theme/vscode.json"; do
+    if [[ -e $path ]]; then
+      doctor_report ok "$path"
+    else
+      doctor_report miss "$path"
+    fi
+  done
+  doctor_section_finish
+
+  doctor_section_start "Browser Policy"
+  policy_path="$HYPRBOLE_CONFIG_PATH/current/browser-policy.json"
+  if [[ -f $policy_path ]]; then
+    doctor_report ok "$policy_path"
+  else
+    doctor_report miss "$policy_path"
+  fi
+
+  for path in \
+    /etc/brave/policies/managed/color.json; do
+    if [[ -L $path ]]; then
+      doctor_report ok "$path symlink"
+    elif [[ -e $path ]]; then
+      doctor_report warn "$path is not a symlink"
+    fi
+  done
+  doctor_section_finish
 }
 
 refresh_config() {
@@ -886,7 +1080,17 @@ main() {
       launch_themes
       ;;
     doctor)
-      doctor
+      doctor "${2:-}"
+      ;;
+    browser)
+      case "${2:-}" in
+        setup-theme-policy)
+          hyprbole-setup-browser-policy
+          ;;
+        *)
+          usage
+          ;;
+      esac
       ;;
     update)
       update_all
@@ -1043,7 +1247,7 @@ main() {
       refresh_config "$2"
       ;;
     refresh-all)
-      hyprbole-refresh-all
+      hyprbole-refresh-all "${2:-}"
       ;;
     refresh-shell)
       hyprbole-refresh-shell
