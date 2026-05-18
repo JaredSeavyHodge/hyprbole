@@ -9,6 +9,7 @@ source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
 
 UPDATE_ORPHANS_REMOVED=0
 UPDATE_CACHE_RECLAIMED_BYTES=0
+HYPRBOLE_USER_UNITS=(pipewire.service pipewire-pulse.service wireplumber.service swayosd-server.service polkit-gnome-agent.service gnome-keyring-daemon.socket elephant.service walker.service swaync.service)
 
 if [[ ${1:-} == "update" ]] && [[ -z ${HYPRBOLE_UPDATE_LOGGED:-} ]] && command -v script >/dev/null 2>&1; then
   script_command=$(printf '%q ' "$0" "$@")
@@ -86,6 +87,7 @@ System:
 
 Maintenance:
   doctor [--verbose]
+  verify
   update
   refresh-limine
   snapshot <cmd>
@@ -97,9 +99,19 @@ EOF
 }
 
 update_repo() {
-  if [[ -d $HYPRBOLE_PATH/.git ]]; then
-    git -C "$HYPRBOLE_PATH" pull --autostash
+  [[ -d $HYPRBOLE_PATH/.git ]] || {
+    printf 'HYPRBOLE_PATH is not a git checkout: %s\n' "$HYPRBOLE_PATH" >&2
+    printf 'Run install.sh from a git checkout to convert older partial deployments.\n' >&2
+    return 1
+  }
+
+  if [[ -n $(git -C "$HYPRBOLE_PATH" status --porcelain) ]]; then
+    printf 'HYPRBOLE_PATH has uncommitted changes: %s\n' "$HYPRBOLE_PATH" >&2
+    printf 'Commit or stash local changes before updating.\n' >&2
+    return 1
   fi
+
+  git -C "$HYPRBOLE_PATH" pull --ff-only
 }
 
 set_theme() {
@@ -534,7 +546,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Services: user"
-  for unit in pipewire.service pipewire-pulse.service wireplumber.service swayosd-server.service polkit-gnome-agent.service gnome-keyring-daemon.socket elephant.service walker.service swaync.service; do
+  for unit in "${HYPRBOLE_USER_UNITS[@]}"; do
     if systemctl --user is-active "$unit" >/dev/null 2>&1; then
       doctor_report ok "$unit active"
     elif systemctl --user is-enabled "$unit" >/dev/null 2>&1; then
@@ -574,6 +586,12 @@ doctor() {
     else
       doctor_report warn "limine-snapper-sync.service not enabled"
     fi
+  fi
+
+  if systemctl is-enabled snapper-cleanup.timer >/dev/null 2>&1; then
+    doctor_report ok "snapper-cleanup.timer enabled"
+  else
+    doctor_report warn "snapper-cleanup.timer not enabled"
   fi
   doctor_section_finish
 
@@ -650,6 +668,12 @@ doctor() {
 
 refresh_config() {
   hyprbole_refresh_config_path "$1"
+}
+
+verify_system() {
+  source "$HYPRBOLE_PATH/install/lib.sh"
+  source "$HYPRBOLE_PATH/install/verify.sh"
+  verify_installation
 }
 
 launch_menu() {
@@ -1007,11 +1031,12 @@ update_all() {
 
   trap 'hyprctl dispatch tagwindow -- -noidle >/dev/null 2>&1 || true' RETURN
 
+  update_repo
+
   if command -v pacman >/dev/null 2>&1; then
     sudo pacman -Sy --noconfirm archlinux-keyring >/dev/null 2>&1 || true
   fi
 
-  update_repo
   hyprbole-snapshot create || [[ $? -eq 127 ]]
   sudo pacman -Syyu --noconfirm
   hyprbole-migrate
@@ -1105,6 +1130,9 @@ main() {
       ;;
     doctor)
       doctor "${2:-}"
+      ;;
+    verify)
+      verify_system
       ;;
     browser)
       case "${2:-}" in

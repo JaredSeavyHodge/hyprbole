@@ -86,7 +86,7 @@ EOF
 }
 
 ensure_bashrc_source() {
-  local source_line='[ -f "$HOME/.local/share/hyprbole/default/bash/rc" ] && source "$HOME/.local/share/hyprbole/default/bash/rc"'
+  local source_line='[ -f "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/default/bash/rc" ] && source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/default/bash/rc"'
 
   if copy_if_missing "$HYPRBOLE_PATH/default/bashrc" "$HOME/.bashrc"; then
     return 0
@@ -160,17 +160,17 @@ setup_snapper_limine() {
   if [[ -f $HYPRBOLE_PATH/default/limine/default.conf ]]; then
     local cmdline
 
-    if [[ -n $limine_config ]]; then
-      cmdline=$(sudo grep "^[[:space:]]*cmdline:" "$limine_config" | head -1 | sed 's/^[[:space:]]*cmdline:[[:space:]]*//')
-    elif [[ -f /etc/kernel/cmdline ]]; then
+    if [[ -f /etc/kernel/cmdline ]]; then
       cmdline=$(</etc/kernel/cmdline)
     else
       cmdline=$(</proc/cmdline)
       cmdline=${cmdline#BOOT_IMAGE=* }
     fi
 
-    sudo cp "$HYPRBOLE_PATH/default/limine/default.conf" /etc/default/limine
-    sudo sed -i "s|@@CMDLINE@@|$cmdline|g" /etc/default/limine
+    local default_limine_config
+    default_limine_config=$(<"$HYPRBOLE_PATH/default/limine/default.conf")
+    default_limine_config=${default_limine_config//@@CMDLINE@@/$cmdline}
+    printf '%s\n' "$default_limine_config" | sudo tee /etc/default/limine >/dev/null
   fi
 
   if [[ -n $limine_config ]] && [[ $limine_config != "/boot/limine.conf" ]]; then
@@ -193,6 +193,7 @@ N
   configure_limine_menu_defaults
 
   sudo btrfs quota disable / >/dev/null 2>&1 || true
+  sudo systemctl enable --now snapper-cleanup.timer >/dev/null 2>&1 || true
 
   if command -v limine-snapper-sync >/dev/null 2>&1; then
     sudo systemctl enable limine-snapper-sync.service >/dev/null 2>&1 || true

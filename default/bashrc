@@ -3,6 +3,7 @@
 
 # All the default Hyprbole aliases and functions
 # (don't mess with these directly, just overwrite them here!)
-source ~/.local/share/hyprbole/default/bash/rc
+HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
+source "$HYPRBOLE_PATH/default/bash/rc"
 
 # Add your own exports, aliases, and functions here.

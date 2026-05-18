@@ -3,6 +3,7 @@ verify_installation() {
   local binary
   local failed_units
   local unit
+  local user_units=(pipewire.service pipewire-pulse.service wireplumber.service swayosd-server.service polkit-gnome-agent.service gnome-keyring-daemon.socket elephant.service walker.service swaync.service)
 
   for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper sddm limine-update; do
     if ! cmd_present "$binary"; then
@@ -49,7 +50,7 @@ verify_installation() {
     failures=$((failures + 1))
   fi
 
-  for unit in pipewire.service pipewire-pulse.service wireplumber.service swayosd-server.service polkit-gnome-agent.service gnome-keyring-daemon.socket elephant.service walker.service swaync.service; do
+  for unit in "${user_units[@]}"; do
     if ! systemctl --user is-enabled "$unit" >/dev/null 2>&1; then
       printf 'user service is not enabled: %s\n' "$unit" >&2
       failures=$((failures + 1))
@@ -62,6 +63,12 @@ verify_installation() {
   if ! systemctl --user is-active gnome-keyring-daemon.service >/dev/null 2>&1; then
     printf 'user service is not active: gnome-keyring-daemon.service\n' >&2
     failures=$((failures + 1))
+  fi
+
+  if command -v snapper >/dev/null 2>&1; then
+    if ! systemctl is-enabled snapper-cleanup.timer >/dev/null 2>&1; then
+      printf 'warning: system timer is not enabled: snapper-cleanup.timer\n' >&2
+    fi
   fi
 
   failed_units="$(systemctl --user list-units --state=failed --no-legend --plain 2>/dev/null || true)"

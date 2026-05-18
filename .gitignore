@@ -5,3 +5,5 @@ dist/
 *.swp
 *.swo
 *.bak
+__pycache__/
+*.py[cod]

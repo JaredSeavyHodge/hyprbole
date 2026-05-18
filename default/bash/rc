@@ -1,6 +1,8 @@
-source ~/.local/share/hyprbole/default/bash/envs
-source ~/.local/share/hyprbole/default/bash/shell
-source ~/.local/share/hyprbole/default/bash/aliases
-source ~/.local/share/hyprbole/default/bash/functions
-source ~/.local/share/hyprbole/default/bash/init
-[[ $- == *i* ]] && [[ -f ~/.local/share/hyprbole/default/bash/inputrc ]] && bind -f ~/.local/share/hyprbole/default/bash/inputrc
+HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
+
+source "$HYPRBOLE_PATH/default/bash/envs"
+source "$HYPRBOLE_PATH/default/bash/shell"
+source "$HYPRBOLE_PATH/default/bash/aliases"
+source "$HYPRBOLE_PATH/default/bash/functions"
+source "$HYPRBOLE_PATH/default/bash/init"
+[[ $- == *i* ]] && [[ -f $HYPRBOLE_PATH/default/bash/inputrc ]] && bind -f "$HYPRBOLE_PATH/default/bash/inputrc"

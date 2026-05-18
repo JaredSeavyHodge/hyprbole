@@ -8,6 +8,7 @@ HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
 STATE_DIR="$HOME/.local/state/hyprbole"
 MIGRATIONS_DIR="$HYPRBOLE_PATH/migrations"
 STATE_FILE="$STATE_DIR/applied-migrations"
+MIGRATION_RETENTION_DAYS="${HYPRBOLE_MIGRATION_RETENTION_DAYS:-90}"
 
 mkdir -p "$STATE_DIR"
 touch "$STATE_FILE"
@@ -25,4 +26,41 @@ while IFS= read -r migration; do
   # shellcheck source=/dev/null
   source "$migration"
   printf '%s\n' "$migration_name" >>"$STATE_FILE"
-done < <(find "$MIGRATIONS_DIR" -maxdepth 1 -type f | sort)
+done < <(find "$MIGRATIONS_DIR" -maxdepth 1 -type f -name '*.sh' | sort)
+
+cleanup_applied_migrations() {
+  local cutoff_epoch
+  local migration_name
+  local migration_date
+  local migration_epoch
+  local tmp_file
+
+  cutoff_epoch=$(date -d "$MIGRATION_RETENTION_DAYS days ago" +%s 2>/dev/null || return 0)
+  tmp_file=$(mktemp)
+
+  # Only prune state for migration files that were already removed from git.
+  # Deleting migration scripts during update would dirty the checkout.
+  while IFS= read -r migration_name; do
+    [[ -n $migration_name ]] || continue
+
+    if [[ -f $MIGRATIONS_DIR/$migration_name ]]; then
+      printf '%s\n' "$migration_name" >>"$tmp_file"
+      continue
+    fi
+
+    migration_date="${migration_name%%-*}"
+    if [[ ! $migration_date =~ ^[0-9]{8}$ ]]; then
+      printf '%s\n' "$migration_name" >>"$tmp_file"
+      continue
+    fi
+
+    migration_epoch=$(date -d "$migration_date" +%s 2>/dev/null || printf '0')
+    if (( migration_epoch == 0 || migration_epoch >= cutoff_epoch )); then
+      printf '%s\n' "$migration_name" >>"$tmp_file"
+    fi
+  done <"$STATE_FILE"
+
+  mv "$tmp_file" "$STATE_FILE"
+}
+
+cleanup_applied_migrations

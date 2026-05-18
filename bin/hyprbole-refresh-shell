@@ -18,7 +18,7 @@ ensure_shell_source() {
 }
 
 ensure_bashrc_source() {
-  local source_line='[ -f "$HOME/.local/share/hyprbole/default/bash/rc" ] && source "$HOME/.local/share/hyprbole/default/bash/rc"'
+  local source_line='[ -f "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/default/bash/rc" ] && source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/default/bash/rc"'
 
   if [[ ! -e $HOME/.bashrc ]]; then
     cp "$HYPRBOLE_PATH/default/bashrc" "$HOME/.bashrc"

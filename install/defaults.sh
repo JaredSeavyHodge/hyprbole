@@ -16,7 +16,7 @@ deploy_defaults() {
     if copy_if_missing "$source_path" "$destination_path"; then
       copied_count=$((copied_count + 1))
     fi
-  done < <(find "$HYPRBOLE_PATH/config" -type f -print0)
+  done < <(find "$HYPRBOLE_PATH/config" -type f ! -path '*/__pycache__/*' ! -name '*.py[co]' -print0)
 
   cleanup_hyprland_generated_stub
 
