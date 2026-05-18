@@ -29,6 +29,7 @@ HYPRBOLE_OFFICIAL_PACKAGES=(
   fzf
   bat
   obsidian
+  opencode
   code
   neovim
   polkit
