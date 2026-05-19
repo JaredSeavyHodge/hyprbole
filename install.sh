@@ -93,6 +93,10 @@ main() {
   full_name=$(prompt_value "Full name" "$(git config --global user.name 2>/dev/null || true)")
   email=$(prompt_value "Email" "$(git config --global user.email 2>/dev/null || true)")
 
+  log_step "Removing conflicting packages"
+  remove_conflicting_packages
+  warn_profile_leftovers
+
   log_step "Installing official packages"
   install_official_packages
 

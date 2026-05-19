@@ -496,11 +496,21 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Packages: core desktop"
-  for package in hyprland uwsm waybar sddm swaync swayosd pipewire wireplumber xdg-desktop-portal xdg-desktop-portal-hyprland polkit-gnome qt5-wayland qt6-wayland hypridle hyprlock awww polkit; do
+  for package in hyprland uwsm waybar sddm swaync swayosd pipewire pipewire-audio pipewire-alsa pipewire-pulse wireplumber xdg-desktop-portal xdg-desktop-portal-hyprland polkit-gnome qt5-wayland qt6-wayland hypridle hyprlock awww polkit; do
     if pacman -Q "$package" >/dev/null 2>&1; then
       doctor_report ok "$package"
     else
       doctor_report miss "$package"
+    fi
+  done
+  doctor_section_finish
+
+  doctor_section_start "Competing packages"
+  for package in dunst pulseaudio pulseaudio-alsa pulseaudio-bluetooth; do
+    if pacman -Q "$package" >/dev/null 2>&1; then
+      doctor_report warn "$package installed"
+    else
+      doctor_report ok "$package absent"
     fi
   done
   doctor_section_finish
@@ -555,12 +565,6 @@ doctor() {
       doctor_report miss "$unit service"
     fi
   done
-
-  if systemctl --user is-active gnome-keyring-daemon.service >/dev/null 2>&1; then
-    doctor_report ok "gnome-keyring-daemon.service active"
-  else
-    doctor_report miss "gnome-keyring-daemon.service active"
-  fi
 
   failed_units="$(systemctl --user list-units --state=failed --no-legend --plain 2>/dev/null || true)"
   if [[ -n $failed_units ]]; then

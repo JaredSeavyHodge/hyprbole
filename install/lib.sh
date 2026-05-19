@@ -132,6 +132,16 @@ write_install_diagnostics() {
       printf '\nAUR packages:\n'
       diagnostic_package_check yay-bin "${HYPRBOLE_AUR_PACKAGES[@]}"
     fi
+    if declare -p HYPRBOLE_CONFLICTING_PACKAGES >/dev/null 2>&1; then
+      printf '\nConflicting packages that should be absent:\n'
+      for package in "${HYPRBOLE_CONFLICTING_PACKAGES[@]}"; do
+        if pacman -Q "$package" >/dev/null 2>&1; then
+          printf 'warn installed %s\n' "$package"
+        else
+          printf 'ok   absent %s\n' "$package"
+        fi
+      done
+    fi
 
     diagnostic_section "Config Paths"
     diagnostic_path_check \

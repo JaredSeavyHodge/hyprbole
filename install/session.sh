@@ -44,6 +44,7 @@ EOF
   setup_sddm
   setup_snapper_limine
   reload_hyprland_after_install
+  cleanup_hyprland_generated_stub
 }
 
 setup_browser_theme_policy() {

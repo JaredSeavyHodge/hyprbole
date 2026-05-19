@@ -66,6 +66,7 @@ for relative_path in \
   systemd/user/hyprbole-wallpaper-cycle.timer \
   systemd/user/elephant.service \
   systemd/user/polkit-gnome-agent.service \
+  systemd/user/swaync.service \
   systemd/user/swayosd-server.service \
   systemd/user/walker.service \
   swaync/config.json; do
