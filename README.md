@@ -47,6 +47,7 @@ Examples:
 - `hyprbole theme set default-theme`
 - `hyprbole pkg install`
 - `hyprbole pkg aur-install`
+- `hyprbole secret-service setup`
 - `hyprbole apps`
 - `hyprbole keybinds`
 - `hyprbole menu`

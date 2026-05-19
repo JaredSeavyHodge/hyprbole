@@ -18,7 +18,7 @@ EOF
 
   xdg-mime default org.gnome.Nautilus.desktop inode/directory || true
   xdg-mime default com.mitchellh.ghostty.desktop x-scheme-handler/terminal || true
-  xdg-settings set default-web-browser brave-origin-nightly.desktop || true
+  "$HYPRBOLE_PATH/bin/hyprbole-refresh-browser-launchers" >/dev/null 2>&1 || true
   xdg-mime default imv.desktop image/png || true
   xdg-mime default imv.desktop image/jpeg || true
   xdg-mime default imv.desktop image/gif || true
@@ -125,6 +125,8 @@ setup_sddm() {
   if [[ -f $HYPRBOLE_PATH/default/sddm/hyprbole.conf ]]; then
     sudo install -Dm644 "$HYPRBOLE_PATH/default/sddm/hyprbole.conf" /etc/sddm.conf.d/hyprbole.conf
   fi
+
+  "$HYPRBOLE_PATH/bin/hyprbole" secret-service setup --quiet
 
   "$HYPRBOLE_PATH/bin/hyprbole-refresh-sddm" >/dev/null 2>&1 || true
 }

@@ -78,6 +78,7 @@ if (( include_user_configs == 1 )); then
 fi
 
 hyprbole-refresh-btop >/dev/null 2>&1 || true
+hyprbole-refresh-browser-launchers >/dev/null 2>&1 || true
 hyprbole-refresh-gnome >/dev/null 2>&1 || true
 hyprbole-refresh-fonts >/dev/null 2>&1 || true
 hyprbole-refresh-vscode >/dev/null 2>&1 || true

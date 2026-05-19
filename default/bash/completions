@@ -30,7 +30,7 @@ _hyprbole_complete() {
 
   case "${COMP_WORDS[1]:-}" in
     "")
-      COMPREPLY=($(compgen -W 'theme themes wallpaper pkg apps clipboard keybinds lock logout menu suspend reboot poweroff launch capture power system doctor update refresh-limine snapshot refresh-config refresh-all refresh-shell migrate' -- "$cur"))
+      COMPREPLY=($(compgen -W 'theme themes wallpaper pkg apps clipboard keybinds lock logout menu suspend reboot poweroff launch capture power system secret-service doctor verify update refresh-limine snapshot refresh-config refresh-all refresh-shell migrate' -- "$cur"))
       return 0
       ;;
     theme)
@@ -121,6 +121,14 @@ _hyprbole_complete() {
     system)
       if (( COMP_CWORD == 2 )); then
         COMPREPLY=($(compgen -W 'lock logout' -- "$cur"))
+      fi
+      return 0
+      ;;
+    secret-service)
+      if (( COMP_CWORD == 2 )); then
+        COMPREPLY=($(compgen -W 'setup' -- "$cur"))
+      elif (( COMP_CWORD == 3 )) && [[ ${COMP_WORDS[2]:-} == "setup" ]]; then
+        COMPREPLY=($(compgen -W '--user-only --quiet' -- "$cur"))
       fi
       return 0
       ;;

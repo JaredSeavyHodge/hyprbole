@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# hyprbole:summary=Refresh Hyprbole browser launchers and flags
+
+set -euo pipefail
+
+XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$XDG_CONFIG_HOME/hyprbole}"
+HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
+APPLICATIONS_DIR="$HOME/.local/share/applications"
+BRAVE_FLAGS_FILE="$XDG_CONFIG_HOME/brave-origin-nightly-flags.conf"
+HYPRBOLE_BRAVE_FLAGS_FILE="$HYPRBOLE_CONFIG_PATH/brave-origin-nightly-flags.conf"
+BRAVE_DESKTOP_FILE="$APPLICATIONS_DIR/hyprbole-brave-origin-nightly.desktop"
+BRAVE_LAUNCHER="$HYPRBOLE_PATH/bin/hyprbole-launch-brave-origin-nightly"
+
+ensure_brave_flags() {
+  local flag
+
+  mkdir -p "$(dirname "$BRAVE_FLAGS_FILE")"
+  mkdir -p "$(dirname "$HYPRBOLE_BRAVE_FLAGS_FILE")"
+  touch "$HYPRBOLE_BRAVE_FLAGS_FILE"
+
+  if [[ -f $BRAVE_FLAGS_FILE ]]; then
+    while IFS= read -r flag || [[ -n $flag ]]; do
+      flag="${flag%%#*}"
+      flag="${flag#"${flag%%[![:space:]]*}"}"
+      flag="${flag%"${flag##*[![:space:]]}"}"
+      [[ -n $flag ]] || continue
+      [[ $flag == --password-store=gnome-libsecret ]] && continue
+      [[ $flag == --ozone-platform-hint=auto ]] && continue
+      grep -Fxq -- "$flag" "$HYPRBOLE_BRAVE_FLAGS_FILE" || printf '%s\n' "$flag" >>"$HYPRBOLE_BRAVE_FLAGS_FILE"
+    done <"$BRAVE_FLAGS_FILE"
+  fi
+
+  printf '%s\n' '--password-store=gnome-libsecret' >"$BRAVE_FLAGS_FILE"
+}
+
+write_brave_desktop_file() {
+  mkdir -p "$APPLICATIONS_DIR"
+
+  cat >"$BRAVE_DESKTOP_FILE" <<EOF
+[Desktop Entry]
+Version=1.0
+Name=Brave Origin Nightly
+GenericName=Web Browser
+Comment=Access the Internet
+Exec=$BRAVE_LAUNCHER %U
+StartupNotify=true
+Terminal=false
+Icon=brave-origin-nightly
+Type=Application
+Categories=Network;WebBrowser;
+MimeType=x-scheme-handler/unknown;x-scheme-handler/about;application/pdf;application/rdf+xml;application/rss+xml;application/xhtml+xml;application/xhtml_xml;application/xml;image/gif;image/jpeg;image/png;image/webp;text/html;text/xml;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/chromium;
+Actions=new-window;new-private-window;
+
+[Desktop Action new-window]
+Name=New Window
+Exec=$BRAVE_LAUNCHER
+
+[Desktop Action new-private-window]
+Name=New Private Window
+Exec=$BRAVE_LAUNCHER --incognito
+EOF
+}
+
+set_default_browser() {
+  xdg-settings set default-web-browser hyprbole-brave-origin-nightly.desktop >/dev/null 2>&1 || true
+  xdg-mime default hyprbole-brave-origin-nightly.desktop text/html >/dev/null 2>&1 || true
+  xdg-mime default hyprbole-brave-origin-nightly.desktop x-scheme-handler/http >/dev/null 2>&1 || true
+  xdg-mime default hyprbole-brave-origin-nightly.desktop x-scheme-handler/https >/dev/null 2>&1 || true
+}
+
+ensure_brave_flags
+write_brave_desktop_file
+set_default_browser

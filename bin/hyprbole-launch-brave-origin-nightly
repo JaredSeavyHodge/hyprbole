@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# hyprbole:summary=Launch Brave Origin Nightly with Hyprbole browser flags
+# hyprbole:args=[brave args...]
+
+set -euo pipefail
+
+XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$XDG_CONFIG_HOME/hyprbole}"
+BRAVE_BINARY="${HYPRBOLE_BRAVE_ORIGIN_NIGHTLY_BINARY:-/opt/brave.com/brave-origin-nightly/brave-origin}"
+FLAGS_FILE="$HYPRBOLE_CONFIG_PATH/brave-origin-nightly-flags.conf"
+FLAGS=(
+  --password-store=gnome-libsecret
+  --ozone-platform-hint=auto
+)
+
+trim_flag_line() {
+  local line="$1"
+
+  line="${line%%#*}"
+  line="${line#"${line%%[![:space:]]*}"}"
+  line="${line%"${line##*[![:space:]]}"}"
+  printf '%s\n' "$line"
+}
+
+read_flags_file() {
+  local line
+
+  [[ -f $FLAGS_FILE ]] || return 0
+
+  while IFS= read -r line || [[ -n $line ]]; do
+    line="$(trim_flag_line "$line")"
+    [[ -n $line ]] || continue
+    FLAGS+=("$line")
+  done <"$FLAGS_FILE"
+}
+
+read_env_flags() {
+  local env_flags=()
+
+  if [[ -n ${BRAVE_FLAGS:-} ]]; then
+    read -r -a env_flags <<<"$BRAVE_FLAGS"
+    FLAGS+=("${env_flags[@]}")
+  fi
+
+  if [[ -n ${FLAG:-} ]]; then
+    read -r -a env_flags <<<"$FLAG"
+    FLAGS+=("${env_flags[@]}")
+  fi
+}
+
+[[ -x $BRAVE_BINARY ]] || {
+  printf 'missing Brave Origin Nightly binary: %s\n' "$BRAVE_BINARY" >&2
+  exit 1
+}
+
+export CHROME_USER_DATA_DIR="${CHROME_USER_DATA_DIR:-$HOME/.config/BraveSoftware/Brave-Origin-Nightly}"
+
+read_flags_file
+read_env_flags
+
+exec "$BRAVE_BINARY" "${FLAGS[@]}" "$@"

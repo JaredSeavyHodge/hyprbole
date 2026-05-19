@@ -167,7 +167,7 @@ hyprbole_app_command() {
   local app="$1"
 
   case "$app" in
-    brave-origin-nightly) printf 'brave-origin-nightly\n' ;;
+    brave-origin-nightly) printf '%s\n' "$HYPRBOLE_PATH/bin/hyprbole-launch-brave-origin-nightly" ;;
     chromium) printf 'chromium\n' ;;
     dolphin) printf 'dolphin\n' ;;
     ghostty) printf 'ghostty\n' ;;
