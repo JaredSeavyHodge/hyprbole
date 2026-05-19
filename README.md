@@ -16,6 +16,8 @@ Hyprbole is a curated post-install desktop layer for Arch Linux built around Hyp
 - Nautilus as the default file manager
 - Managed vendor defaults under `~/.local/share/hyprbole`
 - User-facing editable config under `~/.config`
+- GNOME Keyring/libsecret for Chromium/Electron secret storage
+- External theme sources synced into user config on demand
 
 ## Repository Layout
 
@@ -47,7 +49,6 @@ Examples:
 - `hyprbole theme set default-theme`
 - `hyprbole pkg install`
 - `hyprbole pkg aur-install`
-- `hyprbole secret-service setup`
 - `hyprbole apps`
 - `hyprbole keybinds`
 - `hyprbole menu`
@@ -63,6 +64,83 @@ Examples of equivalent grouped routes:
 - `hyprbole power suspend`
 
 Leaf scripts under `bin/hyprbole-*` still exist for desktop plumbing such as Hyprland binds, Walker/Elephant menus, systemd units, and Nautilus actions.
+
+## Install And Verify
+
+Run the installer from a normal user account, not with `sudo`:
+
+```bash
+./install.sh
+```
+
+After install or after changing core defaults, use:
+
+```bash
+hyprbole doctor
+hyprbole verify
+```
+
+Use `hyprbole doctor --fix` for supported repairs. Secret Service repair is intentionally behind `doctor --fix`; there is no public `hyprbole secret-service` workflow.
+
+`install.sh` is designed to be safe to run more than once on the same machine. Re-running it is a valid repair path for Hyprbole-owned defaults.
+
+Repeat install runs should not overwrite existing user-owned config copied from `config/`. They may intentionally reapply Hyprbole-owned state such as generated theme/runtime files, browser launchers, service enables, browser policy links, SDDM theme files, Limine/Snapper defaults, and Secret Service setup.
+
+PAM cleanup is idempotent: removing already-removed GNOME Keyring `auth`/`password` hooks is a no-op. Secret Service setup also avoids repeated `login.keyring` backups because the encrypted keyring is moved only when it exists.
+
+## Browser Defaults
+
+Hyprbole owns Brave Origin Nightly startup through `bin/hyprbole-launch-brave-origin-nightly` and a generated desktop file at `~/.local/share/applications/hyprbole-brave-origin-nightly.desktop`.
+
+The wrapper always passes:
+
+- `--password-store=gnome-libsecret`
+- `--ozone-platform-hint=auto`
+
+Keep `~/.config/brave-origin-nightly-flags.conf` single-flag safe for the package wrapper. Put Hyprbole-specific extra Brave flags in:
+
+```text
+~/.config/hyprbole/brave-origin-nightly-flags.conf
+```
+
+Chromium fractional-scaling flags are not enabled globally because they are monitor and Chromium-build dependent. Opt in through the Hyprbole extra flags file when testing an odd-scale monitor setup.
+
+## Themes
+
+The shipped fallback theme is `default-theme`.
+
+Theme locations:
+
+- Bundled themes: `~/.local/share/hyprbole/themes/<theme>`
+- User-authored themes: `~/.config/hyprbole/themes/<theme>`
+- Synced source themes: `~/.config/hyprbole/themes/.sources/<source>/themes/<theme>`
+
+Theme source registry:
+
+```text
+~/.config/hyprbole/theme-sources.conf
+```
+
+External repositories are synced explicitly:
+
+```bash
+hyprbole theme source sync
+```
+
+Omarchy themes are treated as an external source example, not as vendored repository content.
+
+## Secret Service
+
+Install configures GNOME Keyring/libsecret for apps such as Brave and VS Code.
+
+Hyprbole's setup creates a passwordless `Default_keyring`, backs up an encrypted `login.keyring` if present, removes SDDM `auth`/`password` GNOME Keyring PAM hooks, keeps session autostart hooks, and restarts the user keyring daemon when possible.
+
+If browser or editor secret storage regresses, run:
+
+```bash
+hyprbole doctor --fix
+hyprbole verify
+```
 
 ## Planned Ownership Matrix
 

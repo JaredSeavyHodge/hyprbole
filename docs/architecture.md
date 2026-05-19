@@ -25,11 +25,44 @@ Repository mapping:
 - `~/.local/share/hyprbole` is the whole repository checkout, not a partial copy
 - `config/` is copied to `~/.config/...` only when the destination is missing
 - `default/` remains vendor-owned inside the checkout
-- `themes/` remains vendor-owned inside the checkout
-- user theme overlays live under `~/.config/hyprbole/themes/<theme>`
+- `themes/` contains shipped theme packs inside the checkout
+- user-authored themes live under `~/.config/hyprbole/themes/<theme>`
+- external source themes sync under `~/.config/hyprbole/themes/.sources/<source>/themes/<theme>`
 - generated current theme files live under `~/.config/hyprbole/current/theme`
+- the external theme source registry is `~/.config/hyprbole/theme-sources.conf`
+- the seed source registry is `default/hyprbole/theme-sources.conf`
 
 The installer should not overwrite existing user-owned files in `~/.config`. Refresh commands may regenerate files under `~/.config/hyprbole/current` because that directory is Hyprbole-owned runtime state.
+
+External theme repositories are not vendored. `hyprbole theme source sync` is the explicit user action for pulling source themes into user config. Omarchy themes are an external source example, not repository content.
+
+## Install Idempotency Model
+
+`install.sh` must be safe to run repeatedly on the same system. Rerunning the installer is an expected repair path for Hyprbole-owned defaults, but it should not silently consume or duplicate user-owned state.
+
+Repeat install runs may intentionally reapply:
+
+- package installation with `--needed`
+- user and system service enables
+- Hyprbole-owned generated runtime state under `~/.config/hyprbole/current`
+- browser launchers and MIME/default-browser associations
+- browser policy symlinks
+- SDDM theme/config files
+- Limine/Snapper defaults
+- Secret Service setup
+
+Repeat install runs must not duplicate:
+
+- shell source lines in profile files
+- GNOME Keyring `login.keyring` backups when `login.keyring` is already absent
+- SDDM PAM edits
+- desktop entries
+- theme source registry entries
+- service definitions
+
+User-owned config copied from `config/` must remain copy-if-missing by default. Commands that intentionally refresh user config must make that explicit, such as `refresh-all --include-user-configs`.
+
+PAM changes must be deletion-safe and no-op when already applied. For Secret Service, removing SDDM `auth`/`password` `pam_gnome_keyring.so` hooks repeatedly is acceptable; session autostart hooks should remain.
 
 ## Update Model
 
@@ -60,8 +93,39 @@ In practice:
 - short common routes such as `hyprbole menu`, `hyprbole lock`, and `hyprbole suspend` are preferred for frequent interactive use
 - Hyprland binds, Walker/Elephant menus, systemd units, and Nautilus actions can continue to call leaf scripts
 - leaf scripts should prefer delegating to `hyprbole ...` when the behavior is part of the public command surface
+- one-off repair/setup behavior should stay out of the public command surface unless it is a normal user workflow; prefer `doctor --fix` or internal leaf scripts
 
 This keeps the user experience coherent without forcing desktop integration through a single giant script entrypoint.
+
+## Browser Model
+
+Brave Origin Nightly is the default browser package, but Hyprbole owns startup behavior through `bin/hyprbole-launch-brave-origin-nightly`.
+
+The wrapper always passes:
+
+- `--password-store=gnome-libsecret`
+- `--ozone-platform-hint=auto`
+
+`bin/hyprbole-refresh-browser-launchers` generates `~/.local/share/applications/hyprbole-brave-origin-nightly.desktop` and makes it the default browser for XDG settings and common web MIME handlers.
+
+Keep `~/.config/brave-origin-nightly-flags.conf` safe for the upstream package wrapper, which does not handle multiple flags robustly. Hyprbole-specific extra Brave flags belong in `~/.config/hyprbole/brave-origin-nightly-flags.conf` and are read by the Hyprbole wrapper.
+
+Do not globally enable Chromium fractional-scaling flags. They are monitor and Chromium-build dependent; users can opt in through the Hyprbole extra flags file.
+
+## Secret Service Model
+
+GNOME Keyring/libsecret owns Secret Service integration for Brave, VS Code, and other Chromium/Electron-style apps.
+
+Install and repair behavior lives in `bin/hyprbole-setup-secret-service`. It is intentionally not exposed as a public `hyprbole secret-service` route. Users should run `hyprbole doctor --fix` if Secret Service checks fail.
+
+Secret Service setup:
+
+- creates a passwordless `~/.local/share/keyrings/Default_keyring.keyring`
+- writes `~/.local/share/keyrings/default` with `Default_keyring`
+- backs up an encrypted `~/.local/share/keyrings/login.keyring` if present
+- removes SDDM `auth` and `password` `pam_gnome_keyring.so` hooks that recreate encrypted login keyrings
+- keeps SDDM session autostart hooks so the daemon starts on login
+- restarts `gnome-keyring-daemon.service` in the user session when possible
 
 ## Session Ownership
 

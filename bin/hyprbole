@@ -94,7 +94,6 @@ System:
   power off
 
 Maintenance:
-  secret-service setup
   doctor [--verbose] [--fix]
   verify
   update
@@ -575,6 +574,14 @@ doctor_report() {
   fi
 }
 
+doctor_fix_secret_service() {
+  if "$HYPRBOLE_PATH/bin/hyprbole-setup-secret-service" --quiet >/dev/null 2>&1; then
+    doctor_report fix "Secret Service defaults repaired"
+  else
+    doctor_report warn "Secret Service repair failed"
+  fi
+}
+
 doctor_fix_runtime_process() {
   local fix="$1"
 
@@ -676,97 +683,6 @@ doctor_check_user_unit() {
   fi
 }
 
-secret_service_setup_default_keyring() {
-  local message="${1:-1}"
-  local keyring_dir="$HOME/.local/share/keyrings"
-  local default_keyring="$keyring_dir/Default_keyring.keyring"
-  local default_file="$keyring_dir/default"
-  local login_keyring="$keyring_dir/login.keyring"
-  local login_backup
-
-  mkdir -p "$keyring_dir"
-
-  if [[ -e $login_keyring ]]; then
-    login_backup="$login_keyring.bak.$(date +%Y%m%d%H%M%S)"
-    mv "$login_keyring" "$login_backup"
-    if (( message == 1 )); then
-      printf 'Backed up encrypted login keyring to %s\n' "$login_backup"
-    fi
-  fi
-
-  if [[ ! -f $default_keyring ]]; then
-    cat >"$default_keyring" <<EOF
-[keyring]
-display-name=Default keyring
-ctime=$(date +%s)
-mtime=0
-lock-on-idle=false
-lock-after=false
-EOF
-  fi
-
-  printf 'Default_keyring\n' >"$default_file"
-  chmod 700 "$keyring_dir"
-  chmod 600 "$default_keyring"
-  chmod 644 "$default_file"
-}
-
-secret_service_disable_sddm_password_keyring() {
-  [[ -f /etc/pam.d/sddm ]] || return 0
-
-  sudo sed -Ei '/^[[:space:]]*-?auth[[:space:]].*pam_gnome_keyring\.so/d' /etc/pam.d/sddm
-  sudo sed -Ei '/^[[:space:]]*-?password[[:space:]].*pam_gnome_keyring\.so/d' /etc/pam.d/sddm
-}
-
-secret_service_restart_daemon() {
-  if systemctl --user is-active --quiet gnome-keyring-daemon.service; then
-    systemctl --user restart gnome-keyring-daemon.service
-    return 0
-  fi
-
-  return 1
-}
-
-secret_service_setup() {
-  local daemon_restarted=0
-  local user_only=0
-  local message=1
-
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-      --user-only)
-        user_only=1
-        ;;
-      --quiet)
-        message=0
-        ;;
-      *)
-        usage
-        return 1
-        ;;
-    esac
-    shift
-  done
-
-  if (( user_only == 0 )); then
-    secret_service_disable_sddm_password_keyring
-  fi
-
-  secret_service_setup_default_keyring "$message"
-
-  if secret_service_restart_daemon; then
-    daemon_restarted=1
-  fi
-
-  if (( message == 1 )); then
-    if (( daemon_restarted == 1 )); then
-      printf 'Secret Service default keyring configured. Relaunch apps before retesting them.\n'
-    else
-      printf 'Secret Service default keyring configured. Log out and back in before retesting apps.\n'
-    fi
-  fi
-}
-
 secret_service_read_alias() {
   local alias="$1"
   local output
@@ -831,6 +747,7 @@ doctor_check_pam_hook() {
         doctor_report ok "$label"
       else
         doctor_report warn "$label missing"
+        return 1
       fi
       ;;
     absent)
@@ -838,10 +755,12 @@ doctor_check_pam_hook() {
         doctor_report ok "$label"
       else
         doctor_report warn "$label should be removed"
+        return 1
       fi
       ;;
     *)
       doctor_report warn "$label has unknown expectation"
+      return 1
       ;;
   esac
 }
@@ -855,17 +774,20 @@ doctor_check_default_keyring_files() {
   if [[ -f $default_keyring ]]; then
     doctor_report ok "$default_keyring"
   else
-    doctor_report warn "$default_keyring missing; run hyprbole secret-service setup"
+    doctor_report warn "$default_keyring missing; run hyprbole doctor --fix"
+    return 1
   fi
 
   if [[ -f $default_file ]] && grep -Fxq 'Default_keyring' "$default_file"; then
     doctor_report ok "$default_file selects Default_keyring"
   else
     doctor_report warn "$default_file does not select Default_keyring"
+    return 1
   fi
 
   if [[ -f $login_keyring ]]; then
     doctor_report warn "$login_keyring remains; it can keep Secret Service on an encrypted login keyring"
+    return 1
   else
     doctor_report ok "$login_keyring absent"
   fi
@@ -874,12 +796,14 @@ doctor_check_default_keyring_files() {
 doctor_check_secret_service() {
   local alias_path
   local collection_state
+  local repair_needed=0
   local secret_service_ready=0
 
   if command -v secret-tool >/dev/null 2>&1; then
     doctor_report ok "secret-tool command"
   else
     doctor_report miss "secret-tool command"
+    repair_needed=1
   fi
 
   if command -v busctl >/dev/null 2>&1; then
@@ -894,15 +818,19 @@ doctor_check_secret_service() {
     secret_service_ready=1
   else
     doctor_report warn "org.freedesktop.secrets not owned"
+    repair_needed=1
   fi
 
-  doctor_check_default_keyring_files
-  doctor_check_pam_hook /etc/pam.d/sddm "SDDM gnome-keyring auth hook removed" auth "" absent
-  doctor_check_pam_hook /etc/pam.d/sddm "SDDM gnome-keyring password hook removed" password "" absent
-  doctor_check_pam_hook /etc/pam.d/sddm "SDDM gnome-keyring session hook" session auto_start
-  doctor_check_pam_hook /etc/pam.d/sddm-autologin "SDDM autologin gnome-keyring session hook" session auto_start
+  doctor_check_default_keyring_files || repair_needed=1
+  doctor_check_pam_hook /etc/pam.d/sddm "SDDM gnome-keyring auth hook removed" auth "" absent || repair_needed=1
+  doctor_check_pam_hook /etc/pam.d/sddm "SDDM gnome-keyring password hook removed" password "" absent || repair_needed=1
+  doctor_check_pam_hook /etc/pam.d/sddm "SDDM gnome-keyring session hook" session auto_start || repair_needed=1
+  doctor_check_pam_hook /etc/pam.d/sddm-autologin "SDDM autologin gnome-keyring session hook" session auto_start || repair_needed=1
 
   if (( secret_service_ready == 0 )); then
+    if (( DOCTOR_FIX == 1 && repair_needed == 1 )); then
+      doctor_fix_secret_service
+    fi
     return 0
   fi
 
@@ -910,12 +838,14 @@ doctor_check_secret_service() {
     doctor_report ok "Secret Service session opens"
   else
     doctor_report warn "Secret Service session open failed"
+    repair_needed=1
   fi
 
   if alias_path="$(secret_service_read_alias default)"; then
     if [[ $alias_path == /org/freedesktop/secrets/collection/* ]]; then
       if [[ $alias_path == */login ]]; then
         doctor_report warn "Secret Service default alias still points to login keyring"
+        repair_needed=1
       else
         doctor_report ok "Secret Service default alias -> $alias_path"
       fi
@@ -925,15 +855,23 @@ doctor_check_secret_service() {
           doctor_report ok "Secret Service default collection unlocked"
         else
           doctor_report warn "Secret Service default collection locked"
+          repair_needed=1
         fi
       else
-        doctor_report warn "Secret Service default collection unavailable until next login"
+        doctor_report warn "Secret Service default collection unavailable"
+        repair_needed=1
       fi
     else
       doctor_report warn "Secret Service default alias unset"
+      repair_needed=1
     fi
   else
     doctor_report warn "Secret Service default alias unreadable"
+    repair_needed=1
+  fi
+
+  if (( DOCTOR_FIX == 1 && repair_needed == 1 )); then
+    doctor_fix_secret_service
   fi
 }
 
@@ -1692,17 +1630,6 @@ main() {
       case "${2:-}" in
         setup-theme-policy)
           hyprbole-setup-browser-policy
-          ;;
-        *)
-          usage
-          ;;
-      esac
-      ;;
-    secret-service)
-      case "${2:-}" in
-        setup)
-          shift 2
-          secret_service_setup "$@"
           ;;
         *)
           usage

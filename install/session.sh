@@ -126,7 +126,7 @@ setup_sddm() {
     sudo install -Dm644 "$HYPRBOLE_PATH/default/sddm/hyprbole.conf" /etc/sddm.conf.d/hyprbole.conf
   fi
 
-  "$HYPRBOLE_PATH/bin/hyprbole" secret-service setup --quiet
+  "$HYPRBOLE_PATH/bin/hyprbole-setup-secret-service" --quiet
 
   "$HYPRBOLE_PATH/bin/hyprbole-refresh-sddm" >/dev/null 2>&1 || true
 }

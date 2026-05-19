@@ -10,7 +10,8 @@ This repository defines the `hyprbole` desktop layer for Arch Linux. The project
 - `hyprbole` handles the desktop environment layer after first boot
 - `config/` mirrors the editable `~/.config` surface
 - `default/` contains vendor-owned framework pieces and templates
-- `themes/` contains theme packs and theme source data
+- `themes/` contains shipped theme packs only
+- external theme repositories are synced into user config, not vendored into this repo
 
 ## Current Product Direction
 
@@ -22,6 +23,8 @@ This repository defines the `hyprbole` desktop layer for Arch Linux. The project
 - Brave Nightly (`brave-origin-nightly-bin`) browser
 - Nautilus file manager
 - `yay` is installed and used for a small curated AUR package set
+- GNOME Keyring/libsecret owns app Secret Service integration
+- Browser startup is owned by Hyprbole wrappers rather than package launchers where needed
 
 ## Editing Guidance
 
@@ -36,6 +39,7 @@ This repository defines the `hyprbole` desktop layer for Arch Linux. The project
 - Prefer short top-level `hyprbole` routes for very common interactive actions when they improve ergonomics without creating ambiguity
 - Keep `bin/hyprbole-*` leaf scripts for integration points such as Hyprland keybinds, Walker/Elephant menus, systemd services, and file manager actions
 - When a leaf script and `bin/hyprbole` overlap, prefer making the leaf script a thin wrapper around `hyprbole ...`
+- Do not expose one-off install repair commands on the public `hyprbole` command surface unless they are normal user workflows; prefer `doctor --fix` or internal leaf scripts
 
 ## Config Guidance
 
@@ -44,6 +48,35 @@ This repository defines the `hyprbole` desktop layer for Arch Linux. The project
 - Theme-specific data should live under `themes/`
 - Hyprland config should remain modular and should not collapse into a single giant Lua file
 - Waybar config should be simple and robust before becoming feature-dense
+
+## Install Idempotency
+
+- `install.sh` should remain safe to run multiple times on the same system
+- Re-running install is an expected repair path for some Hyprbole-owned defaults
+- Install may reapply Hyprbole-owned generated/runtime state, browser launchers, service enables, system policy links, SDDM theme files, and Secret Service setup
+- Install must not overwrite user-owned config copied from `config/` when the destination already exists, except where a command explicitly asks to refresh user configs
+- Repeat runs must not duplicate shell source lines, keyring backups, PAM lines, desktop entries, source registry entries, or service definitions
+- PAM edits must remain idempotent; deleting already-removed GNOME Keyring `auth`/`password` hooks is acceptable and should be a no-op
+- If an install step cannot be made no-op, document the intentional reapplication and keep it limited to Hyprbole-owned state
+
+## Current Implementation Facts
+
+- Shipped fallback theme is `themes/default-theme`
+- User-authored themes live under `~/.config/hyprbole/themes/<theme>`
+- Synced external source themes live under `~/.config/hyprbole/themes/.sources/<source>/themes/<theme>`
+- Theme source registry lives at `~/.config/hyprbole/theme-sources.conf`
+- Repo seed for that registry lives at `default/hyprbole/theme-sources.conf`
+- Install seeds `theme-sources.conf` only when missing and does not auto-sync external theme repos
+- `hyprbole theme source sync` is the explicit sync command for external theme repos
+- Omarchy themes are an example external source, not vendored repo content
+- Secret Service setup is install-owned via `bin/hyprbole-setup-secret-service`
+- Users should repair Secret Service through `hyprbole doctor --fix`, not a public `secret-service` command
+- Secret Service setup creates a passwordless `Default_keyring`, backs up an encrypted `login.keyring`, removes SDDM `auth`/`password` GNOME Keyring PAM hooks, keeps session autostart hooks, and restarts the user keyring daemon when possible
+- Brave Origin Nightly is launched through `bin/hyprbole-launch-brave-origin-nightly`
+- `bin/hyprbole-refresh-browser-launchers` generates `~/.local/share/applications/hyprbole-brave-origin-nightly.desktop` and makes it the default browser
+- Hyprbole's Brave wrapper always passes `--password-store=gnome-libsecret` and `--ozone-platform-hint=auto`
+- Keep `~/.config/brave-origin-nightly-flags.conf` single-flag safe for the package wrapper; user extra Brave flags belong in `~/.config/hyprbole/brave-origin-nightly-flags.conf`
+- Do not enable Chromium fractional-scaling flags globally; keep them opt-in through the Hyprbole Brave extra flags file
 
 ## Priorities For Early Work
 
