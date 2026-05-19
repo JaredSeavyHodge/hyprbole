@@ -2,6 +2,7 @@
 Description=Walker application service
 PartOf=graphical-session.target
 After=graphical-session.target elephant.service
+ConditionEnvironment=WAYLAND_DISPLAY
 
 [Service]
 Type=simple

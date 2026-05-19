@@ -3,3 +3,13 @@
 # Set a value to true to keep Hyprbole theme changes from mutating that app.
 # skip_browser_theme_changes = true
 # skip_vscode_theme_changes = true
+
+# Runtime default apps used by Hyprbole launch scripts and menus.
+# default_terminal = "ghostty"
+# default_browser = "brave-origin-nightly"
+# default_files = "nautilus"
+
+# Runtime font roles used by Hyprbole refresh scripts and font menus.
+# font_ui = "Inter"
+# font_mono = "JetBrains Mono"
+# font_terminal = "JetBrainsMono Nerd Font Mono"

@@ -3,17 +3,16 @@ HYPRBOLE_AUR_PACKAGES=(
   1password-cli
   brave-origin-nightly-bin
   walker-bin
-  elephant-bin
-  elephant-clipboard-bin
-  elephant-calc-bin
-  elephant-desktopapplications-bin
-  elephant-files-bin
-  elephant-1password-bin
-  elephant-menus-bin
-  elephant-providerlist-bin
-  elephant-runner-bin
-  elephant-symbols-bin
-  elephant-websearch-bin
+  elephant
+  elephant-1password
+  elephant-calc
+  elephant-clipboard
+  elephant-desktopapplications
+  elephant-files
+  elephant-menus
+  elephant-runner
+  elephant-symbols
+  elephant-websearch
   hyprsysteminfo
   limine-snapper-sync
   limine-mkinitcpio-hook

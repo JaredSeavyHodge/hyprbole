@@ -7,15 +7,21 @@
 -- Add only the settings you want to differ from the Hyprbole defaults.
 --
 -- Example: change keyboard layout and repeat settings.
--- hl.input({
---   kb_layout = "us",
---   repeat_rate = 40,
---   repeat_delay = 300,
+-- hl.config({
+--   input = {
+--     kb_layout = "us",
+--     repeat_rate = 40,
+--     repeat_delay = 300,
+--   },
 -- })
 --
 -- Example: tune touchpad behavior.
--- hl.touchpad({
---   natural_scroll = true,
---   tap_to_click = true,
---   clickfinger_behavior = true,
+-- hl.config({
+--   input = {
+--     touchpad = {
+--       natural_scroll = true,
+--       tap_to_click = true,
+--       clickfinger_behavior = true,
+--     },
+--   },
 -- })

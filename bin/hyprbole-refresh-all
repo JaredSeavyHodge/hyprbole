@@ -44,6 +44,10 @@ for relative_path in \
   elephant/menus/hyprbole-capture.toml \
   elephant/menus/hyprbole-controls.toml \
   elephant/menus/hyprbole-cycle-wallpaper.toml \
+  elephant/menus/hyprbole-font-mono.lua \
+  elephant/menus/hyprbole-font-terminal.lua \
+  elephant/menus/hyprbole-font-ui.lua \
+  elephant/menus/hyprbole-fonts.toml \
   elephant/menus/hyprbole-install.toml \
   elephant/menus/hyprbole-keybinds.lua \
   elephant/menus/hyprbole-power.toml \
@@ -75,6 +79,7 @@ done
 
 hyprbole-refresh-btop >/dev/null 2>&1 || true
 hyprbole-refresh-gnome >/dev/null 2>&1 || true
+hyprbole-refresh-fonts >/dev/null 2>&1 || true
 hyprbole-refresh-vscode >/dev/null 2>&1 || true
 hyprbole-refresh-shell >/dev/null 2>&1 || true
 systemctl --user daemon-reload >/dev/null 2>&1 || true

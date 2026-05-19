@@ -8,5 +8,8 @@
 -- cleanly into the other user config files yet.
 --
 -- Example: add a floating rule for a specific app.
--- hl.windowrule = hl.windowrule or function(...) end
--- -- Add your local override helpers or direct Hyprland rules here.
+-- hl.window_rule({
+--   name = "float-example",
+--   match = { class = "^example$" },
+--   float = true,
+-- })

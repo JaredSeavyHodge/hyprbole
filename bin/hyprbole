@@ -9,7 +9,9 @@ source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
 
 UPDATE_ORPHANS_REMOVED=0
 UPDATE_CACHE_RECLAIMED_BYTES=0
-HYPRBOLE_USER_UNITS=(pipewire.service pipewire-pulse.service wireplumber.service swayosd-server.service polkit-gnome-agent.service gnome-keyring-daemon.socket elephant.service walker.service swaync.service)
+HYPRBOLE_CORE_USER_UNITS=(pipewire.service pipewire-pulse.service wireplumber.service gnome-keyring-daemon.socket)
+HYPRBOLE_GRAPHICAL_USER_UNITS=(swayosd-server.service polkit-gnome-agent.service elephant.service walker.service swaync.service)
+HYPRBOLE_USER_UNITS=("${HYPRBOLE_CORE_USER_UNITS[@]}" "${HYPRBOLE_GRAPHICAL_USER_UNITS[@]}")
 
 if [[ ${1:-} == "update" ]] && [[ -z ${HYPRBOLE_UPDATE_LOGGED:-} ]] && command -v script >/dev/null 2>&1; then
   script_command=$(printf '%q ' "$0" "$@")
@@ -28,6 +30,8 @@ Theme:
   theme list
   theme current
   theme set <name>
+  theme font current [ui|mono|terminal]
+  theme font set <ui|mono|terminal> <family>
   theme wallpaper list [theme]
   theme wallpaper current
   theme wallpaper set [theme] <file>
@@ -86,7 +90,7 @@ System:
   power off
 
 Maintenance:
-  doctor [--verbose]
+  doctor [--verbose] [--fix]
   verify
   update
   refresh-limine
@@ -95,7 +99,71 @@ Maintenance:
   refresh-all
   refresh-shell
   migrate
+  default-app <role> [command|label]
 EOF
+}
+
+default_app() {
+  local role="${1:-}"
+  local field="${2:-name}"
+  local app
+
+  [[ -n $role ]] || {
+    usage
+    return 1
+  }
+
+  if ! app="$(hyprbole_default_app "$role")"; then
+    usage
+    return 1
+  fi
+
+  case "$field" in
+    name)
+      printf '%s\n' "$app"
+      ;;
+    command)
+      hyprbole_app_command "$app"
+      ;;
+    label)
+      hyprbole_app_label "$app"
+      ;;
+    *)
+      usage
+      return 1
+      ;;
+  esac
+}
+
+font_config() {
+  local command="${1:-}"
+  local role="${2:-}"
+
+  case "$command" in
+    current)
+      if [[ -n $role ]]; then
+        hyprbole_default_font "$role"
+      else
+        printf 'ui=%s\n' "$(hyprbole_default_font ui)"
+        printf 'mono=%s\n' "$(hyprbole_default_font mono)"
+        printf 'terminal=%s\n' "$(hyprbole_default_font terminal)"
+      fi
+      ;;
+    set)
+      [[ -n $role && -n ${3:-} ]] || usage
+      shift 2
+      hyprbole_set_font "$role" "$*"
+      hyprbole_apply_font_settings
+      hyprbole-restart-waybar >/dev/null 2>&1 || true
+      hyprbole-restart-swayosd >/dev/null 2>&1 || true
+      hyprbole-restart-terminal >/dev/null 2>&1 || true
+      hyprctl reload >/dev/null 2>&1 || true
+      ;;
+    *)
+      usage
+      return 1
+      ;;
+  esac
 }
 
 update_repo() {
@@ -457,6 +525,7 @@ doctor_report() {
 
   case "$status" in
     ok) DOCTOR_SECTION_OK=$((DOCTOR_SECTION_OK + 1)) ;;
+    fix) DOCTOR_SECTION_OK=$((DOCTOR_SECTION_OK + 1)) ;;
     warn) DOCTOR_SECTION_WARN=$((DOCTOR_SECTION_WARN + 1)) ;;
     miss) DOCTOR_SECTION_MISS=$((DOCTOR_SECTION_MISS + 1)) ;;
   esac
@@ -466,26 +535,136 @@ doctor_report() {
   fi
 }
 
+doctor_fix_runtime_process() {
+  local fix="$1"
+
+  case "$fix" in
+    waybar)
+      hyprbole-restart-waybar
+      ;;
+    wallpaper)
+      hyprbole-restart-wallpaper
+      ;;
+    swaync)
+      systemctl --user restart swaync.service
+      ;;
+    swayosd-server)
+      systemctl --user restart swayosd-server.service
+      ;;
+    walker)
+      systemctl --user restart walker.service
+      ;;
+    elephant)
+      systemctl --user restart elephant.service
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+doctor_check_runtime_process() {
+  local process="$1"
+  local label="$2"
+  local fix="$3"
+
+  if pgrep -x "$process" >/dev/null 2>&1; then
+    doctor_report ok "$label running"
+    return 0
+  fi
+
+  if (( DOCTOR_FIX == 1 )); then
+    if doctor_fix_runtime_process "$fix" >/dev/null 2>&1; then
+      sleep 1
+      if pgrep -x "$process" >/dev/null 2>&1; then
+        doctor_report fix "$label restarted"
+      else
+        doctor_report warn "$label still not running after restart"
+      fi
+    else
+      doctor_report warn "$label restart failed"
+    fi
+  else
+    doctor_report warn "$label not running"
+  fi
+}
+
+doctor_check_user_unit() {
+  local unit="$1"
+  local require_active="$2"
+
+  if systemctl --user is-active "$unit" >/dev/null 2>&1; then
+    doctor_report ok "$unit active"
+    return 0
+  fi
+
+  if systemctl --user is-enabled "$unit" >/dev/null 2>&1; then
+    if (( require_active == 0 )); then
+      doctor_report ok "$unit enabled for graphical session"
+      return 0
+    fi
+
+    if (( DOCTOR_FIX == 1 )); then
+      systemctl --user reset-failed "$unit" >/dev/null 2>&1 || true
+      if systemctl --user restart "$unit" >/dev/null 2>&1 && systemctl --user is-active "$unit" >/dev/null 2>&1; then
+        doctor_report fix "$unit restarted"
+      else
+        doctor_report warn "$unit enabled but inactive; restart failed"
+      fi
+    else
+      doctor_report warn "$unit enabled but inactive"
+    fi
+    return 0
+  fi
+
+  if (( DOCTOR_FIX == 1 )); then
+    if (( require_active == 1 )); then
+      if systemctl --user enable --now "$unit" >/dev/null 2>&1 && systemctl --user is-active "$unit" >/dev/null 2>&1; then
+        doctor_report fix "$unit enabled and started"
+      else
+        doctor_report miss "$unit service"
+      fi
+    else
+      if systemctl --user enable "$unit" >/dev/null 2>&1; then
+        doctor_report fix "$unit enabled"
+      else
+        doctor_report miss "$unit service"
+      fi
+    fi
+  else
+    doctor_report miss "$unit service"
+  fi
+}
+
 doctor() {
-  local arg="${1:-}"
   local binary
   local failed_units
+  local graphical_session_active=0
   local package
   local path
   local policy_path
   local unit
 
-  case "$arg" in
-    "") DOCTOR_VERBOSE=0 ;;
-    --verbose|-v) DOCTOR_VERBOSE=1 ;;
-    *) usage ;;
-  esac
-
+  local DOCTOR_FIX=0
   local DOCTOR_SECTION=""
   local DOCTOR_SECTION_OK=0
   local DOCTOR_SECTION_WARN=0
   local DOCTOR_SECTION_MISS=0
   local DOCTOR_SECTION_COUNT=0
+
+  DOCTOR_VERBOSE=0
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --fix) DOCTOR_FIX=1 ;;
+      --verbose|-v) DOCTOR_VERBOSE=1 ;;
+      *) usage; return 1 ;;
+    esac
+    shift
+  done
+
+  if systemctl --user is-active --quiet graphical-session.target; then
+    graphical_session_active=1
+  fi
 
   doctor_section_start "Checkout"
   if [[ -d $HYPRBOLE_PATH/.git ]]; then
@@ -526,7 +705,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Packages: launcher"
-  for package in walker-bin elephant-bin elephant-clipboard-bin elephant-calc-bin elephant-desktopapplications-bin elephant-files-bin elephant-1password-bin elephant-menus-bin elephant-providerlist-bin elephant-runner-bin elephant-symbols-bin elephant-websearch-bin; do
+  for package in walker-bin elephant elephant-1password elephant-calc elephant-clipboard elephant-desktopapplications elephant-files elephant-menus elephant-runner elephant-symbols elephant-websearch; do
     if pacman -Q "$package" >/dev/null 2>&1; then
       doctor_report ok "$package"
     else
@@ -536,7 +715,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Packages: system tools"
-  for package in yay-bin bash-completion mise starship zoxide fzf bat wl-clipboard grim slurp satty pavucontrol nm-connection-editor network-manager-applet blueman gnome-keyring playerctl brightnessctl xdg-user-dirs xdg-utils gvfs gvfs-mtp libsecret git curl jq imagemagick pacman-contrib limine noto-fonts noto-fonts-emoji rust ttf-jetbrains-mono-nerd ttf-nerd-fonts-symbols base-devel snapper limine-snapper-sync limine-mkinitcpio-hook hyprsysteminfo; do
+  for package in yay-bin bash-completion mise starship zoxide fzf bat fd wl-clipboard grim slurp satty pavucontrol nm-connection-editor network-manager-applet blueman gnome-keyring playerctl brightnessctl xdg-user-dirs xdg-utils gvfs gvfs-mtp libsecret git curl jq imagemagick libqalculate pacman-contrib limine noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra rust ttf-cascadia-code ttf-dejavu ttf-fira-code ttf-hack ttf-jetbrains-mono ttf-jetbrains-mono-nerd ttf-liberation ttf-nerd-fonts-symbols ttf-opensans ttf-roboto ttf-ubuntu-font-family inter-font otf-font-awesome papirus-icon-theme adwaita-icon-theme hicolor-icon-theme base-devel snapper limine-snapper-sync limine-mkinitcpio-hook hyprsysteminfo; do
     if pacman -Q "$package" >/dev/null 2>&1; then
       doctor_report ok "$package"
     else
@@ -556,20 +735,47 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Services: user"
-  for unit in "${HYPRBOLE_USER_UNITS[@]}"; do
-    if systemctl --user is-active "$unit" >/dev/null 2>&1; then
-      doctor_report ok "$unit active"
-    elif systemctl --user is-enabled "$unit" >/dev/null 2>&1; then
-      doctor_report warn "$unit enabled but inactive"
-    else
-      doctor_report miss "$unit service"
-    fi
+  for unit in "${HYPRBOLE_CORE_USER_UNITS[@]}"; do
+    doctor_check_user_unit "$unit" 1
+  done
+
+  for unit in "${HYPRBOLE_GRAPHICAL_USER_UNITS[@]}"; do
+    doctor_check_user_unit "$unit" "$graphical_session_active"
   done
 
   failed_units="$(systemctl --user list-units --state=failed --no-legend --plain 2>/dev/null || true)"
   if [[ -n $failed_units ]]; then
-    doctor_report warn "failed user services present"
-    printf '%s\n' "$failed_units"
+    if (( DOCTOR_FIX == 1 )); then
+      systemctl --user reset-failed >/dev/null 2>&1 || true
+      failed_units="$(systemctl --user list-units --state=failed --no-legend --plain 2>/dev/null || true)"
+      if [[ -n $failed_units ]]; then
+        doctor_report warn "failed user services remain"
+        printf '%s\n' "$failed_units"
+      else
+        doctor_report fix "failed user service state reset"
+      fi
+    else
+      doctor_report warn "failed user services present"
+      printf '%s\n' "$failed_units"
+    fi
+  fi
+  doctor_section_finish
+
+  doctor_section_start "Runtime"
+  if (( graphical_session_active == 1 )); then
+    doctor_check_runtime_process waybar "Waybar" waybar
+    doctor_check_runtime_process swaync "SwayNC" swaync
+    doctor_check_runtime_process swayosd-server "SwayOSD server" swayosd-server
+    doctor_check_runtime_process walker "Walker" walker
+    doctor_check_runtime_process elephant "Elephant" elephant
+
+    if [[ -f $HYPRBOLE_CONFIG_PATH/current/background ]]; then
+      doctor_check_runtime_process awww-daemon "wallpaper daemon" wallpaper
+    else
+      doctor_report warn "current wallpaper is missing"
+    fi
+  else
+    doctor_report ok "graphical session inactive; runtime checks skipped"
   fi
   doctor_section_finish
 
@@ -756,23 +962,23 @@ launch_my_wallpaper_menu() {
 }
 
 launch_update() {
-  exec ghostty -e bash -lc 'hyprbole update; status=$?; if (( status != 0 )); then printf "\nUpdate failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
+  hyprbole_launch_terminal_shell 'hyprbole update; status=$?; if (( status != 0 )); then printf "\nUpdate failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
 }
 
 launch_pkg_installed() {
-  exec ghostty -e bash -lc 'hyprbole pkg installed; status=$?; if (( status != 0 )); then printf "\nInstalled package browser exited with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
+  hyprbole_launch_terminal_shell 'hyprbole pkg installed; status=$?; if (( status != 0 )); then printf "\nInstalled package browser exited with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
 }
 
 launch_pkg_install() {
-  exec ghostty -e bash -lc 'hyprbole pkg install; status=$?; if (( status != 0 )); then printf "\nPackage install failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
+  hyprbole_launch_terminal_shell 'hyprbole pkg install; status=$?; if (( status != 0 )); then printf "\nPackage install failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
 }
 
 launch_pkg_aur_install() {
-  exec ghostty -e bash -lc 'hyprbole pkg aur-install; status=$?; if (( status != 0 )); then printf "\nAUR package install failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
+  hyprbole_launch_terminal_shell 'hyprbole pkg aur-install; status=$?; if (( status != 0 )); then printf "\nAUR package install failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
 }
 
 launch_pkg_remove() {
-  exec ghostty -e bash -lc 'hyprbole pkg remove; status=$?; if (( status != 0 )); then printf "\nPackage removal failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
+  hyprbole_launch_terminal_shell 'hyprbole pkg remove; status=$?; if (( status != 0 )); then printf "\nPackage removal failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
 }
 
 pkg_install() {
@@ -1066,6 +1272,10 @@ main() {
           [[ -n ${3:-} ]] || usage
           set_theme "$3"
           ;;
+        font)
+          shift 2
+          font_config "$@"
+          ;;
         wallpaper)
           case "${3:-}" in
             current)
@@ -1133,7 +1343,7 @@ main() {
       launch_themes
       ;;
     doctor)
-      doctor "${2:-}"
+      doctor "${@:2}"
       ;;
     verify)
       verify_system
@@ -1310,6 +1520,9 @@ main() {
       ;;
     migrate)
       hyprbole-migrate
+      ;;
+    default-app)
+      default_app "${2:-}" "${3:-name}"
       ;;
     ""|--help|-h)
       usage

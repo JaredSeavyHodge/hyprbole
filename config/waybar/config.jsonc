@@ -17,7 +17,7 @@
     "exec": "$HOME/.local/share/hyprbole/bin/hyprbole-package-updates",
     "interval": 21600,
     "tooltip-format": "Updates available",
-    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-launch-terminal -e $HOME/.local/share/hyprbole/bin/hyprbole update"
+    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-launch-terminal $HOME/.local/share/hyprbole/bin/hyprbole update"
   },
   "custom/recording-indicator": {
     "exec": "$HOME/.local/share/hyprbole/bin/hyprbole-record-status",

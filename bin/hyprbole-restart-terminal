@@ -4,6 +4,14 @@
 
 set -euo pipefail
 
-if pgrep -x ghostty >/dev/null 2>&1; then
-  killall -SIGUSR2 ghostty >/dev/null 2>&1 || true
-fi
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+
+app="$(hyprbole_default_app terminal)"
+
+case "$app" in
+  ghostty)
+    if pgrep -x ghostty >/dev/null 2>&1; then
+      killall -SIGUSR2 ghostty >/dev/null 2>&1 || true
+    fi
+    ;;
+esac

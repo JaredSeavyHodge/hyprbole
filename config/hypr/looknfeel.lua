@@ -6,19 +6,19 @@
 -- Use this file for gaps, borders, blur, opacity, animations, and decoration tweaks.
 -- Theme-driven defaults still apply; add local overrides only where you want custom behavior.
 --
--- Example: change gaps and border size.
--- hl.general({
---   gaps_in = 6,
---   gaps_out = 12,
---   border_size = 2,
--- })
---
--- Example: tune decoration and blur.
--- hl.decoration({
---   rounding = 10,
---   blur = {
---     enabled = true,
---     size = 6,
---     passes = 2,
+-- Example: change gaps, border size, decoration, and blur.
+-- hl.config({
+--   general = {
+--     gaps_in = 6,
+--     gaps_out = 12,
+--     border_size = 2,
+--   },
+--   decoration = {
+--     rounding = 30,
+--     blur = {
+--       enabled = true,
+--       size = 6,
+--       passes = 2,
+--     },
 --   },
 -- })

@@ -10,7 +10,7 @@
 -- The keybind cheat sheet menu reads this file too, so new binds added here will show up.
 --
 -- Example: open a terminal file manager.
--- hl.bind("SUPER + E", hl.dsp.exec_cmd("ghostty -e yazi"))
+-- hl.bind("SUPER + E", hl.dsp.exec_cmd("hyprbole-launch-terminal yazi"))
 --
 -- Example: quick note capture in Obsidian.
 -- hl.bind("SUPER + ALT + N", hl.dsp.exec_cmd("obsidian obsidian://new"))

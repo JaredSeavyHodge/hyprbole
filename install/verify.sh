@@ -1,10 +1,33 @@
+verify_runtime_process() {
+  local process="$1"
+  local label="$2"
+  local attempt
+
+  for attempt in 1 2 3; do
+    if pgrep -x "$process" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 0.2
+  done
+
+  printf 'graphical runtime process is not running: %s (%s)\n' "$label" "$process" >&2
+  return 1
+}
+
 verify_installation() {
   local failures=0
   local binary
   local failed_units
+  local graphical_session_active=0
+  local process_label
   local unit
-  local active_user_units=(pipewire.service pipewire-pulse.service wireplumber.service swayosd-server.service polkit-gnome-agent.service elephant.service walker.service swaync.service)
-  local enabled_user_units=(gnome-keyring-daemon.socket)
+  local active_user_units=(pipewire.service pipewire-pulse.service wireplumber.service)
+  local graphical_user_units=(swayosd-server.service polkit-gnome-agent.service elephant.service walker.service swaync.service)
+  local enabled_user_units=(gnome-keyring-daemon.socket "${graphical_user_units[@]}")
+
+  if systemctl --user is-active --quiet graphical-session.target; then
+    graphical_session_active=1
+  fi
 
   for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper sddm limine-update; do
     if ! cmd_present "$binary"; then
@@ -72,6 +95,30 @@ verify_installation() {
     fi
   done
 
+  if (( graphical_session_active == 1 )); then
+    for unit in "${graphical_user_units[@]}"; do
+      if ! systemctl --user is-active "$unit" >/dev/null 2>&1; then
+        printf 'graphical user service is not active: %s\n' "$unit" >&2
+        failures=$((failures + 1))
+      fi
+    done
+
+    for process_label in \
+      waybar:Waybar \
+      swaync:SwayNC \
+      swayosd-server:SwayOSD \
+      walker:Walker \
+      elephant:Elephant; do
+      if ! verify_runtime_process "${process_label%%:*}" "${process_label#*:}"; then
+        failures=$((failures + 1))
+      fi
+    done
+
+    if [[ -f $HYPRBOLE_CONFIG_PATH/current/background ]] && ! verify_runtime_process awww-daemon "wallpaper daemon"; then
+      failures=$((failures + 1))
+    fi
+  fi
+
   if command -v snapper >/dev/null 2>&1; then
     if ! systemctl is-enabled snapper-cleanup.timer >/dev/null 2>&1; then
       printf 'warning: system timer is not enabled: snapper-cleanup.timer\n' >&2
@@ -80,9 +127,14 @@ verify_installation() {
 
   failed_units="$(systemctl --user list-units --state=failed --no-legend --plain 2>/dev/null || true)"
   if [[ -n $failed_units ]]; then
-    printf 'failed user services remain:\n' >&2
-    printf '%s\n' "$failed_units" >&2
-    failures=$((failures + 1))
+    if (( graphical_session_active == 1 )); then
+      printf 'failed user services remain:\n' >&2
+      printf '%s\n' "$failed_units" >&2
+      failures=$((failures + 1))
+    else
+      printf 'warning: failed user services are present before graphical login:\n' >&2
+      printf '%s\n' "$failed_units" >&2
+    fi
   fi
 
   if (( failures > 0 )); then

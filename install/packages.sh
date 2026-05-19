@@ -31,6 +31,7 @@ HYPRBOLE_OFFICIAL_PACKAGES=(
   zoxide
   fzf
   bat
+  fd
   obsidian
   opencode
   code
@@ -56,13 +57,30 @@ HYPRBOLE_OFFICIAL_PACKAGES=(
   curl
   jq
   imagemagick
+  libqalculate
   pacman-contrib
   limine
   noto-fonts
+  noto-fonts-cjk
   noto-fonts-emoji
+  noto-fonts-extra
   rust
+  ttf-cascadia-code
+  ttf-dejavu
+  ttf-fira-code
+  ttf-hack
+  ttf-jetbrains-mono
   ttf-jetbrains-mono-nerd
+  ttf-liberation
   ttf-nerd-fonts-symbols
+  ttf-opensans
+  ttf-roboto
+  ttf-ubuntu-font-family
+  inter-font
+  otf-font-awesome
+  papirus-icon-theme
+  adwaita-icon-theme
+  hicolor-icon-theme
   base-devel
   snapper
 )

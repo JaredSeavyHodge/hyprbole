@@ -4,12 +4,14 @@
 
 set -euo pipefail
 
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+
 if command -v fastfetch >/dev/null 2>&1; then
-  exec ghostty --class=com.hyprbole.system --title=system -e bash -lc 'fastfetch; exec bash'
+  hyprbole_launch_floating_terminal com.hyprbole.system system bash -lc 'fastfetch; exec bash'
 fi
 
 if command -v neofetch >/dev/null 2>&1; then
-  exec ghostty --class=com.hyprbole.system --title=system -e bash -lc 'neofetch; exec bash'
+  hyprbole_launch_floating_terminal com.hyprbole.system system bash -lc 'neofetch; exec bash'
 fi
 
-exec ghostty --class=com.hyprbole.system --title=system -e bash -lc 'printf "fastfetch/neofetch not installed\n"; exec bash'
+hyprbole_launch_floating_terminal com.hyprbole.system system bash -lc 'printf "fastfetch/neofetch not installed\n"; exec bash'

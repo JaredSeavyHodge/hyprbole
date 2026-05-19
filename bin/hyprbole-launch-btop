@@ -4,4 +4,6 @@
 
 set -euo pipefail
 
-exec ghostty --class=com.hyprbole.btop --title=btop -e btop
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+
+hyprbole_launch_floating_terminal com.hyprbole.btop btop btop

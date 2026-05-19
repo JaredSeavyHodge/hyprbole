@@ -7,14 +7,16 @@
 -- Keep only the monitor rules you actually want to own locally.
 --
 -- Example: set a preferred monitor mode and position.
--- hl.monitor("DP-1", {
+-- hl.monitor({
+--   output = "DP-1",
 --   mode = "2560x1440@144",
 --   position = "0x0",
 --   scale = 1,
 -- })
 --
 -- Example: place a second display to the right of the primary display.
--- hl.monitor("HDMI-A-1", {
+-- hl.monitor({
+--   output = "HDMI-A-1",
 --   mode = "1920x1080@60",
 --   position = "2560x0",
 --   scale = 1,

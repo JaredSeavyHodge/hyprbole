@@ -30,6 +30,15 @@
 - Add reset/refresh flows
 - Add higher-level `hyprbole` command surface
 
+## Future Features
+
+- Add a Walker/Elephant menu for switching runtime default apps such as browser, terminal, and file manager.
+- Add optional Walker/Elephant provider installation from the Hyprbole menu for extras such as package search, provider list, bookmarks, snippets, bluetooth, and window actions.
+- Store selected runtime defaults in `~/.config/hyprbole/settings.toml` and keep install-time package defaults hard-coded for now.
+- Have runtime wrappers and menus honor selected defaults for roles such as browser, terminal, file manager, image viewer, video player, and PDF viewer.
+- Add a MIME/default-app refresh command that applies selected roles through `xdg-mime` and `xdg-settings` for web links, directories, images, video/audio files, PDFs, text/code files, and archives.
+- Let the default-app menu install missing supported alternatives, update `settings.toml`, refresh MIME associations, and restart or reload affected runtime components.
+
 ## Current Open Questions
 
 - Exact package target or replacement for `hyprcapture`

@@ -4,18 +4,21 @@
 
 set -euo pipefail
 
-HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+
 USER_BROWSER_POLICY="$HYPRBOLE_CONFIG_PATH/current/browser-policy.json"
+browser_app="$(hyprbole_default_app browser)"
 
 mkdir -p "$(dirname "$USER_BROWSER_POLICY")"
 if [[ ! -f $USER_BROWSER_POLICY ]]; then
   printf '{"BrowserThemeColor":"#1c2027","BrowserColorScheme":"device"}\n' >"$USER_BROWSER_POLICY"
 fi
 
-POLICY_DIR=/etc/brave/policies/managed
-
-sudo install -d "$POLICY_DIR"
-sudo rm -f "$POLICY_DIR/color.json"
-sudo ln -s "$USER_BROWSER_POLICY" "$POLICY_DIR/color.json"
+while IFS= read -r policy_dir; do
+  [[ -n $policy_dir ]] || continue
+  sudo install -d "$policy_dir"
+  sudo rm -f "$policy_dir/color.json"
+  sudo ln -s "$USER_BROWSER_POLICY" "$policy_dir/color.json"
+done < <(hyprbole_browser_policy_dirs "$browser_app")
 
 hyprbole-refresh-browser

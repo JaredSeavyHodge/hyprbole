@@ -11,3 +11,8 @@ actions = { activate = "hyprbole themes" }
 text = "Wallpaper Settings"
 subtext = "Theme, custom, and cycling wallpaper options"
 submenu = "hyprbole-wallpaper-settings"
+
+[[entries]]
+text = "Fonts"
+subtext = "Choose UI, monospace, and terminal fonts"
+submenu = "hyprbole-fonts"

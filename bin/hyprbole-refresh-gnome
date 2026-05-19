@@ -4,7 +4,8 @@
 
 set -euo pipefail
 
-HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+
 CURRENT_THEME_DIR="$HYPRBOLE_CONFIG_PATH/current/theme"
 
 if [[ -f $CURRENT_THEME_DIR/light.mode ]]; then
@@ -19,4 +20,12 @@ if [[ -f $CURRENT_THEME_DIR/icons.theme ]]; then
   gsettings set org.gnome.desktop.interface icon-theme "$(<$CURRENT_THEME_DIR/icons.theme)" || true
 else
   gsettings set org.gnome.desktop.interface icon-theme "Yaru-blue" || true
+fi
+
+if command -v gsettings >/dev/null 2>&1; then
+  ui_font="$(hyprbole_default_font ui)"
+  mono_font="$(hyprbole_default_font mono)"
+  gsettings set org.gnome.desktop.interface font-name "$ui_font 10" || true
+  gsettings set org.gnome.desktop.interface document-font-name "$ui_font 10" || true
+  gsettings set org.gnome.desktop.interface monospace-font-name "$mono_font 10" || true
 fi

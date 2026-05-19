@@ -4,4 +4,14 @@
 
 set -euo pipefail
 
-exec brave-origin-nightly "$@"
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+
+app="$(hyprbole_default_app browser)"
+command_name="$(hyprbole_app_command "$app")"
+
+command -v "$command_name" >/dev/null 2>&1 || {
+  printf 'missing browser command for %s: %s\n' "$app" "$command_name" >&2
+  exit 1
+}
+
+exec "$command_name" "$@"

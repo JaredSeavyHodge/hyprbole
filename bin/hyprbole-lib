@@ -4,6 +4,8 @@ set -euo pipefail
 
 export HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
 export HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
+export HYPRBOLE_CONFIG_BACKUP_KEEP="${HYPRBOLE_CONFIG_BACKUP_KEEP:-3}"
+HYPRBOLE_SETTINGS_PATH="$HYPRBOLE_CONFIG_PATH/settings.toml"
 
 hyprbole_log() {
   printf '%s\n' "$1"
@@ -11,6 +13,252 @@ hyprbole_log() {
 
 hyprbole_cmd_present() {
   command -v "$1" >/dev/null 2>&1
+}
+
+hyprbole_setting_value() {
+  local key="$1"
+
+  [[ -f $HYPRBOLE_SETTINGS_PATH ]] || return 1
+  sed -n "s/^[[:space:]]*${key}[[:space:]]*=[[:space:]]*\"\([^\"]*\)\".*/\1/p" "$HYPRBOLE_SETTINGS_PATH" | tail -n 1
+}
+
+hyprbole_default_app() {
+  local role="$1"
+  local app=""
+
+  app="$(hyprbole_setting_value "default_${role}" || true)"
+
+  if [[ -z $app ]]; then
+    case "$role" in
+      terminal) app="ghostty" ;;
+      browser) app="brave-origin-nightly" ;;
+      files) app="nautilus" ;;
+      *) return 1 ;;
+    esac
+  fi
+
+  printf '%s\n' "$app"
+}
+
+hyprbole_default_font() {
+  local role="$1"
+  local font=""
+
+  font="$(hyprbole_setting_value "font_${role}" || true)"
+
+  if [[ -z $font ]]; then
+    case "$role" in
+      ui) font="Inter" ;;
+      mono) font="JetBrains Mono" ;;
+      terminal) font="JetBrainsMono Nerd Font Mono" ;;
+      *) return 1 ;;
+    esac
+  fi
+
+  printf '%s\n' "$font"
+}
+
+hyprbole_set_setting() {
+  local key="$1"
+  local value="$2"
+  local escaped_value
+  local tmp_file
+
+  mkdir -p "$HYPRBOLE_CONFIG_PATH"
+  touch "$HYPRBOLE_SETTINGS_PATH"
+
+  escaped_value="$(printf '%s' "$value" | sed 's/[&|\\]/\\&/g; s/"/\\"/g')"
+  tmp_file="$(mktemp)"
+  if grep -Eq "^[[:space:]]*#?[[:space:]]*${key}[[:space:]]*=" "$HYPRBOLE_SETTINGS_PATH"; then
+    sed "s|^[[:space:]]*#\?[[:space:]]*${key}[[:space:]]*=.*|${key} = \"$escaped_value\"|" "$HYPRBOLE_SETTINGS_PATH" >"$tmp_file"
+  else
+    cp "$HYPRBOLE_SETTINGS_PATH" "$tmp_file"
+    printf '%s = "%s"\n' "$key" "${value//\"/\\\"}" >>"$tmp_file"
+  fi
+
+  mv "$tmp_file" "$HYPRBOLE_SETTINGS_PATH"
+}
+
+hyprbole_set_font() {
+  local role="$1"
+  local font="$2"
+
+  case "$role" in
+    ui|mono|terminal) ;;
+    *)
+      printf 'unknown font role: %s\n' "$role" >&2
+      return 1
+      ;;
+  esac
+
+  [[ -n $font ]] || {
+    printf 'font cannot be empty\n' >&2
+    return 1
+  }
+
+  hyprbole_set_setting "font_${role}" "$font"
+}
+
+hyprbole_sed_pipe_escape() {
+  printf '%s' "$1" | sed 's/[&|\\]/\\&/g'
+}
+
+hyprbole_css_double_escape() {
+  hyprbole_sed_pipe_escape "$1" | sed 's/"/\\"/g'
+}
+
+hyprbole_css_single_escape() {
+  hyprbole_sed_pipe_escape "$1" | sed "s/'/\\\\'/g"
+}
+
+hyprbole_apply_font_settings() {
+  local ui_font
+  local mono_font
+  local terminal_font
+
+  ui_font="$(hyprbole_default_font ui)"
+  mono_font="$(hyprbole_default_font mono)"
+  terminal_font="$(hyprbole_default_font terminal)"
+
+  if [[ -f $HOME/.config/waybar/style.css ]]; then
+    sed -i "s|font-family: \"[^\"]*\";|font-family: \"$(hyprbole_css_double_escape "$mono_font")\";|" "$HOME/.config/waybar/style.css"
+  fi
+
+  if [[ -f $HOME/.config/walker/themes/hyprbole/style.css ]]; then
+    sed -i "s|font-family: [^;]*;|font-family: \"$(hyprbole_css_double_escape "$ui_font")\";|" "$HOME/.config/walker/themes/hyprbole/style.css"
+  fi
+
+  if [[ -f $HOME/.config/swayosd/style.css ]]; then
+    sed -i "s|font-family: '[^']*';|font-family: '$(hyprbole_css_single_escape "$mono_font")';|" "$HOME/.config/swayosd/style.css"
+  fi
+
+  if [[ -f $HOME/.config/ghostty/config ]]; then
+    sed -i "s|^font-family = .*|font-family = \"$(hyprbole_css_double_escape "$terminal_font")\"|" "$HOME/.config/ghostty/config"
+  fi
+
+  if [[ -f $HOME/.config/hypr/hyprlock.conf ]]; then
+    sed -i "s|^    font_family = .*|    font_family = $(hyprbole_sed_pipe_escape "$mono_font")|" "$HOME/.config/hypr/hyprlock.conf"
+  fi
+
+  if command -v gsettings >/dev/null 2>&1; then
+    gsettings set org.gnome.desktop.interface font-name "$ui_font 10" >/dev/null 2>&1 || true
+    gsettings set org.gnome.desktop.interface document-font-name "$ui_font 10" >/dev/null 2>&1 || true
+    gsettings set org.gnome.desktop.interface monospace-font-name "$mono_font 10" >/dev/null 2>&1 || true
+  fi
+}
+
+hyprbole_app_label() {
+  local app="$1"
+
+  case "$app" in
+    brave-origin-nightly) printf 'Brave Origin Nightly\n' ;;
+    chromium) printf 'Chromium\n' ;;
+    dolphin) printf 'Dolphin\n' ;;
+    ghostty) printf 'Ghostty\n' ;;
+    kitty) printf 'Kitty\n' ;;
+    nautilus) printf 'Nautilus\n' ;;
+    *) printf '%s\n' "$app" ;;
+  esac
+}
+
+hyprbole_app_command() {
+  local app="$1"
+
+  case "$app" in
+    brave-origin-nightly) printf 'brave-origin-nightly\n' ;;
+    chromium) printf 'chromium\n' ;;
+    dolphin) printf 'dolphin\n' ;;
+    ghostty) printf 'ghostty\n' ;;
+    kitty) printf 'kitty\n' ;;
+    nautilus) printf 'nautilus\n' ;;
+    *) printf '%s\n' "$app" ;;
+  esac
+}
+
+hyprbole_browser_policy_dirs() {
+  local app="$1"
+
+  case "$app" in
+    brave-origin-nightly) printf '%s\n' /etc/brave/policies/managed ;;
+    chromium) printf '%s\n' /etc/chromium/policies/managed ;;
+  esac
+}
+
+hyprbole_browser_processes() {
+  local app="$1"
+
+  case "$app" in
+    brave-origin-nightly) printf '%s\n' brave-origin-nightly brave-origin ;;
+    chromium) printf '%s\n' chromium ;;
+  esac
+}
+
+hyprbole_terminal_exec_args() {
+  local app="$1"
+
+  case "$app" in
+    ghostty|kitty) printf '%s\0' -e ;;
+    *) printf '%s\0' -e ;;
+  esac
+}
+
+hyprbole_launch_terminal_command() {
+  local app
+  local command_name
+  local exec_args=()
+
+  app="$(hyprbole_default_app terminal)"
+  command_name="$(hyprbole_app_command "$app")"
+
+  if ! command -v "$command_name" >/dev/null 2>&1; then
+    printf 'missing terminal command for %s: %s\n' "$app" "$command_name" >&2
+    return 1
+  fi
+
+  if (($# == 0)); then
+    exec "$command_name"
+  fi
+
+  if [[ ${1:-} == "-e" || ${1:-} == "--" ]]; then
+    shift
+  fi
+
+  while IFS= read -r -d '' arg; do
+    exec_args+=("$arg")
+  done < <(hyprbole_terminal_exec_args "$app")
+
+  exec "$command_name" "${exec_args[@]}" "$@"
+}
+
+hyprbole_launch_terminal_shell() {
+  local shell_command="$1"
+
+  shift || true
+  hyprbole_launch_terminal_command bash -lc "$shell_command" "$@"
+}
+
+hyprbole_launch_floating_terminal() {
+  local class_name="$1"
+  local title="$2"
+  local app
+  local command_name
+
+  shift 2
+
+  app="$(hyprbole_default_app terminal)"
+  command_name="$(hyprbole_app_command "$app")"
+
+  case "$app" in
+    ghostty)
+      exec "$command_name" --class="$class_name" --title="$title" -e "$@"
+      ;;
+    kitty)
+      exec "$command_name" --class "$class_name" --title "$title" -e "$@"
+      ;;
+    *)
+      hyprbole_launch_terminal_command "$@"
+      ;;
+  esac
 }
 
 hyprbole_current_theme() {
@@ -180,20 +428,58 @@ hyprbole_refresh_config_path() {
   local source_path="$HYPRBOLE_PATH/config/$relative_path"
   local destination_path="$HOME/.config/$relative_path"
   local backup_path="${destination_path}.bak.$(date +%Y%m%d%H%M%S)"
+  local backup_keep="$HYPRBOLE_CONFIG_BACKUP_KEEP"
 
   [[ -f $source_path ]] || {
     printf 'unknown config path: %s\n' "$relative_path" >&2
     return 1
   }
 
+  if [[ ! $backup_keep =~ ^[0-9]+$ ]]; then
+    backup_keep=3
+  fi
+
   mkdir -p "$(dirname "$destination_path")"
 
-  if [[ $backup_existing == "1" && -f $destination_path ]]; then
+  if [[ -f $destination_path ]] && cmp -s "$source_path" "$destination_path"; then
+    hyprbole_prune_config_backups "$destination_path" "$backup_keep"
+    return 0
+  fi
+
+  if [[ $backup_existing == "1" && -f $destination_path && $backup_keep -gt 0 ]]; then
     cp "$destination_path" "$backup_path"
     printf 'backed up to %s\n' "$backup_path"
   fi
 
+  hyprbole_prune_config_backups "$destination_path" "$backup_keep"
+
   cp "$source_path" "$destination_path"
+}
+
+hyprbole_prune_config_backups() {
+  local destination_path="$1"
+  local keep="$2"
+  local backups=()
+  local backup_path
+  local index=0
+
+  if (( keep < 0 )); then
+    keep=0
+  fi
+
+  while IFS= read -r backup_path; do
+    [[ -e $backup_path ]] || continue
+    backups+=("$backup_path")
+  done < <(printf '%s\n' "$destination_path".bak.[0-9]* | sort -r)
+
+  [[ ${#backups[@]} -gt 0 ]] || return 0
+
+  for backup_path in "${backups[@]}"; do
+    index=$((index + 1))
+    if (( index > keep )); then
+      rm -f -- "$backup_path"
+    fi
+  done
 }
 
 hyprbole_theme_generate_ghostty() {

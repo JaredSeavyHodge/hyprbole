@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# hyprbole:summary=Launch the default terminal
+# hyprbole:summary=Apply configured font roles to runtime configs
 
 set -euo pipefail
 
 source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
 
-hyprbole_launch_terminal_command "$@"
+hyprbole_apply_font_settings

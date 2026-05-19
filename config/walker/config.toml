@@ -5,7 +5,7 @@ additional_theme_location = "~/.config/walker/themes/"
 hide_action_hints = true
 
 [placeholders]
-"default" = { input = "Search", list = "No Results" }
+"default" = { input = "Search   = calc  > run  / files  . symbols  @ web  : clipboard  p: passwords", list = "No Results" }
 calc = { input = "Calculate", list = "Enter expression" }
 desktopapplications = { input = "Launch App", list = "No Applications" }
 clipboard = { input = "Clipboard history", list = "Clipboard is empty" }
@@ -25,10 +25,6 @@ default = [
   "websearch",
 ]
 empty = ["desktopapplications"]
-
-[[providers.prefixes]]
-prefix = ";"
-provider = "providerlist"
 
 [[providers.prefixes]]
 prefix = "="
@@ -55,5 +51,5 @@ prefix = ":"
 provider = "clipboard"
 
 [[providers.prefixes]]
-prefix = "1p"
+prefix = "p:"
 provider = "1password"
