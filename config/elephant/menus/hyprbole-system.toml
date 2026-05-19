@@ -4,8 +4,13 @@ hide_from_providerlist = true
 
 [[entries]]
 text = "Refresh Desktop"
-subtext = "Reapply shipped configs and theme assets"
+subtext = "Refresh theme and runtime state"
 actions = { activate = "hyprbole-refresh-all" }
+
+[[entries]]
+text = "Refresh Shipped Configs"
+subtext = "Overwrite user configs with backups"
+actions = { activate = "hyprbole-refresh-all --include-user-configs" }
 
 [[entries]]
 text = "Update System"

@@ -27,6 +27,7 @@ This repository defines the `hyprbole` desktop layer for Arch Linux. The project
 
 - Prefer the smallest correct change
 - Keep naming direct and boring
+- This is initial development and users are not running Hyprbole yet; do not add backward-compatibility branches, migrations, or legacy handling unless explicitly requested
 - Never guess repo facts when editing. Verify package names, commands, service names, file paths, config locations, policy paths, and external behavior from repo manifests, installed files, command output, or upstream documentation before encoding them.
 - Add new scripts as shell scripts unless there is a clear reason otherwise
 - Avoid creating abstraction layers until repeated patterns are obvious

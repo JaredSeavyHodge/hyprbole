@@ -36,7 +36,13 @@ _hyprbole_complete() {
     theme)
       case "${COMP_WORDS[2]:-}" in
         "")
-          COMPREPLY=($(compgen -W 'list current set wallpaper' -- "$cur"))
+          COMPREPLY=($(compgen -W 'list current set source wallpaper' -- "$cur"))
+          return 0
+          ;;
+        source)
+          if (( COMP_CWORD == 3 )); then
+            COMPREPLY=($(compgen -W 'list add edit sync' -- "$cur"))
+          fi
           return 0
           ;;
         set)
@@ -128,6 +134,8 @@ _hyprbole_complete() {
 
   if [[ ${COMP_WORDS[1]:-} == "refresh-config" && $COMP_CWORD -eq 2 ]]; then
     COMPREPLY=($(compgen -W "$(_hyprbole_complete_refresh_config_paths)" -- "$cur"))
+  elif [[ ${COMP_WORDS[1]:-} == "refresh-all" && $COMP_CWORD -eq 2 ]]; then
+    COMPREPLY=($(compgen -W '--include-user-configs' -- "$cur"))
   fi
 }
 

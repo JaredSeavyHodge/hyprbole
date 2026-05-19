@@ -3,6 +3,8 @@ configure_session() {
 
   mkdir -p "$(dirname "$env_file")"
   cat >"$env_file" <<EOF
+XDG_CURRENT_DESKTOP=Hyprland
+XDG_SESSION_DESKTOP=Hyprland
 QT_QPA_PLATFORM=wayland;xcb
 QT_QPA_PLATFORMTHEME=qt6ct
 GDK_BACKEND=wayland,x11

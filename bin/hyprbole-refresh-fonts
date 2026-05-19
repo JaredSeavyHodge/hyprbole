@@ -7,3 +7,5 @@ set -euo pipefail
 source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
 
 hyprbole_apply_font_settings
+hyprbole-refresh-gnome >/dev/null 2>&1 || true
+hyprbole-refresh-vscode >/dev/null 2>&1 || true

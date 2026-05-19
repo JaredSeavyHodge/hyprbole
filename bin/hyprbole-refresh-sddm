@@ -4,17 +4,33 @@
 
 set -euo pipefail
 
-HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
 HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
 SDDM_THEME_PATH="/usr/share/sddm/themes/hyprbole"
 WALLPAPER_PATH="$HYPRBOLE_CONFIG_PATH/current/background"
 CURRENT_THEME_NAME_PATH="$HYPRBOLE_CONFIG_PATH/current/theme-name"
 CURRENT_THEME_COLORS_PATH=""
+sudo_args=()
 
 current_theme_name="default"
 accent="#9bb1ff"
 foreground="#e7e9ee"
 muted="#8b91a0"
+
+case "${1:-}" in
+  --noninteractive)
+    sudo_args=(-n)
+    ;;
+  "")
+    ;;
+  *)
+    printf 'Usage: hyprbole-refresh-sddm [--noninteractive]\n' >&2
+    exit 1
+    ;;
+esac
+
+run_sudo() {
+  sudo "${sudo_args[@]}" "$@"
+}
 
 read_theme_color() {
   local key="$1"
@@ -27,7 +43,7 @@ if [[ -f $CURRENT_THEME_NAME_PATH ]]; then
   current_theme_name="$(cat "$CURRENT_THEME_NAME_PATH")"
 fi
 
-CURRENT_THEME_COLORS_PATH="$HYPRBOLE_PATH/themes/$current_theme_name/colors.toml"
+CURRENT_THEME_COLORS_PATH="$HYPRBOLE_CONFIG_PATH/current/theme/colors.toml"
 
 if [[ -f $CURRENT_THEME_COLORS_PATH ]]; then
   accent="$(read_theme_color accent "$CURRENT_THEME_COLORS_PATH")"
@@ -46,8 +62,8 @@ fi
 [[ -d $SDDM_THEME_PATH ]] || exit 0
 [[ -f $WALLPAPER_PATH ]] || exit 0
 
-sudo cp "$(readlink -f "$WALLPAPER_PATH")" "$SDDM_THEME_PATH/background.jpg"
-sudo tee "$SDDM_THEME_PATH/theme.conf" >/dev/null <<EOF
+run_sudo cp "$(readlink -f "$WALLPAPER_PATH")" "$SDDM_THEME_PATH/background.jpg"
+run_sudo tee "$SDDM_THEME_PATH/theme.conf" >/dev/null <<EOF
 [General]
 background=background.jpg
 backgroundBlur=background-blur.jpg
@@ -57,9 +73,9 @@ Muted=$muted
 EOF
 
 if command -v magick >/dev/null 2>&1; then
-  sudo magick "$SDDM_THEME_PATH/background.jpg" -resize 1920x1080^ -gravity center -extent 1920x1080 -blur 0x18 "$SDDM_THEME_PATH/background-blur.jpg"
+  run_sudo magick "$SDDM_THEME_PATH/background.jpg" -resize 1920x1080^ -gravity center -extent 1920x1080 -blur 0x18 "$SDDM_THEME_PATH/background-blur.jpg"
 elif command -v convert >/dev/null 2>&1; then
-  sudo convert "$SDDM_THEME_PATH/background.jpg" -resize 1920x1080^ -gravity center -extent 1920x1080 -blur 0x18 "$SDDM_THEME_PATH/background-blur.jpg"
+  run_sudo convert "$SDDM_THEME_PATH/background.jpg" -resize 1920x1080^ -gravity center -extent 1920x1080 -blur 0x18 "$SDDM_THEME_PATH/background-blur.jpg"
 else
-  sudo cp "$SDDM_THEME_PATH/background.jpg" "$SDDM_THEME_PATH/background-blur.jpg"
+  run_sudo cp "$SDDM_THEME_PATH/background.jpg" "$SDDM_THEME_PATH/background-blur.jpg"
 fi

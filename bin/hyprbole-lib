@@ -4,8 +4,10 @@ set -euo pipefail
 
 export HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
 export HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
+export HYPRBOLE_THEME_SOURCES_PATH="${HYPRBOLE_THEME_SOURCES_PATH:-$HYPRBOLE_CONFIG_PATH/theme-sources.conf}"
 export HYPRBOLE_CONFIG_BACKUP_KEEP="${HYPRBOLE_CONFIG_BACKUP_KEEP:-3}"
 HYPRBOLE_SETTINGS_PATH="$HYPRBOLE_CONFIG_PATH/settings.toml"
+HYPRBOLE_FALLBACK_THEME="default-theme"
 
 hyprbole_log() {
   printf '%s\n' "$1"
@@ -265,28 +267,225 @@ hyprbole_current_theme() {
   if [[ -f $HYPRBOLE_CONFIG_PATH/current/theme-name ]]; then
     cat "$HYPRBOLE_CONFIG_PATH/current/theme-name"
   else
-    printf 'default\n'
+    printf '%s\n' "$HYPRBOLE_FALLBACK_THEME"
   fi
+}
+
+hyprbole_expand_path() {
+  local path="$1"
+
+  case "$path" in
+    "~") printf '%s\n' "$HOME" ;;
+    "~/"*) printf '%s/%s\n' "$HOME" "${path:2}" ;;
+    "\$HOME") printf '%s\n' "$HOME" ;;
+    "\$HOME/"*) printf '%s/%s\n' "$HOME" "${path#\$HOME/}" ;;
+    "\$HYPRBOLE_CONFIG_PATH") printf '%s\n' "$HYPRBOLE_CONFIG_PATH" ;;
+    "\$HYPRBOLE_CONFIG_PATH/"*) printf '%s/%s\n' "$HYPRBOLE_CONFIG_PATH" "${path#\$HYPRBOLE_CONFIG_PATH/}" ;;
+    *) printf '%s\n' "$path" ;;
+  esac
+}
+
+hyprbole_ensure_theme_sources() {
+  local default_sources_path="$HYPRBOLE_PATH/default/hyprbole/theme-sources.conf"
+
+  mkdir -p "$HYPRBOLE_CONFIG_PATH"
+
+  if [[ ! -f $HYPRBOLE_THEME_SOURCES_PATH ]]; then
+    if [[ -f $default_sources_path ]]; then
+      cp "$default_sources_path" "$HYPRBOLE_THEME_SOURCES_PATH"
+    else
+      printf '%s\n' '# name repo_url ref repo_theme_path local_theme_path' >"$HYPRBOLE_THEME_SOURCES_PATH"
+    fi
+  fi
+}
+
+hyprbole_theme_source_records() {
+  local name
+  local repo_url
+  local repo_ref
+  local repo_theme_path
+  local local_theme_path
+  local extra
+
+  hyprbole_ensure_theme_sources
+
+  while read -r name repo_url repo_ref repo_theme_path local_theme_path extra; do
+    [[ -n ${name:-} ]] || continue
+    [[ ${name:0:1} != "#" ]] || continue
+    [[ -n ${repo_url:-} && -n ${repo_ref:-} && -n ${repo_theme_path:-} && -n ${local_theme_path:-} ]] || continue
+
+    local_theme_path="$(hyprbole_expand_path "$local_theme_path")"
+    printf '%s\t%s\t%s\t%s\t%s\n' "$name" "$repo_url" "$repo_ref" "$repo_theme_path" "$local_theme_path"
+  done <"$HYPRBOLE_THEME_SOURCES_PATH"
+}
+
+hyprbole_theme_source_names() {
+  local name
+  local repo_url
+  local repo_ref
+  local repo_theme_path
+  local local_theme_path
+
+  while IFS=$'\t' read -r name repo_url repo_ref repo_theme_path local_theme_path; do
+    printf '%s\n' "$name"
+  done < <(hyprbole_theme_source_records)
+}
+
+hyprbole_theme_source_add() {
+  local name="$1"
+  local repo_url="$2"
+  local repo_ref="$3"
+  local repo_theme_path="$4"
+  local local_theme_path="${5:-}"
+
+  [[ $name =~ ^[A-Za-z0-9._-]+$ ]] || {
+    printf 'theme source name must use only letters, numbers, dot, underscore, or dash: %s\n' "$name" >&2
+    return 1
+  }
+
+  [[ -n $repo_url && -n $repo_ref && -n $repo_theme_path ]] || return 1
+
+  if [[ -z $local_theme_path ]]; then
+    local_theme_path="\$HYPRBOLE_CONFIG_PATH/themes/.sources/$name/themes"
+  fi
+
+  hyprbole_ensure_theme_sources
+
+  if awk -v name="$name" '$1 == name { found = 1 } END { exit found ? 0 : 1 }' "$HYPRBOLE_THEME_SOURCES_PATH"; then
+    printf 'theme source already exists: %s\n' "$name" >&2
+    return 1
+  fi
+
+  printf '%s %s %s %s %s\n' "$name" "$repo_url" "$repo_ref" "$repo_theme_path" "$local_theme_path" >>"$HYPRBOLE_THEME_SOURCES_PATH"
+}
+
+hyprbole_theme_source_dirs() {
+  local name
+  local repo_url
+  local repo_ref
+  local repo_theme_path
+  local local_theme_path
+
+  while IFS=$'\t' read -r name repo_url repo_ref repo_theme_path local_theme_path; do
+    [[ -d $local_theme_path ]] || continue
+    printf '%s\n' "$local_theme_path"
+  done < <(hyprbole_theme_source_records)
+}
+
+hyprbole_theme_source_dirs_for_name() {
+  local theme_name="$1"
+  local source_dir
+
+  while IFS= read -r source_dir; do
+    [[ -d $source_dir/$theme_name ]] || continue
+    printf '%s\n' "$source_dir/$theme_name"
+  done < <(hyprbole_theme_source_dirs)
 }
 
 hyprbole_list_themes() {
   local theme_dir
+  local source_dir
 
-  for theme_dir in "$HYPRBOLE_PATH"/themes/*; do
-    [[ -d $theme_dir ]] || continue
-    basename "$theme_dir"
+  {
+    for theme_dir in "$HYPRBOLE_PATH"/themes/*; do
+      [[ -d $theme_dir ]] || continue
+      basename "$theme_dir"
+    done
+
+    while IFS= read -r source_dir; do
+      for theme_dir in "$source_dir"/*; do
+        [[ -d $theme_dir ]] || continue
+        basename "$theme_dir"
+      done
+    done < <(hyprbole_theme_source_dirs)
+
+    for theme_dir in "$HYPRBOLE_CONFIG_PATH"/themes/*; do
+      [[ -d $theme_dir ]] || continue
+      basename "$theme_dir"
+    done
+  } | sort -u
+}
+
+hyprbole_theme_exists() {
+  local theme_name="$1"
+  local theme_dir
+
+  [[ -d $HYPRBOLE_PATH/themes/$theme_name ]] && return 0
+  while IFS= read -r theme_dir; do
+    [[ -d $theme_dir ]] && return 0
+  done < <(hyprbole_theme_source_dirs_for_name "$theme_name")
+  [[ -d $HYPRBOLE_CONFIG_PATH/themes/$theme_name ]] && return 0
+
+  return 1
+}
+
+hyprbole_theme_lookup_dirs_for_name() {
+  local theme_name="$1"
+  local source_dirs=()
+  local index
+
+  [[ -d $HYPRBOLE_CONFIG_PATH/themes/$theme_name ]] && printf '%s\n' "$HYPRBOLE_CONFIG_PATH/themes/$theme_name"
+
+  mapfile -t source_dirs < <(hyprbole_theme_source_dirs)
+  for ((index = ${#source_dirs[@]} - 1; index >= 0; index--)); do
+    [[ -d ${source_dirs[$index]}/$theme_name ]] || continue
+    printf '%s\n' "${source_dirs[$index]}/$theme_name"
   done
+
+  [[ -d $HYPRBOLE_PATH/themes/$theme_name ]] && printf '%s\n' "$HYPRBOLE_PATH/themes/$theme_name"
+}
+
+hyprbole_theme_merge_dirs_for_name() {
+  local theme_name="$1"
+  local source_dir
+
+  [[ -d $HYPRBOLE_PATH/themes/$theme_name ]] && printf '%s\n' "$HYPRBOLE_PATH/themes/$theme_name"
+
+  while IFS= read -r source_dir; do
+    [[ -d $source_dir ]] || continue
+    printf '%s\n' "$source_dir"
+  done < <(hyprbole_theme_source_dirs_for_name "$theme_name")
+
+  [[ -d $HYPRBOLE_CONFIG_PATH/themes/$theme_name ]] && printf '%s\n' "$HYPRBOLE_CONFIG_PATH/themes/$theme_name"
 }
 
 hyprbole_theme_backgrounds_dir() {
   local theme_name="$1"
-  local source_theme_dir="$HYPRBOLE_PATH/themes/$theme_name"
+  local theme_dir
 
-  if [[ -d $source_theme_dir/backgrounds ]]; then
-    printf '%s\n' "$source_theme_dir/backgrounds"
-  else
-    printf '%s\n' "$source_theme_dir"
-  fi
+  while IFS= read -r theme_dir; do
+    [[ -d $theme_dir/backgrounds ]] || continue
+    printf '%s\n' "$theme_dir/backgrounds"
+    return 0
+  done < <(hyprbole_theme_lookup_dirs_for_name "$theme_name")
+
+  while IFS= read -r theme_dir; do
+    [[ -d $theme_dir ]] || continue
+    printf '%s\n' "$theme_dir"
+    return 0
+  done < <(hyprbole_theme_lookup_dirs_for_name "$theme_name")
+
+  return 1
+}
+
+hyprbole_theme_file_path() {
+  local theme_name="$1"
+  local file_name="$2"
+  local theme_dir
+
+  while IFS= read -r theme_dir; do
+    [[ -f $theme_dir/backgrounds/$file_name ]] && {
+      printf '%s\n' "$theme_dir/backgrounds/$file_name"
+      return 0
+    }
+
+    [[ -f $theme_dir/$file_name ]] && {
+      printf '%s\n' "$theme_dir/$file_name"
+      return 0
+    }
+  done < <(hyprbole_theme_lookup_dirs_for_name "$theme_name")
+
+  return 1
 }
 
 hyprbole_is_background_asset() {
@@ -359,13 +558,9 @@ hyprbole_set_theme_wallpaper() {
   local current_background_link="$current_dir/background"
   local wallpaper_path=""
 
-  wallpaper_path="$HYPRBOLE_PATH/themes/$theme_name/backgrounds/$wallpaper_name"
+  wallpaper_path="$(hyprbole_theme_file_path "$theme_name" "$wallpaper_name" || true)"
 
-  if [[ ! -f $wallpaper_path ]]; then
-    wallpaper_path="$HYPRBOLE_PATH/themes/$theme_name/$wallpaper_name"
-  fi
-
-  [[ -f $wallpaper_path ]] || {
+  [[ -n $wallpaper_path && -f $wallpaper_path ]] || {
     printf 'unknown wallpaper for %s: %s\n' "$theme_name" "$wallpaper_name" >&2
     return 1
   }
@@ -661,9 +856,8 @@ hyprbole_theme_generate_chromium() {
 hyprbole_sync_theme_assets() {
   local theme_name="$1"
   local previous_theme_name
-  local source_theme_dir="$HYPRBOLE_PATH/themes/$theme_name"
-  local user_theme_dir="$HYPRBOLE_CONFIG_PATH/themes/$theme_name"
-  local default_theme_dir="$HYPRBOLE_PATH/themes/default"
+  local fallback_theme_dir="$HYPRBOLE_PATH/themes/$HYPRBOLE_FALLBACK_THEME"
+  local fallback_source_dir=""
   local current_config_dir="$HYPRBOLE_CONFIG_PATH/current"
   local current_config_theme_dir="$HYPRBOLE_CONFIG_PATH/current/theme"
   local current_config_background_link="$HYPRBOLE_CONFIG_PATH/current/background"
@@ -675,10 +869,11 @@ hyprbole_sync_theme_assets() {
   local source_backgrounds_dir=""
   local user_backgrounds_dir=""
   local asset
+  local theme_dir
 
   previous_theme_name="$(hyprbole_current_theme)"
 
-  [[ -d $source_theme_dir || -d $user_theme_dir ]] || {
+  hyprbole_theme_exists "$theme_name" || {
     printf 'unknown theme: %s\n' "$theme_name" >&2
     return 1
   }
@@ -691,12 +886,15 @@ hyprbole_sync_theme_assets() {
   rm -rf "$next_config_theme_dir"
   mkdir -p "$next_config_theme_dir"
 
-  if [[ -d $source_theme_dir ]]; then
-    cp -a "$source_theme_dir/." "$next_config_theme_dir/"
-  fi
+  while IFS= read -r theme_dir; do
+    cp -a "$theme_dir/." "$next_config_theme_dir/"
+  done < <(hyprbole_theme_merge_dirs_for_name "$theme_name")
 
-  if [[ -d $user_theme_dir ]]; then
-    cp -a "$user_theme_dir/." "$next_config_theme_dir/"
+  if [[ ! -d $fallback_theme_dir ]]; then
+    fallback_source_dir="$(hyprbole_theme_lookup_dirs_for_name "$HYPRBOLE_FALLBACK_THEME" | head -n 1 || true)"
+    if [[ -n $fallback_source_dir ]]; then
+      fallback_theme_dir="$fallback_source_dir"
+    fi
   fi
 
   for asset in waybar.css walker.css ghostty.conf hyprlock.conf swayosd.css chromium.theme btop.theme icons.theme light.mode; do
@@ -712,14 +910,14 @@ hyprbole_sync_theme_assets() {
       :
     elif [[ $asset == "chromium.theme" ]] && hyprbole_theme_generate_chromium "$next_config_theme_dir" "$next_config_theme_dir/$asset"; then
       :
-    elif [[ -f $default_theme_dir/$asset ]]; then
-      cp "$default_theme_dir/$asset" "$next_config_theme_dir/$asset"
+    elif [[ -f $fallback_theme_dir/$asset ]]; then
+      cp "$fallback_theme_dir/$asset" "$next_config_theme_dir/$asset"
     fi
   done
 
-  if [[ ! -d $next_config_theme_dir/backgrounds && -f $default_theme_dir/wallpaper.jpg ]]; then
+  if [[ ! -d $next_config_theme_dir/backgrounds && -f $fallback_theme_dir/wallpaper.jpg ]]; then
     mkdir -p "$next_config_theme_dir/backgrounds"
-    cp "$default_theme_dir/wallpaper.jpg" "$next_config_theme_dir/backgrounds/default.jpg"
+    cp "$fallback_theme_dir/wallpaper.jpg" "$next_config_theme_dir/backgrounds/default.jpg"
   fi
 
   if [[ -f $next_config_theme_dir/wallpaper.jpg ]]; then

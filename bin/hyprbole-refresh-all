@@ -1,81 +1,81 @@
 #!/bin/bash
 
-# hyprbole:summary=Refresh core configs from shipped defaults
+# hyprbole:summary=Refresh Hyprbole runtime state
+# hyprbole:args=[--include-user-configs]
 
 set -euo pipefail
 
 source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
 
-force=0
+include_user_configs=0
 
-case "${1:-}" in
-  --force)
-    force=1
-    ;;
-  "")
-    ;;
-  *)
-    printf 'Usage: hyprbole-refresh-all [--force]\n' >&2
-    exit 1
-    ;;
-esac
+while (( $# > 0 )); do
+  case "$1" in
+    --include-user-configs)
+      include_user_configs=1
+      ;;
+    *)
+      printf 'Usage: hyprbole-refresh-all [--include-user-configs]\n' >&2
+      exit 1
+      ;;
+  esac
+  shift
+done
 
 hyprbole_sync_theme_assets "$(hyprbole_current_theme)"
 
-if (( force == 1 )); then
+if (( include_user_configs == 1 )); then
   for relative_path in \
     hypr/hyprland.lua \
     hypr/bindings.lua \
     hypr/monitors.lua \
     hypr/input.lua \
     hypr/looknfeel.lua \
-    hypr/autostart.lua; do
+    hypr/autostart.lua \
+    hypr/hypridle.conf \
+    hypr/hyprlock.conf \
+    waybar/config.jsonc \
+    waybar/style.css \
+    ghostty/config \
+    elephant/menus/hyprbole-apps.lua \
+    elephant/menus/hyprbole-capture.toml \
+    elephant/menus/hyprbole-controls.toml \
+    elephant/menus/hyprbole-cycle-wallpaper.toml \
+    elephant/menus/hyprbole-fonts.lua \
+    elephant/menus/hyprbole-install.toml \
+    elephant/menus/hyprbole-keybinds.lua \
+    elephant/menus/hyprbole-power.toml \
+    elephant/menus/hyprbole-system.toml \
+    elephant/menus/hyprbole-theme.toml \
+    elephant/menus/hyprbole-wallpaper-settings.toml \
+    elephant/menus/hyprbole.toml \
+    elephant/menus/hyprbolemywallpapers.lua \
+    elephant/menus/hyprbolethemes.lua \
+    elephant/menus/hyprbolewallpapers.lua \
+    walker/config.toml \
+    walker/themes/hyprbole/layout.xml \
+    walker/themes/hyprbole/style.css \
+    satty/config.toml \
+    xdg-desktop-portal/hyprland-portals.conf \
+    nvim/init.lua \
+    nvim/lua/config/autocmds.lua \
+    nvim/lua/config/keymaps.lua \
+    nvim/lua/config/lazy.lua \
+    nvim/lua/config/options.lua \
+    nvim/lua/plugins/hyprbole-theme.lua \
+    swayosd/config.toml \
+    swayosd/style.css \
+    systemd/user/hyprbole-wallpaper-cycle.service \
+    systemd/user/hyprbole-wallpaper-cycle.timer \
+    systemd/user/elephant.service \
+    systemd/user/polkit-gnome-agent.service \
+    systemd/user/swaync.service \
+    systemd/user/swayosd-server.service \
+    systemd/user/walker.service \
+    swaync/config.json; do
     hyprbole_refresh_config_path "$relative_path" 1
   done
 fi
-
-for relative_path in \
-  hypr/hypridle.conf \
-  hypr/hyprlock.conf \
-  waybar/config.jsonc \
-  waybar/style.css \
-  ghostty/config \
-  elephant/menus/hyprbole-apps.lua \
-  elephant/menus/hyprbole-capture.toml \
-  elephant/menus/hyprbole-controls.toml \
-  elephant/menus/hyprbole-cycle-wallpaper.toml \
-  elephant/menus/hyprbole-font-mono.lua \
-  elephant/menus/hyprbole-font-terminal.lua \
-  elephant/menus/hyprbole-font-ui.lua \
-  elephant/menus/hyprbole-fonts.toml \
-  elephant/menus/hyprbole-install.toml \
-  elephant/menus/hyprbole-keybinds.lua \
-  elephant/menus/hyprbole-power.toml \
-  elephant/menus/hyprbole-system.toml \
-  elephant/menus/hyprbole-theme.toml \
-  elephant/menus/hyprbole-wallpaper-settings.toml \
-  elephant/menus/hyprbole.toml \
-  elephant/menus/hyprbolemywallpapers.lua \
-  elephant/menus/hyprbolethemes.lua \
-  elephant/menus/hyprbolewallpapers.lua \
-  walker/config.toml \
-  walker/themes/hyprbole/layout.xml \
-  walker/themes/hyprbole/style.css \
-  satty/config.toml \
-  nvim/init.lua \
-  nvim/lua/options.lua \
-  swayosd/config.toml \
-  swayosd/style.css \
-  systemd/user/hyprbole-wallpaper-cycle.service \
-  systemd/user/hyprbole-wallpaper-cycle.timer \
-  systemd/user/elephant.service \
-  systemd/user/polkit-gnome-agent.service \
-  systemd/user/swaync.service \
-  systemd/user/swayosd-server.service \
-  systemd/user/walker.service \
-  swaync/config.json; do
-  hyprbole_refresh_config_path "$relative_path" 1
-done
 
 hyprbole-refresh-btop >/dev/null 2>&1 || true
 hyprbole-refresh-gnome >/dev/null 2>&1 || true
@@ -83,4 +83,5 @@ hyprbole-refresh-fonts >/dev/null 2>&1 || true
 hyprbole-refresh-vscode >/dev/null 2>&1 || true
 hyprbole-refresh-shell >/dev/null 2>&1 || true
 systemctl --user daemon-reload >/dev/null 2>&1 || true
+hyprctl reload >/dev/null 2>&1 || true
 hyprbole-restart-terminal >/dev/null 2>&1 || true

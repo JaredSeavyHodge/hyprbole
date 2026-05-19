@@ -42,12 +42,94 @@ local function find_preview_path(dir)
   return first_image_in_dir(dir .. "/backgrounds")
 end
 
+local function collect_theme_dirs(theme_dir, themes, seen)
+  local handle = io.popen("find -L '" .. theme_dir .. "' -mindepth 1 -maxdepth 1 -type d 2>/dev/null")
+  if not handle then
+    return
+  end
+
+  for path in handle:lines() do
+    local theme_name = path:match(".*/(.+)$")
+    if theme_name and theme_name:sub(1, 1) ~= "." then
+      if not seen[theme_name] then
+        seen[theme_name] = { name = theme_name, paths = {} }
+        table.insert(themes, seen[theme_name])
+      end
+
+      table.insert(seen[theme_name].paths, path)
+    end
+  end
+
+  handle:close()
+end
+
+local function expand_path(path)
+  local home = os.getenv("HOME")
+  local config_path = os.getenv("HYPRBOLE_CONFIG_PATH") or (home .. "/.config/hyprbole")
+
+  if path == "~" then
+    return home
+  end
+
+  if path:sub(1, 2) == "~/" then
+    return home .. "/" .. path:sub(3)
+  end
+
+  if path == "$HOME" then
+    return home
+  end
+
+  if path:sub(1, 6) == "$HOME/" then
+    return home .. "/" .. path:sub(7)
+  end
+
+  if path == "$HYPRBOLE_CONFIG_PATH" then
+    return config_path
+  end
+
+  if path:sub(1, 22) == "$HYPRBOLE_CONFIG_PATH/" then
+    return config_path .. "/" .. path:sub(23)
+  end
+
+  return path
+end
+
+local function collect_theme_source_dirs(config_path)
+  local source_dirs = {}
+  local sources_path = config_path .. "/theme-sources.conf"
+  local handle = io.open(sources_path, "r")
+
+  if not handle then
+    return source_dirs
+  end
+
+  for line in handle:lines() do
+    local trimmed = line:match("^%s*(.-)%s*$")
+    if trimmed ~= "" and trimmed:sub(1, 1) ~= "#" then
+      local fields = {}
+      for field in trimmed:gmatch("%S+") do
+        table.insert(fields, field)
+      end
+
+      if fields[5] then
+        table.insert(source_dirs, expand_path(fields[5]))
+      end
+    end
+  end
+
+  handle:close()
+  return source_dirs
+end
+
 function GetEntries()
   local entries = {}
+  local themes = {}
+  local home = os.getenv("HOME")
   local hyprbole_path = os.getenv("HYPRBOLE_PATH") or (os.getenv("HOME") .. "/.local/share/hyprbole")
-  local theme_dir = hyprbole_path .. "/themes"
+  local hyprbole_config_path = os.getenv("HYPRBOLE_CONFIG_PATH") or (home .. "/.config/hyprbole")
+  local theme_source_dirs = collect_theme_source_dirs(hyprbole_config_path)
   local current_theme = ""
-  local current_theme_file = os.getenv("HOME") .. "/.config/hyprbole/current/theme-name"
+  local current_theme_file = hyprbole_config_path .. "/current/theme-name"
   local seen = {}
 
   if file_exists(current_theme_file) then
@@ -58,17 +140,31 @@ function GetEntries()
     end
   end
 
-  local handle = io.popen("find -L '" .. theme_dir .. "' -mindepth 1 -maxdepth 1 -type d 2>/dev/null")
-  if not handle then
-    return entries
+  collect_theme_dirs(hyprbole_config_path .. "/themes", themes, seen)
+  for _, theme_source_dir in ipairs(theme_source_dirs) do
+    collect_theme_dirs(theme_source_dir, themes, seen)
   end
+  collect_theme_dirs(hyprbole_path .. "/themes", themes, seen)
 
-  for path in handle:lines() do
-    local theme_name = path:match(".*/(.+)$")
-    if theme_name and not seen[theme_name] then
-      seen[theme_name] = true
+  table.insert(entries, {
+    Text = "Add Theme Repository",
+    Sub = "Edit theme-sources.conf, then run theme source sync",
+    Actions = {
+      activate = "hyprbole theme source edit",
+    },
+  })
 
-      local preview_path = find_preview_path(path)
+  for _, theme in ipairs(themes) do
+      local theme_name = theme.name
+      local preview_path = nil
+
+      for _, path in ipairs(theme.paths) do
+        preview_path = find_preview_path(path)
+        if preview_path and preview_path ~= "" then
+          break
+        end
+      end
+
       local display_name = theme_name:gsub("_", " "):gsub("%-", " ")
       display_name = display_name:gsub("(%a)([%w_']*)", function(first, rest)
         return first:upper() .. rest:lower()
@@ -91,10 +187,8 @@ function GetEntries()
       end
 
       table.insert(entries, entry)
-    end
   end
 
-  handle:close()
   table.sort(entries, function(a, b)
     return a.Text < b.Text
   end)

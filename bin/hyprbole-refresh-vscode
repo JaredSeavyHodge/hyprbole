@@ -4,19 +4,20 @@
 
 set -euo pipefail
 
-HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
-HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
-HYPRBOLE_SETTINGS_PATH="$HYPRBOLE_CONFIG_PATH/settings.toml"
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
 
-current_theme="default"
+current_theme="default-theme"
 theme_metadata=""
 theme_name=""
 theme_extension=""
-colors_path=""
-background=""
-foreground=""
-accent=""
-muted=""
+editor_command=""
+apply_theme=1
+ui_font=""
+mono_font=""
+terminal_font=""
+ui_font_stack=""
+mono_font_stack=""
+terminal_font_stack=""
 
 setting_enabled() {
   local key="$1"
@@ -25,21 +26,38 @@ setting_enabled() {
   grep -Eq "^[[:space:]]*${key}[[:space:]]*=[[:space:]]*true([[:space:]]*(#.*)?)?$" "$HYPRBOLE_SETTINGS_PATH"
 }
 
-set_editor_theme() {
+find_editor_command() {
   local command_name="$1"
-  local settings_path="$2"
-  local force_create="${3:-0}"
-  local tmp_file=""
+
+  command -v "$command_name" >/dev/null 2>&1 || return 1
+  printf '%s\n' "$command_name"
+}
+
+ensure_editor_theme_extension() {
+  local command_name="$1"
 
   command -v "$command_name" >/dev/null 2>&1 || return 0
 
-  if [[ -n $theme_extension ]]; then
-    if ! "$command_name" --list-extensions 2>/dev/null | grep -Fxq "$theme_extension"; then
-      if ! "$command_name" --install-extension "$theme_extension" --force >/dev/null 2>&1; then
-        printf 'warning: could not install VS Code theme extension: %s\n' "$theme_extension" >&2
-      fi
+  if [[ -n $theme_extension ]] && ! "$command_name" --list-extensions 2>/dev/null | grep -Fxq "$theme_extension"; then
+    if ! "$command_name" --install-extension "$theme_extension" --force >/dev/null 2>&1; then
+      apply_theme=0
     fi
   fi
+}
+
+font_stack() {
+  local family="$1"
+  local fallback="$2"
+
+  family="${family//\\/\\\\}"
+  family="${family//\"/\\\"}"
+  printf '"%s", %s\n' "$family" "$fallback"
+}
+
+set_editor_settings() {
+  local settings_path="$1"
+  local force_create="${2:-0}"
+  local tmp_file=""
 
   if [[ $force_create != "1" && ! -e $settings_path ]]; then
     return 0
@@ -51,18 +69,24 @@ set_editor_theme() {
     tmp_file="$(mktemp)"
     if jq \
       --arg theme "$theme_name" \
-      --arg background "$background" \
-      --arg foreground "$foreground" \
-      --arg accent "$accent" \
-      --arg muted "$muted" \
-      '."workbench.colorTheme" = $theme
-      | if $background != "" then ."workbench.colorCustomizations"."editor.background" = $background else . end
-      | if $foreground != "" then ."workbench.colorCustomizations"."editor.foreground" = $foreground else . end
-      | if $background != "" then ."workbench.colorCustomizations"."sideBar.background" = $background else . end
-      | if $background != "" then ."workbench.colorCustomizations"."activityBar.background" = $background else . end
-      | if $accent != "" then ."workbench.colorCustomizations"."activityBarBadge.background" = $accent else . end
-      | if $accent != "" then ."workbench.colorCustomizations"."statusBar.background" = $accent else . end
-      | if $muted != "" then ."workbench.colorCustomizations"."tab.inactiveForeground" = $muted else . end' \
+      --arg apply_theme "$apply_theme" \
+      --arg ui_font "$ui_font_stack" \
+      --arg mono_font "$mono_font_stack" \
+      --arg terminal_font "$terminal_font_stack" \
+      'if $apply_theme == "1" then ."workbench.colorTheme" = $theme else . end
+      | ."editor.fontFamily" = $mono_font
+      | ."debug.console.fontFamily" = $mono_font
+      | ."interactiveSession.editor.fontFamily" = $mono_font
+      | ."terminal.integrated.fontFamily" = $terminal_font
+      | ."markdown.preview.fontFamily" = $ui_font
+      | del(."workbench.colorCustomizations"."editor.background")
+      | del(."workbench.colorCustomizations"."editor.foreground")
+      | del(."workbench.colorCustomizations"."sideBar.background")
+      | del(."workbench.colorCustomizations"."activityBar.background")
+      | del(."workbench.colorCustomizations"."activityBarBadge.background")
+      | del(."workbench.colorCustomizations"."statusBar.background")
+      | del(."workbench.colorCustomizations"."tab.inactiveForeground")
+      | if ."workbench.colorCustomizations" == {} then del(."workbench.colorCustomizations") else . end' \
       "$settings_path" >"$tmp_file"; then
       mv "$tmp_file" "$settings_path"
     else
@@ -73,35 +97,19 @@ set_editor_theme() {
   else
     jq -n \
       --arg theme "$theme_name" \
-      --arg background "$background" \
-      --arg foreground "$foreground" \
-      --arg accent "$accent" \
-      --arg muted "$muted" \
-      '{"workbench.colorTheme": $theme}
-      | if $background != "" then ."workbench.colorCustomizations"."editor.background" = $background else . end
-      | if $foreground != "" then ."workbench.colorCustomizations"."editor.foreground" = $foreground else . end
-      | if $background != "" then ."workbench.colorCustomizations"."sideBar.background" = $background else . end
-      | if $background != "" then ."workbench.colorCustomizations"."activityBar.background" = $background else . end
-      | if $accent != "" then ."workbench.colorCustomizations"."activityBarBadge.background" = $accent else . end
-      | if $accent != "" then ."workbench.colorCustomizations"."statusBar.background" = $accent else . end
-      | if $muted != "" then ."workbench.colorCustomizations"."tab.inactiveForeground" = $muted else . end' \
+      --arg apply_theme "$apply_theme" \
+      --arg ui_font "$ui_font_stack" \
+      --arg mono_font "$mono_font_stack" \
+      --arg terminal_font "$terminal_font_stack" \
+      '(if $apply_theme == "1" then {"workbench.colorTheme": $theme} else {} end) + {
+        "editor.fontFamily": $mono_font,
+        "debug.console.fontFamily": $mono_font,
+        "interactiveSession.editor.fontFamily": $mono_font,
+        "terminal.integrated.fontFamily": $terminal_font,
+        "markdown.preview.fontFamily": $ui_font
+      }' \
       >"$settings_path"
   fi
-}
-
-read_theme_color() {
-  local key="$1"
-  local path="$2"
-
-  sed -n "s/^${key}[[:space:]]*=[[:space:]]*\"\([^\"]*\)\".*/\1/p" "$path"
-}
-
-reload_editor_window() {
-  local command_name="$1"
-
-  command -v "$command_name" >/dev/null 2>&1 || return 0
-  pgrep -f "[c]ode.mjs|[C]ode - OSS|[c]ode-oss|[c]ode" >/dev/null 2>&1 || return 0
-  "$command_name" --reuse-window --command workbench.action.reloadWindow >/dev/null 2>&1 || true
 }
 
 if [[ -f $HYPRBOLE_CONFIG_PATH/current/theme-name ]]; then
@@ -109,9 +117,6 @@ if [[ -f $HYPRBOLE_CONFIG_PATH/current/theme-name ]]; then
 fi
 
 theme_metadata="$HYPRBOLE_CONFIG_PATH/current/theme/vscode.json"
-if [[ ! -f $theme_metadata ]]; then
-  theme_metadata="$HYPRBOLE_PATH/themes/$current_theme/vscode.json"
-fi
 [[ -f $theme_metadata ]] || exit 0
 
 theme_name="$(jq -r '.name // empty' "$theme_metadata")"
@@ -119,19 +124,23 @@ theme_extension="$(jq -r '.extension // empty' "$theme_metadata")"
 
 [[ -n $theme_name ]] || exit 0
 
-setting_enabled skip_vscode_theme_changes && exit 0
-
-colors_path="$HYPRBOLE_CONFIG_PATH/current/theme/colors.toml"
-if [[ -f $colors_path ]]; then
-  background="$(read_theme_color background "$colors_path")"
-  foreground="$(read_theme_color foreground "$colors_path")"
-  accent="$(read_theme_color accent "$colors_path")"
-  muted="$(read_theme_color color8 "$colors_path")"
+if setting_enabled skip_vscode_theme_changes; then
+  apply_theme=0
 fi
 
-set_editor_theme code "$HOME/.config/Code - OSS/User/settings.json" 1
-set_editor_theme code "$HOME/.config/Code/User/settings.json" 0
-set_editor_theme code-oss "$HOME/.config/Code - OSS/User/settings.json" 1
+editor_command="$(find_editor_command code || find_editor_command code-oss || true)"
+[[ -n $editor_command ]] || exit 0
 
-reload_editor_window code
-reload_editor_window code-oss
+if (( apply_theme == 1 )); then
+  ensure_editor_theme_extension "$editor_command"
+fi
+
+ui_font="$(hyprbole_default_font ui)"
+mono_font="$(hyprbole_default_font mono)"
+terminal_font="$(hyprbole_default_font terminal)"
+ui_font_stack="$(font_stack "$ui_font" "sans-serif")"
+mono_font_stack="$(font_stack "$mono_font" "monospace")"
+terminal_font_stack="$(font_stack "$terminal_font" "monospace")"
+
+set_editor_settings "$HOME/.config/Code/User/settings.json" 1
+set_editor_settings "$HOME/.config/Code - OSS/User/settings.json" 0

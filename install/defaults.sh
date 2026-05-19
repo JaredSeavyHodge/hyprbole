@@ -8,6 +8,8 @@ deploy_defaults() {
 
   ensure_hyprbole_checkout
 
+  seed_theme_sources_config
+
   chmod +x "$HYPRBOLE_PATH/bin"/* "$HYPRBOLE_PATH/default/waybar"/*.sh 2>/dev/null || true
 
   while IFS= read -r -d '' source_path; do
@@ -30,7 +32,7 @@ deploy_defaults() {
       "$HOME/.local/share/nautilus-python/extensions/hyprbole_vscode.py"
   fi
 
-  sync_theme_assets retro-82
+  sync_theme_assets default-theme
 
   mkdir -p "$HYPRBOLE_CONFIG_PATH/metadata"
   date --iso-8601=seconds >"$HYPRBOLE_CONFIG_PATH/metadata/installed-at"
@@ -94,4 +96,12 @@ cleanup_hyprland_generated_stub() {
 sync_theme_assets() {
   local theme_name="$1"
   "$HYPRBOLE_PATH/bin/hyprbole" theme set "$theme_name"
+}
+
+seed_theme_sources_config() {
+  local source_path="$HYPRBOLE_PATH/default/hyprbole/theme-sources.conf"
+  local destination_path="$HYPRBOLE_CONFIG_PATH/theme-sources.conf"
+
+  [[ -f $source_path ]] || return 0
+  copy_if_missing "$source_path" "$destination_path" >/dev/null || true
 }

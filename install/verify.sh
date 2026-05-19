@@ -29,7 +29,7 @@ verify_installation() {
     graphical_session_active=1
   fi
 
-  for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper sddm limine-update; do
+  for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper sddm limine-update code nvim rg fd unzip lazygit tree-sitter; do
     if ! cmd_present "$binary"; then
       printf 'missing command: %s\n' "$binary" >&2
       failures=$((failures + 1))
@@ -38,9 +38,19 @@ verify_installation() {
 
   for path in \
     "$HOME/.config/hypr/hyprland.lua" \
+    "$HYPRBOLE_CONFIG_PATH/theme-sources.conf" \
     "$HOME/.config/waybar/config.jsonc" \
+    "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf" \
+    "$HOME/.config/gtk-3.0/settings.ini" \
+    "$HOME/.config/gtk-4.0/settings.ini" \
     "$HOME/.config/code-flags.conf" \
     "$HOME/.config/brave-origin-nightly-flags.conf" \
+    "$HOME/.config/elephant/menus/hyprbole-fonts.lua" \
+    "$HOME/.config/nvim/init.lua" \
+    "$HOME/.config/nvim/lua/config/lazy.lua" \
+    "$HOME/.config/nvim/lua/plugins/hyprbole-theme.lua" \
+    "$HYPRBOLE_CONFIG_PATH/current/theme/neovim.lua" \
+    "$HYPRBOLE_CONFIG_PATH/current/theme/vscode.json" \
     "$HYPRBOLE_PATH/.git" \
     "$HYPRBOLE_PATH/default" \
     "$HYPRBOLE_PATH/themes"; do
@@ -69,7 +79,7 @@ verify_installation() {
   done
 
   if ! grep -Fxq -- '--password-store=gnome-libsecret' "$HOME/.config/code-flags.conf"; then
-    printf 'Code - OSS should use gnome-libsecret password store: %s\n' "$HOME/.config/code-flags.conf" >&2
+    printf 'VS Code should use gnome-libsecret password store: %s\n' "$HOME/.config/code-flags.conf" >&2
     failures=$((failures + 1))
   fi
 

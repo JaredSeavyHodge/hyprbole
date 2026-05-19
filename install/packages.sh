@@ -12,6 +12,7 @@ HYPRBOLE_OFFICIAL_PACKAGES=(
   wireplumber
   xdg-desktop-portal
   xdg-desktop-portal-hyprland
+  xdg-desktop-portal-gtk
   polkit-gnome
   qt5-wayland
   qt6-wayland
@@ -32,9 +33,12 @@ HYPRBOLE_OFFICIAL_PACKAGES=(
   fzf
   bat
   fd
+  ripgrep
+  unzip
+  lazygit
+  tree-sitter-cli
   obsidian
   opencode
-  code
   neovim
   polkit
   wl-clipboard
@@ -60,6 +64,7 @@ HYPRBOLE_OFFICIAL_PACKAGES=(
   libqalculate
   pacman-contrib
   limine
+  gnome-themes-extra
   noto-fonts
   noto-fonts-cjk
   noto-fonts-emoji

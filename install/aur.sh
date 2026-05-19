@@ -2,6 +2,7 @@ HYPRBOLE_AUR_PACKAGES=(
   1password-beta
   1password-cli
   brave-origin-nightly-bin
+  visual-studio-code-bin
   walker-bin
   elephant
   elephant-1password

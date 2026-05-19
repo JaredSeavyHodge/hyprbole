@@ -30,8 +30,12 @@ Theme:
   theme list
   theme current
   theme set <name>
+  theme source list
+  theme source add <name> <repo-url> <ref> <repo-theme-path> [local-theme-path]
+  theme source edit
+  theme source sync
   theme font current [ui|mono|terminal]
-  theme font set <ui|mono|terminal> <family>
+  theme font set <ui|mono|terminal|all> <family>
   theme wallpaper list [theme]
   theme wallpaper current
   theme wallpaper set [theme] <file>
@@ -96,7 +100,7 @@ Maintenance:
   refresh-limine
   snapshot <cmd>
   refresh-config <path>
-  refresh-all
+  refresh-all [--include-user-configs]
   refresh-shell
   migrate
   default-app <role> [command|label]
@@ -138,6 +142,7 @@ default_app() {
 font_config() {
   local command="${1:-}"
   local role="${2:-}"
+  local font=""
 
   case "$command" in
     current)
@@ -152,12 +157,46 @@ font_config() {
     set)
       [[ -n $role && -n ${3:-} ]] || usage
       shift 2
-      hyprbole_set_font "$role" "$*"
+      font="$*"
+      if [[ $role == "all" ]]; then
+        hyprbole_set_font ui "$font"
+        hyprbole_set_font mono "$font"
+        hyprbole_set_font terminal "$font"
+      else
+        hyprbole_set_font "$role" "$font"
+      fi
       hyprbole_apply_font_settings
+      hyprbole-refresh-gnome >/dev/null 2>&1 || true
+      hyprbole-refresh-vscode >/dev/null 2>&1 || true
       hyprbole-restart-waybar >/dev/null 2>&1 || true
       hyprbole-restart-swayosd >/dev/null 2>&1 || true
       hyprbole-restart-terminal >/dev/null 2>&1 || true
       hyprctl reload >/dev/null 2>&1 || true
+      ;;
+    *)
+      usage
+      return 1
+      ;;
+  esac
+}
+
+theme_source() {
+  local command="${1:-}"
+
+  case "$command" in
+    list)
+      hyprbole_theme_source_records
+      ;;
+    add)
+      [[ -n ${2:-} && -n ${3:-} && -n ${4:-} && -n ${5:-} ]] || usage
+      hyprbole_theme_source_add "$2" "$3" "$4" "$5" "${6:-}"
+      ;;
+    sync)
+      "$HYPRBOLE_PATH/bin/hyprbole-sync-theme-sources"
+      ;;
+    edit)
+      hyprbole_ensure_theme_sources
+      hyprbole_launch_terminal_command nvim "$HYPRBOLE_THEME_SOURCES_PATH"
       ;;
     *)
       usage
@@ -184,9 +223,8 @@ update_repo() {
 
 set_theme() {
   local theme_name="$1"
-  local source_theme_dir="$HYPRBOLE_PATH/themes/$theme_name"
 
-  [[ -d $source_theme_dir ]] || {
+  hyprbole_theme_exists "$theme_name" || {
     printf 'unknown theme: %s\n' "$theme_name" >&2
     exit 1
   }
@@ -195,10 +233,11 @@ set_theme() {
   hyprbole-refresh-btop >/dev/null 2>&1 || true
   hyprbole-refresh-gnome >/dev/null 2>&1 || true
   hyprbole-restart-wallpaper >/dev/null 2>&1 || true
-  hyprbole-refresh-sddm >/dev/null 2>&1 || true
+  (hyprbole-refresh-sddm --noninteractive >/dev/null 2>&1 || true) & disown
   hyprbole-refresh-browser >/dev/null 2>&1 || true
   hyprbole-refresh-vscode >/dev/null 2>&1 || true
   hyprbole-restart-terminal >/dev/null 2>&1 || true
+  hyprctl reload >/dev/null 2>&1 || true
   pkill -x waybar >/dev/null 2>&1 || true
   waybar >/dev/null 2>&1 & disown
   hyprbole-restart-swayosd >/dev/null 2>&1 || true
@@ -215,7 +254,7 @@ current_theme() {
 list_theme_wallpapers() {
   local theme_name="${1:-$(hyprbole_current_theme)}"
 
-  [[ -d $HYPRBOLE_PATH/themes/$theme_name ]] || {
+  hyprbole_theme_exists "$theme_name" || {
     printf 'unknown theme: %s\n' "$theme_name" >&2
     exit 1
   }
@@ -235,7 +274,7 @@ set_theme_wallpaper() {
     wallpaper_name="$1"
   fi
 
-  [[ -d $HYPRBOLE_PATH/themes/$theme_name ]] || {
+  hyprbole_theme_exists "$theme_name" || {
     printf 'unknown theme: %s\n' "$theme_name" >&2
     exit 1
   }
@@ -254,7 +293,7 @@ cycle_theme_wallpaper() {
   local next_index=0
   local i
 
-  [[ -d $HYPRBOLE_PATH/themes/$theme_name ]] || {
+  hyprbole_theme_exists "$theme_name" || {
     printf 'unknown theme: %s\n' "$theme_name" >&2
     exit 1
   }
@@ -675,7 +714,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Packages: core desktop"
-  for package in hyprland uwsm waybar sddm swaync swayosd pipewire pipewire-audio pipewire-alsa pipewire-pulse wireplumber xdg-desktop-portal xdg-desktop-portal-hyprland polkit-gnome qt5-wayland qt6-wayland hypridle hyprlock awww polkit; do
+  for package in hyprland uwsm waybar sddm swaync swayosd pipewire pipewire-audio pipewire-alsa pipewire-pulse wireplumber xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk polkit-gnome qt5-wayland qt6-wayland hypridle hyprlock awww polkit; do
     if pacman -Q "$package" >/dev/null 2>&1; then
       doctor_report ok "$package"
     else
@@ -695,7 +734,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Packages: apps"
-  for package in wf-recorder nautilus nautilus-python imv mpv ghostty btop obsidian code neovim 1password-beta 1password-cli brave-origin-nightly-bin; do
+  for package in wf-recorder nautilus nautilus-python imv mpv ghostty btop obsidian visual-studio-code-bin neovim 1password-beta 1password-cli brave-origin-nightly-bin; do
     if pacman -Q "$package" >/dev/null 2>&1; then
       doctor_report ok "$package"
     else
@@ -715,7 +754,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Packages: system tools"
-  for package in yay-bin bash-completion mise starship zoxide fzf bat fd wl-clipboard grim slurp satty pavucontrol nm-connection-editor network-manager-applet blueman gnome-keyring playerctl brightnessctl xdg-user-dirs xdg-utils gvfs gvfs-mtp libsecret git curl jq imagemagick libqalculate pacman-contrib limine noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra rust ttf-cascadia-code ttf-dejavu ttf-fira-code ttf-hack ttf-jetbrains-mono ttf-jetbrains-mono-nerd ttf-liberation ttf-nerd-fonts-symbols ttf-opensans ttf-roboto ttf-ubuntu-font-family inter-font otf-font-awesome papirus-icon-theme adwaita-icon-theme hicolor-icon-theme base-devel snapper limine-snapper-sync limine-mkinitcpio-hook hyprsysteminfo; do
+  for package in yay-bin bash-completion mise starship zoxide fzf bat fd ripgrep unzip lazygit tree-sitter-cli wl-clipboard grim slurp satty pavucontrol nm-connection-editor network-manager-applet blueman gnome-keyring playerctl brightnessctl xdg-user-dirs xdg-utils gvfs gvfs-mtp libsecret git curl jq imagemagick libqalculate pacman-contrib limine gnome-themes-extra noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra rust ttf-cascadia-code ttf-dejavu ttf-fira-code ttf-hack ttf-jetbrains-mono ttf-jetbrains-mono-nerd ttf-liberation ttf-nerd-fonts-symbols ttf-opensans ttf-roboto ttf-ubuntu-font-family inter-font otf-font-awesome papirus-icon-theme adwaita-icon-theme hicolor-icon-theme base-devel snapper limine-snapper-sync limine-mkinitcpio-hook hyprsysteminfo; do
     if pacman -Q "$package" >/dev/null 2>&1; then
       doctor_report ok "$package"
     else
@@ -725,7 +764,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Commands"
-  for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper wf-recorder grim slurp satty mise walker elephant; do
+  for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper wf-recorder grim slurp satty mise code nvim rg fd unzip lazygit tree-sitter walker elephant; do
     if command -v "$binary" >/dev/null 2>&1; then
       doctor_report ok "$binary"
     else
@@ -808,8 +847,10 @@ doctor() {
   doctor_section_start "Configs"
   for path in \
     "$HOME/.config/hypr/hyprland.lua" \
+    "$HYPRBOLE_CONFIG_PATH/theme-sources.conf" \
     "$HOME/.config/waybar/config.jsonc" \
     "$HOME/.config/swaync/config.json" \
+    "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf" \
     "$HOME/.config/code-flags.conf" \
     "$HOME/.config/brave-origin-nightly-flags.conf" \
     "$HOME/.config/systemd/user/polkit-gnome-agent.service" \
@@ -831,6 +872,7 @@ doctor() {
     else
       doctor_report warn "$HOME/.config/code-flags.conf does not set --password-store=gnome-libsecret"
     fi
+
   fi
 
   if [[ -f $HOME/.config/brave-origin-nightly-flags.conf ]]; then
@@ -848,6 +890,8 @@ doctor() {
     "$HYPRBOLE_CONFIG_PATH/current/background" \
     "$HYPRBOLE_CONFIG_PATH/current/theme/waybar.css" \
     "$HYPRBOLE_CONFIG_PATH/current/theme/ghostty.conf" \
+    "$HOME/.config/gtk-3.0/settings.ini" \
+    "$HOME/.config/gtk-4.0/settings.ini" \
     "$HYPRBOLE_CONFIG_PATH/current/theme/vscode.json"; do
     if [[ -e $path ]]; then
       doctor_report ok "$path"
@@ -1272,6 +1316,10 @@ main() {
           [[ -n ${3:-} ]] || usage
           set_theme "$3"
           ;;
+        source)
+          shift 2
+          theme_source "$@"
+          ;;
         font)
           shift 2
           font_config "$@"
@@ -1513,7 +1561,8 @@ main() {
       refresh_config "$2"
       ;;
     refresh-all)
-      hyprbole-refresh-all "${2:-}"
+      shift
+      hyprbole-refresh-all "$@"
       ;;
     refresh-shell)
       hyprbole-refresh-shell

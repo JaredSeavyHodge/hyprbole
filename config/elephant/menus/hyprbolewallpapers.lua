@@ -18,9 +18,9 @@ end
 function GetEntries()
   local entries = {}
   local home = os.getenv("HOME")
-  local hyprbole_path = os.getenv("HYPRBOLE_PATH") or (home .. "/.local/share/hyprbole")
-  local current_theme_file = home .. "/.config/hyprbole/current/theme-name"
-  local current_wallpaper_file = home .. "/.config/hyprbole/current/background"
+  local hyprbole_config_path = os.getenv("HYPRBOLE_CONFIG_PATH") or (home .. "/.config/hyprbole")
+  local current_theme_file = hyprbole_config_path .. "/current/theme-name"
+  local current_wallpaper_file = hyprbole_config_path .. "/current/background"
   local current_theme = ""
   local current_wallpaper = ""
 
@@ -43,7 +43,7 @@ function GetEntries()
     return entries
   end
 
-  local backgrounds_dir = hyprbole_path .. "/themes/" .. current_theme .. "/backgrounds"
+  local backgrounds_dir = hyprbole_config_path .. "/current/theme/backgrounds"
   local handle = io.popen("find -L '" .. backgrounds_dir .. "' -maxdepth 1 -type f 2>/dev/null | sort")
   if not handle then
     return entries

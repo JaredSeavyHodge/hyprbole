@@ -14,5 +14,5 @@ submenu = "hyprbole-wallpaper-settings"
 
 [[entries]]
 text = "Fonts"
-subtext = "Choose UI, monospace, and terminal fonts"
+subtext = "Choose the Hyprbole font"
 submenu = "hyprbole-fonts"

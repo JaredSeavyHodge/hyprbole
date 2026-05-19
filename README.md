@@ -44,7 +44,7 @@ Hyprbole is a curated post-install desktop layer for Arch Linux built around Hyp
 Examples:
 
 - `hyprbole update`
-- `hyprbole theme set retro-82`
+- `hyprbole theme set default-theme`
 - `hyprbole pkg install`
 - `hyprbole pkg aur-install`
 - `hyprbole apps`

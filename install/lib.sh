@@ -147,11 +147,21 @@ write_install_diagnostics() {
     diagnostic_path_check \
       "$HOME/.config/hypr/hyprland.lua" \
       "$HOME/.config/hypr/hyprland.conf" \
+      "$HOME/.config/hyprbole/theme-sources.conf" \
       "$HOME/.config/waybar/config.jsonc" \
       "$HOME/.config/swaync/config.json" \
+      "$HOME/.config/elephant/menus/hyprbole-fonts.lua" \
+      "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf" \
+      "$HOME/.config/gtk-3.0/settings.ini" \
+      "$HOME/.config/gtk-4.0/settings.ini" \
       "$HOME/.config/code-flags.conf" \
       "$HOME/.config/brave-origin-nightly-flags.conf" \
+      "$HOME/.config/nvim/init.lua" \
+      "$HOME/.config/nvim/lua/config/lazy.lua" \
+      "$HOME/.config/nvim/lua/plugins/hyprbole-theme.lua" \
       "$HOME/.config/hyprbole/current/theme-name" \
+      "$HOME/.config/hyprbole/current/theme/neovim.lua" \
+      "$HOME/.config/hyprbole/current/theme/vscode.json" \
       "$HOME/.config/hyprbole/current/browser-policy.json" \
       /etc/brave/policies/managed/color.json
 

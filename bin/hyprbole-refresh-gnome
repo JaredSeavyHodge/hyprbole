@@ -7,25 +7,71 @@ set -euo pipefail
 source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
 
 CURRENT_THEME_DIR="$HYPRBOLE_CONFIG_PATH/current/theme"
+gtk_theme="Adwaita-dark"
+color_scheme="prefer-dark"
+prefer_dark="1"
+icon_theme=""
+
+icon_theme_available() {
+  local theme_name="$1"
+
+  [[ -n $theme_name ]] || return 1
+  [[ -d $HOME/.local/share/icons/$theme_name ]] && return 0
+  [[ -d $HOME/.icons/$theme_name ]] && return 0
+  [[ -d /usr/share/icons/$theme_name ]] && return 0
+  return 1
+}
+
+select_icon_theme() {
+  local preferred_theme=""
+  local fallback_theme="Papirus-Dark"
+  local theme_name
+
+  if [[ -f $CURRENT_THEME_DIR/icons.theme ]]; then
+    preferred_theme="$(sed -n '1s/[[:space:]]*$//p' "$CURRENT_THEME_DIR/icons.theme")"
+  fi
+
+  if [[ $prefer_dark == "0" ]]; then
+    fallback_theme="Papirus-Light"
+  fi
+
+  for theme_name in "$preferred_theme" "$fallback_theme" Papirus Adwaita hicolor; do
+    if icon_theme_available "$theme_name"; then
+      printf '%s\n' "$theme_name"
+      return 0
+    fi
+  done
+
+  printf '%s\n' "${preferred_theme:-Adwaita}"
+}
+
+write_gtk_settings() {
+  local settings_dir="$1"
+
+  mkdir -p "$settings_dir"
+  cat >"$settings_dir/settings.ini" <<EOF
+[Settings]
+gtk-theme-name=$gtk_theme
+gtk-icon-theme-name=$icon_theme
+gtk-application-prefer-dark-theme=$prefer_dark
+EOF
+}
 
 if [[ -f $CURRENT_THEME_DIR/light.mode ]]; then
-  gsettings set org.gnome.desktop.interface color-scheme "prefer-light" || true
-  gsettings set org.gnome.desktop.interface gtk-theme "Adwaita" || true
-else
-  gsettings set org.gnome.desktop.interface color-scheme "prefer-dark" || true
-  gsettings set org.gnome.desktop.interface gtk-theme "Adwaita-dark" || true
+  gtk_theme="Adwaita"
+  color_scheme="prefer-light"
+  prefer_dark="0"
 fi
 
-if [[ -f $CURRENT_THEME_DIR/icons.theme ]]; then
-  gsettings set org.gnome.desktop.interface icon-theme "$(<$CURRENT_THEME_DIR/icons.theme)" || true
-else
-  gsettings set org.gnome.desktop.interface icon-theme "Yaru-blue" || true
-fi
+icon_theme="$(select_icon_theme)"
+
+write_gtk_settings "$HOME/.config/gtk-3.0"
+write_gtk_settings "$HOME/.config/gtk-4.0"
 
 if command -v gsettings >/dev/null 2>&1; then
-  ui_font="$(hyprbole_default_font ui)"
-  mono_font="$(hyprbole_default_font mono)"
-  gsettings set org.gnome.desktop.interface font-name "$ui_font 10" || true
-  gsettings set org.gnome.desktop.interface document-font-name "$ui_font 10" || true
-  gsettings set org.gnome.desktop.interface monospace-font-name "$mono_font 10" || true
+  gsettings set org.gnome.desktop.interface color-scheme "$color_scheme" || true
+  gsettings set org.gnome.desktop.interface gtk-theme "$gtk_theme" || true
+  gsettings set org.gnome.desktop.interface icon-theme "$icon_theme" || true
 fi
+
+systemctl --user try-restart xdg-desktop-portal-gtk.service >/dev/null 2>&1 || true
