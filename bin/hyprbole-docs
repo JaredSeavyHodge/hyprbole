@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# hyprbole:summary=Build and open the Hyprbole user guide
+
+set -euo pipefail
+
+HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
+HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
+DOCS_SOURCE_DIR="$HYPRBOLE_PATH/docs/user-guide"
+DOCS_SITE_DIR="$HYPRBOLE_CONFIG_PATH/docs/site"
+DOCS_INDEX="$DOCS_SITE_DIR/index.html"
+
+if ! command -v mkdocs >/dev/null 2>&1; then
+  printf 'missing required command: mkdocs\n' >&2
+  printf 'Install the official packages: sudo pacman -S mkdocs mkdocs-material\n' >&2
+  exit 1
+fi
+
+if [[ ! -f $DOCS_SOURCE_DIR/mkdocs.yml ]]; then
+  printf 'missing Hyprbole docs source: %s\n' "$DOCS_SOURCE_DIR/mkdocs.yml" >&2
+  exit 1
+fi
+
+mkdocs build --clean --strict --config-file "$DOCS_SOURCE_DIR/mkdocs.yml" --site-dir "$DOCS_SITE_DIR" >/dev/null
+
+if [[ ! -f $DOCS_INDEX ]]; then
+  printf 'Hyprbole docs build did not create %s\n' "$DOCS_INDEX" >&2
+  exit 1
+fi
+
+exec "$HYPRBOLE_PATH/bin/hyprbole-launch-browser" "file://$DOCS_INDEX"

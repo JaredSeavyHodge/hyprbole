@@ -13,6 +13,11 @@ subtext = "Browse current keyboard shortcuts"
 actions = { activate = "hyprbole keybinds" }
 
 [[entries]]
+text = "User Guide"
+subtext = "Open the Hyprbole documentation"
+actions = { activate = "hyprbole docs" }
+
+[[entries]]
 text = "Theme"
 subtext = "Themes and wallpapers"
 submenu = "hyprbole-theme"

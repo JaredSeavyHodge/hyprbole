@@ -47,8 +47,8 @@ if (( include_user_configs == 1 )); then
     elephant/menus/hyprbole-power.toml \
     elephant/menus/hyprbole-system.toml \
     elephant/menus/hyprbole-theme.toml \
-    elephant/menus/hyprbole-wallpaper-settings.toml \
     elephant/menus/hyprbole.toml \
+    elephant/menus/hyprbole-wallpaper-settings.toml \
     elephant/menus/hyprbolemywallpapers.lua \
     elephant/menus/hyprbolethemes.lua \
     elephant/menus/hyprbolewallpapers.lua \
