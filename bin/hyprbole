@@ -1352,7 +1352,7 @@ disk_usage() {
 }
 
 launch_disk_usage() {
-  hyprbole_launch_terminal_shell 'hyprbole disk-usage "$@"; status=$?; if (( status != 0 )); then printf "\nDisk Usage exited with status %d\n" "$status"; printf "\nPress Enter to close..."; read -r _; fi' hyprbole-disk-usage "$@"
+  hyprbole_launch_floating_terminal com.hyprbole.disk-usage "Disk Usage" bash -lc 'hyprbole disk-usage "$@"; status=$?; if (( status != 0 )); then printf "\nDisk Usage exited with status %d\n" "$status"; printf "\nPress Enter to close..."; read -r _; fi' hyprbole-disk-usage "$@"
 }
 
 launch_launcher() {

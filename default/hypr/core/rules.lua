@@ -24,6 +24,12 @@ hl.window_rule({
 })
 
 hl.window_rule({
+  name = "float-disk-usage-terminal",
+  match = { class = "^com\\.hyprbole\\.disk%-usage$" },
+  float = true,
+})
+
+hl.window_rule({
   name = "float-system-terminal",
   match = { class = "^com\\.hyprbole\\.system$" },
   float = true,
