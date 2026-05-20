@@ -112,10 +112,19 @@ local function collect_bindings()
   hl = proxy("hl")
   hl.dsp = proxy("dsp")
   hl.bind = function(keys, action)
+    local binding = {
+      unbind = function() end,
+      remove = function() end,
+      set_enabled = function() end,
+      is_enabled = function() return true end,
+    }
+
     table.insert(bindings, {
       keys = keys,
       action = action_label(action),
     })
+
+    return binding
   end
 
   package.loaded["default.hypr.core.bindings"] = nil

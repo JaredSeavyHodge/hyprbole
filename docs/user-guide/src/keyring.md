@@ -1,10 +1,10 @@
-# Secret Service
+# Keyring
 
-Hyprbole uses GNOME Keyring and libsecret for app secret storage. This is what Chromium/Electron apps use when launched with `--password-store=gnome-libsecret`.
+Hyprbole uses GNOME Keyring and libsecret for app secret storage. Secret Service is the freedesktop protocol that Chromium/Electron apps use when launched with `--password-store=gnome-libsecret`.
 
 ## What Hyprbole Configures
 
-Install and `hyprbole doctor --fix` run the internal repair script:
+Install and `hb doctor --fix` run the internal repair script:
 
 ```text
 ~/.local/share/hyprbole/bin/hyprbole-setup-secret-service
@@ -26,23 +26,23 @@ An encrypted `login.keyring` can make Chromium-based apps hang or show keyring w
 ## Check It
 
 ```bash
-hyprbole doctor
-hyprbole verify
+hb doctor
+hb verify
 ```
 
 ## Repair It
 
 ```bash
-hyprbole doctor --fix
+hb doctor --fix
 ```
 
 Then relaunch affected apps such as Brave or VS Code.
 
-Do not run the internal setup script directly for normal repair. Use `hyprbole doctor --fix` so future supported checks can run in one place.
+Do not run the internal setup script directly for normal repair. Use `hb doctor --fix` so future supported checks can run in one place.
 
 ## What Good Looks Like
 
-In `hyprbole doctor --verbose`, the Secret Service section should report:
+In `hb doctor --verbose`, the Keyring and Secret Service checks should report:
 
 - `org.freedesktop.secrets owned`.
 - `Default_keyring.keyring` exists.

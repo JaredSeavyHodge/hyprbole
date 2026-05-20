@@ -4,14 +4,33 @@ Hyprbole is the desktop layer that runs after Arch Linux is installed. It owns t
 
 Use this guide when you want to understand what Hyprbole installed, how to change the everyday defaults, and how to repair the common desktop services.
 
+Examples use `hb`, the short alias for `hyprbole`. If the alias is not loaded in a shell yet, use `hyprbole` instead.
+
 ## Start Here
 
-- Run `hyprbole doctor` to check the desktop state.
-- Run `hyprbole verify` after install or major changes.
-- Run `hyprbole doctor --fix` for supported repairs.
-- Run `hyprbole docs` to build and open this guide locally.
-- Open the launcher with `SUPER + SPACE`.
-- Open the Hyprbole menu with `SUPER + ALT + SPACE`.
+- Run `hb doctor` to check the desktop state.
+- Run `hb verify` after install or major changes.
+- Run `hb doctor --fix` for supported repairs.
+- Run `hb docs` to build and open this guide locally.
+
+Must-have shortcuts:
+
+| Keybind | Action |
+| --- | --- |
+| `SUPER + SPACE` | Open Walker app launcher |
+| `SUPER + ALT + SPACE` | Open Hyprbole menu |
+| `SUPER + RETURN` | Open terminal |
+| `SUPER + SHIFT + F` | Open file manager |
+| `SUPER + SHIFT + B` | Open browser |
+| `SUPER + Q` | Close focused window |
+| `SUPER + left mouse drag` | Move window |
+| `SUPER + right mouse drag` | Resize window |
+
+For the full shortcut list, open Keybinds from the Hyprbole menu or run:
+
+```bash
+hb keybinds
+```
 
 ## What Hyprbole Owns
 
@@ -23,7 +42,7 @@ Use this guide when you want to understand what Hyprbole installed, how to chang
 - Brave Origin Nightly browser through a Hyprbole wrapper.
 - Nautilus file manager.
 - Theme and wallpaper state under `~/.config/hyprbole/current`.
-- Secret Service setup for GNOME Keyring/libsecret.
+- Keyring setup for GNOME Keyring/libsecret Secret Service integration.
 
 ## Important Paths
 
@@ -44,4 +63,4 @@ Hyprbole should be understandable from files on disk. When in doubt, inspect the
 
 Edit files under `~/.config` for your own machine. Treat `~/.local/share/hyprbole/default` and `~/.local/share/hyprbole/bin` as Hyprbole-owned framework files unless you are developing Hyprbole itself.
 
-If you are unsure whether a change belongs in user config or Hyprbole defaults, prefer user config first. You can always reset or refresh Hyprbole-owned runtime state with `hyprbole refresh-all`.
+If you are unsure whether a change belongs in user config or Hyprbole defaults, prefer user config first. You can always reset or refresh Hyprbole-owned runtime state with `hb refresh-all`.

@@ -3,20 +3,20 @@
 Start with the built-in checks:
 
 ```bash
-hyprbole doctor
-hyprbole verify
+hb doctor
+hb verify
 ```
 
 Use repair mode for supported fixes:
 
 ```bash
-hyprbole doctor --fix
+hb doctor --fix
 ```
 
 Use verbose output when you need the full checklist:
 
 ```bash
-hyprbole doctor --verbose
+hb doctor --verbose
 ```
 
 ## Fresh Install Looks Partial
@@ -24,8 +24,8 @@ hyprbole doctor --verbose
 Run:
 
 ```bash
-hyprbole refresh-all
-hyprbole doctor --verbose
+hb refresh-all
+hb doctor --verbose
 ```
 
 If generated GTK settings are missing, refresh GNOME/GTK appearance:
@@ -43,11 +43,11 @@ Expected files:
 
 If many config files are missing, rerun `./install.sh` from the Hyprbole checkout.
 
-## Wrong Session From SDDM
+## Login Does Not Start Hyprbole
 
-Choose `Hyprland (uwsm)` in SDDM. Hyprbole expects UWSM-managed startup so user services and the graphical session target behave correctly.
+Hyprbole expects SDDM to start Hyprland through UWSM so user services and the graphical session target behave correctly.
 
-If the session list only shows `Hyprland`, check that `uwsm` is installed:
+Check that `uwsm` is installed:
 
 ```bash
 pacman -Q uwsm
@@ -58,8 +58,8 @@ pacman -Q uwsm
 Run:
 
 ```bash
-hyprbole doctor --fix
-hyprbole verify
+hb doctor --fix
+hb verify
 ```
 
 Then fully close and relaunch Brave or VS Code.
@@ -81,13 +81,13 @@ Then close all Brave windows and relaunch through Hyprbole.
 Reapply the current theme:
 
 ```bash
-hyprbole theme set "$(hyprbole theme current)"
+hb theme set "$(hb theme current)"
 ```
 
 or switch back to the fallback:
 
 ```bash
-hyprbole theme set default-theme
+hb theme set default-theme
 ```
 
 ## Waybar Or Wallpaper Missing
@@ -110,12 +110,12 @@ hyprbole-restart-swayosd
 If user config files are intentionally being reset from Hyprbole defaults, use:
 
 ```bash
-hyprbole refresh-all --include-user-configs
+hb refresh-all --include-user-configs
 ```
 
 ## Installer Rerun
 
-`install.sh` is safe to rerun and can repair Hyprbole-owned state. It should not overwrite existing user-owned config copied from `config/`, but it may intentionally reapply generated state, browser launchers, service enables, SDDM files, browser policy links, Limine/Snapper defaults, and Secret Service setup.
+`install.sh` is safe to rerun and can repair Hyprbole-owned state. It should not overwrite existing user-owned config copied from `config/`, but it may intentionally reapply generated state, browser launchers, service enables, SDDM files, browser policy links, Limine/Snapper defaults, and Keyring setup.
 
 Installer logs are under:
 
@@ -124,13 +124,3 @@ Installer logs are under:
 ```
 
 Start with `latest.log` and `latest.diagnostics.txt`.
-
-## Disk Space
-
-Package installs can fail when `/` is full. Check space with:
-
-```bash
-df -h / /home
-```
-
-Common cleanup targets are package cache and user cache. Avoid deleting project files or config unless you know what owns them.

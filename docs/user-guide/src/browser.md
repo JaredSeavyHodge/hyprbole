@@ -60,7 +60,7 @@ The managed Brave policy is linked at:
 To reapply it:
 
 ```bash
-hyprbole browser setup-theme-policy
+hb browser setup-theme-policy
 ```
 
 If you do not want Hyprbole theme changes to update the browser policy, set this in `~/.config/hyprbole/settings.toml`:
@@ -89,13 +89,13 @@ Run:
 
 ```bash
 hyprbole-refresh-browser-launchers
-hyprbole verify
+hb verify
 ```
 
 or use:
 
 ```bash
-hyprbole doctor --fix
+hb doctor --fix
 ```
 
 Then close every Brave window and launch it again from the Hyprbole launcher, desktop entry, or browser keybind.

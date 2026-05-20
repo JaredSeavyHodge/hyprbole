@@ -18,11 +18,15 @@ DOCS_NAV=(
   "Install:install.md"
   "First Boot:first-boot.md"
   "Commands:commands.md"
+  "Hyprland Config:hyprland-config.md"
+  "Walker:walker.md"
+  "Neovim:neovim.md"
   "Themes:themes.md"
   "Browser:browser.md"
   "Keybinds:keybinds.md"
   "Packages:packages.md"
-  "Secret Service:secret-service.md"
+  "Snapshots:snapshots.md"
+  "Keyring:keyring.md"
   "Troubleshooting:troubleshooting.md"
 )
 
@@ -475,7 +479,7 @@ HTML
       overflow-x: auto;
     }
 
-    pre code {
+    .doc pre code {
       border: 0;
       padding: 0;
       background: transparent;

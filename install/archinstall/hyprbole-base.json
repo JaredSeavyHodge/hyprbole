@@ -21,9 +21,7 @@
   "ntp": true,
   "offline": false,
   "packages": [
-    "git",
-    "networkmanager",
-    "sudo"
+    "git"
   ],
   "parallel downloads": 5,
   "profile_config": null,

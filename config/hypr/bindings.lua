@@ -5,6 +5,8 @@
 --
 -- Add personal keybinds here. The shipped Hyprbole bindings load first, then this file.
 -- That means local binds here can extend the defaults without editing vendor files.
+-- Shipped binding handles are available under `Hyprbole.bindings` when you need to
+-- unbind and replace a default.
 --
 -- Use `hl.bind("KEYS", action)` with the same helper style used in the shipped config.
 -- The keybind cheat sheet menu reads this file too, so new binds added here will show up.
@@ -14,3 +16,7 @@
 --
 -- Example: quick note capture in Obsidian.
 -- hl.bind("SUPER + ALT + N", hl.dsp.exec_cmd("obsidian obsidian://new"))
+--
+-- Example: replace the default browser binding.
+-- Hyprbole.bindings.browser:unbind()
+-- hl.bind("SUPER + SHIFT + W", hl.dsp.exec_cmd("hyprbole-launch-browser"))

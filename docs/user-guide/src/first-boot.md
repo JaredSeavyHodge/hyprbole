@@ -1,16 +1,14 @@
 # First Boot
 
-Start a Hyprbole session from SDDM. Hyprland is launched through UWSM and loads the Lua config entrypoint at `~/.config/hypr/hyprland.lua`.
-
-In SDDM, choose `Hyprland (uwsm)` if more than one Hyprland session is listed.
+Log in from SDDM. Hyprbole configures SDDM to start Hyprland through UWSM, which loads the Lua config entrypoint at `~/.config/hypr/hyprland.lua`.
 
 ## First Checks
 
 Open a terminal and run:
 
 ```bash
-hyprbole doctor
-hyprbole verify
+hb doctor
+hb verify
 ```
 
 `doctor` gives a readable health report. `verify` is stricter and is useful after install, updates, and repairs.
@@ -34,6 +32,19 @@ hyprbole verify
 - `Print`: region screenshot
 - `Shift + Print`: full screen screenshot
 
+## Window Management Shortcuts
+
+- `SUPER + Q`: close focused window
+- `SUPER + T`: toggle floating window
+- `SUPER + F`: toggle fullscreen
+- `SUPER + H/J/K/L`: move focus left/down/up/right
+- `SUPER + 1..0`: focus workspace 1 through 10
+- `SUPER + SHIFT + 1..0`: move focused window to workspace 1 through 10
+- `SUPER + S`: toggle scratchpad workspace
+- `SUPER + SHIFT + S`: move focused window to scratchpad
+- `SUPER + left mouse drag`: move window
+- `SUPER + right mouse drag`: resize window
+
 Use the Keybinds entry in the Hyprbole menu to browse the current shortcuts.
 
 ## Open The Guide
@@ -41,14 +52,14 @@ Use the Keybinds entry in the Hyprbole menu to browse the current shortcuts.
 Build and open the local guide with:
 
 ```bash
-hyprbole docs
+hb docs
 ```
 
 The generated guide is written to `~/.config/hyprbole/docs/index.html`.
 
 ## Check Default Files
 
-Hyprbole copies editable defaults into `~/.config` only when missing. The most useful first files to inspect are:
+Hyprbole copies editable defaults into `~/.config` only when missing. The most useful first Hyprland files to inspect are:
 
 | File | Purpose |
 | --- | --- |
@@ -66,12 +77,12 @@ Run `hyprctl reload` after editing Hyprland config.
 Run:
 
 ```bash
-hyprbole doctor --verbose
+hb doctor --verbose
 ```
 
 If it reports missing generated theme state or browser launchers, run:
 
 ```bash
-hyprbole refresh-all
-hyprbole doctor
+hb refresh-all
+hb doctor
 ```

@@ -9,10 +9,10 @@ Official packages are declared in `install/packages.sh`. AUR packages are declar
 Open package menus:
 
 ```bash
-hyprbole pkg installed
-hyprbole pkg install
-hyprbole pkg aur-install
-hyprbole pkg remove
+hb pkg installed
+hb pkg install
+hb pkg aur-install
+hb pkg remove
 ```
 
 The Hyprbole menu also includes package install and removal entries.
@@ -24,7 +24,7 @@ These commands open interactive picker workflows. Use normal `pacman` or `yay` d
 Run:
 
 ```bash
-hyprbole update
+hb update
 ```
 
 Update will pull the Hyprbole checkout, update system packages, update AUR packages, run migrations, refresh Hyprbole runtime state, and print a summary.
@@ -36,29 +36,3 @@ The update command writes a terminal session log to:
 ```text
 /tmp/hyprbole-update.log
 ```
-
-## Snapshots
-
-Create a manual snapshot:
-
-```bash
-hyprbole snapshot create
-```
-
-Start the restore workflow:
-
-```bash
-hyprbole snapshot restore
-```
-
-Snapshot restore uses `limine-snapper-restore` when available.
-
-## Package Cache
-
-If disk space is low, inspect:
-
-```bash
-df -h / /home
-```
-
-The package cache at `/var/cache/pacman/pkg` can grow over time. Hyprbole update trims package cache with `paccache` when available.
