@@ -263,6 +263,12 @@ prompt_value() {
   local default_value="${2:-}"
   local value=""
 
+  if [[ ${HYPRBOLE_ASSUME_YES:-0} == 1 ]]; then
+    [[ -n $default_value ]] || die "$prompt is required; configure it before running install with --yes"
+    printf '%s' "$default_value"
+    return 0
+  fi
+
   if [[ -n $default_value ]]; then
     read -r -p "$prompt [$default_value]: " value
     if [[ -z $value ]]; then

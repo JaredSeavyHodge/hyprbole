@@ -32,10 +32,12 @@ deploy_defaults() {
       "$HOME/.local/share/nautilus-python/extensions/hyprbole_vscode.py"
   fi
 
-  sync_theme_assets default-theme
+  sync_current_theme_assets
 
   mkdir -p "$HYPRBOLE_CONFIG_PATH/metadata"
-  date --iso-8601=seconds >"$HYPRBOLE_CONFIG_PATH/metadata/installed-at"
+  if [[ ! -f $HYPRBOLE_CONFIG_PATH/metadata/installed-at ]]; then
+    date --iso-8601=seconds >"$HYPRBOLE_CONFIG_PATH/metadata/installed-at"
+  fi
 
   log_info "copied $copied_count user config file(s) that were missing"
 }
@@ -96,6 +98,20 @@ cleanup_hyprland_generated_stub() {
 sync_theme_assets() {
   local theme_name="$1"
   "$HYPRBOLE_PATH/bin/hyprbole" theme set "$theme_name"
+}
+
+sync_current_theme_assets() {
+  local current_theme=""
+
+  if [[ -f $HYPRBOLE_CONFIG_PATH/current/theme-name ]]; then
+    current_theme="$(<"$HYPRBOLE_CONFIG_PATH/current/theme-name")"
+  fi
+
+  if [[ -n $current_theme ]] && "$HYPRBOLE_PATH/bin/hyprbole" theme list | grep -Fxq -- "$current_theme"; then
+    sync_theme_assets "$current_theme"
+  else
+    sync_theme_assets default-theme
+  fi
 }
 
 seed_theme_sources_config() {

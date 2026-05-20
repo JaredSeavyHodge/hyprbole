@@ -58,6 +58,10 @@ reload_hyprland_after_install() {
   if command -v hyprctl >/dev/null 2>&1; then
     hyprctl reload >/dev/null 2>&1 || true
   fi
+
+  if [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} && -x $HYPRBOLE_PATH/bin/hyprbole-restart-waybar ]]; then
+    "$HYPRBOLE_PATH/bin/hyprbole-restart-waybar" >/dev/null 2>&1 || true
+  fi
 }
 
 setup_shell_environment() {
@@ -213,7 +217,11 @@ configure_limine_menu_defaults() {
   local tmp_file
   tmp_file=$(mktemp)
 
-  sudo grep -vE '^(timeout|default_entry|remember_last_entry|interface_branding_color):' /boot/limine.conf >"$tmp_file"
+  sudo awk '
+    /^(timeout|default_entry|remember_last_entry|interface_branding_color):/ { next }
+    /^$/ && ! seen_content { next }
+    { seen_content = 1; print }
+  ' /boot/limine.conf >"$tmp_file"
 
   cat <<'EOF' | sudo tee /boot/limine.conf >/dev/null
 timeout: 3
