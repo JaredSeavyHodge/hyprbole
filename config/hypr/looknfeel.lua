@@ -22,3 +22,10 @@
 --     },
 --   },
 -- })
+
+-- Example: coerce a lone window into a 2:1 ratio on widescreen displays.
+-- hl.config({
+--   layout = {
+--     single_window_aspect_ratio = { 2, 1 },
+--   },
+-- })
