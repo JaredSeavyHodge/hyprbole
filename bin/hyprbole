@@ -60,7 +60,7 @@ Packages:
 Tools:
   tools
   disk-usage [path...]
-  health
+  health [refresh|updates]
 
 Launch:
   apps
@@ -1116,6 +1116,13 @@ doctor() {
       doctor_report miss "$binary"
     fi
   done
+  for binary in hyprbole-health-check hyprbole-health-indicator hyprbole-health-report hyprbole-health-updates; do
+    if [[ -x $HYPRBOLE_PATH/bin/$binary ]]; then
+      doctor_report ok "$binary"
+    else
+      doctor_report miss "$binary"
+    fi
+  done
   doctor_section_finish
 
   doctor_section_start "Services: user"
@@ -1384,7 +1391,26 @@ launch_disk_usage() {
 }
 
 health_report() {
-  exec hyprbole-health-report
+  case "${1:-}" in
+    "")
+      exec hyprbole-health-report
+      ;;
+    refresh)
+      if ! systemctl start hyprbole-health-check.service; then
+        printf 'failed to start health check service\n' >&2
+        printf 'Try: sudo systemctl start hyprbole-health-check.service\n' >&2
+        return 1
+      fi
+      exec hyprbole-health-report
+      ;;
+    updates)
+      exec hyprbole-health-updates
+      ;;
+    *)
+      usage
+      return 1
+      ;;
+  esac
 }
 
 launch_health() {
@@ -1928,7 +1954,7 @@ main() {
       disk_usage "$@"
       ;;
     health)
-      health_report
+      health_report "${2:-}"
       ;;
     clipboard)
       launch_clipboard

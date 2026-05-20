@@ -88,10 +88,12 @@ hb disk-usage
 hb disk-usage ~/Downloads
 hb launch disk-usage
 hb health
+hb health refresh
+hb health updates
 hb launch health
 ```
 
-`hb tools` opens the Tools menu. `hb disk-usage` runs `dua i` in the current terminal. `hb launch disk-usage` opens it in a floating terminal for menu and launcher workflows. `hb health` prints the cached hourly system health report.
+`hb tools` opens the Tools menu. `hb disk-usage` runs `dua i` in the current terminal. `hb launch disk-usage` opens it in a floating terminal for menu and launcher workflows. `hb health` prints the cached hourly system health report. `hb health refresh` runs a fresh check through the systemd service. `hb health updates` checks package update age and Hyprbole repo freshness directly.
 
 ## Defaults
 

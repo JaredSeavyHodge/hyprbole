@@ -122,13 +122,15 @@ hyprbole_apply_font_settings() {
   local ui_font
   local mono_font
   local terminal_font
+  local waybar_font_stack
 
   ui_font="$(hyprbole_default_font ui)"
   mono_font="$(hyprbole_default_font mono)"
   terminal_font="$(hyprbole_default_font terminal)"
+  waybar_font_stack="\"$(hyprbole_css_double_escape "$mono_font")\", \"JetBrainsMono Nerd Font\", \"Symbols Nerd Font\", \"Font Awesome 7 Free\", \"Font Awesome 6 Free\""
 
   if [[ -f $HOME/.config/waybar/style.css ]]; then
-    sed -i "s|font-family: \"[^\"]*\";|font-family: \"$(hyprbole_css_double_escape "$mono_font")\";|" "$HOME/.config/waybar/style.css"
+    sed -i "/^\* {/,/^}/ s|font-family: .*;|font-family: $waybar_font_stack;|" "$HOME/.config/waybar/style.css"
   fi
 
   if [[ -f $HOME/.config/walker/themes/hyprbole/style.css ]]; then

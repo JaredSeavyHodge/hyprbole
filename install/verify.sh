@@ -139,6 +139,10 @@ verify_installation() {
   done
 
   for path in \
+    "$HYPRBOLE_PATH/bin/hyprbole-health-check" \
+    "$HYPRBOLE_PATH/bin/hyprbole-health-indicator" \
+    "$HYPRBOLE_PATH/bin/hyprbole-health-report" \
+    "$HYPRBOLE_PATH/bin/hyprbole-health-updates" \
     "$HOME/.config/hypr/hyprland.lua" \
     "$HYPRBOLE_CONFIG_PATH/theme-sources.conf" \
     "$HOME/.config/waybar/config.jsonc" \

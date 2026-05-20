@@ -6,7 +6,7 @@
   border: none;
   border-radius: 0;
   min-height: 0;
-  font-family: "JetBrainsMono Nerd Font";
+  font-family: "JetBrains Mono", "JetBrainsMono Nerd Font", "Symbols Nerd Font", "Font Awesome 7 Free", "Font Awesome 6 Free";
   font-size: 12px;
 }
 
@@ -87,8 +87,15 @@ window#waybar {
   font-size: 10px;
 }
 
+#custom-health,
+#pulseaudio {
+  font-family: "JetBrainsMono Nerd Font", "Symbols Nerd Font", "Font Awesome 7 Free", "Font Awesome 6 Free", "JetBrains Mono";
+  font-size: 14px;
+}
+
 #custom-health {
-  font-size: 11px;
+  margin-left: 0;
+  margin-right: 4px;
 }
 
 window#waybar #custom-health.warning {

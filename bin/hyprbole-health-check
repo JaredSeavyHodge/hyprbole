@@ -6,12 +6,14 @@ set -euo pipefail
 
 STATE_DIR="${HYPRBOLE_HEALTH_STATE_DIR:-/var/lib/hyprbole}"
 STATE_FILE="${HYPRBOLE_HEALTH_STATE_FILE:-$STATE_DIR/health.json}"
+HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
 DISK_WARNING_THRESHOLD="${HYPRBOLE_DISK_WARNING_THRESHOLD:-95}"
 DISK_BLOCK_THRESHOLD="${HYPRBOLE_DISK_BLOCK_THRESHOLD:-98}"
 NVME_WEAR_WARNING="${HYPRBOLE_NVME_WEAR_WARNING:-80}"
 NVME_WEAR_CRITICAL="${HYPRBOLE_NVME_WEAR_CRITICAL:-100}"
 NVME_TEMP_WARNING="${HYPRBOLE_NVME_TEMP_WARNING:-70}"
 NVME_TEMP_CRITICAL="${HYPRBOLE_NVME_TEMP_CRITICAL:-80}"
+UPDATE_WARNING_DAYS="${HYPRBOLE_UPDATE_WARNING_DAYS:-14}"
 
 issues_file=""
 warning_count=0
@@ -145,6 +147,26 @@ add_issue() {
     --arg message "$message" \
     --arg details "$details" \
     '{severity: $severity, category: $category, target: $target, message: $message, details: $details}' >>"$issues_file"
+}
+
+append_issue_json() {
+  local issue="$1"
+  local severity
+
+  severity="$(jq -r '.severity // empty' <<<"$issue" 2>/dev/null || true)"
+  case "$severity" in
+    critical)
+      critical_count=$((critical_count + 1))
+      ;;
+    warning)
+      warning_count=$((warning_count + 1))
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+
+  printf '%s\n' "$issue" >>"$issues_file"
 }
 
 json_int() {
@@ -306,6 +328,18 @@ scan_failed_system_units() {
   add_issue warning systemd system "Failed systemd units are present" "$summary"
 }
 
+scan_update_health() {
+  local probe="$HYPRBOLE_PATH/bin/hyprbole-health-updates"
+  local issue
+
+  [[ -x $probe ]] || return 0
+
+  while IFS= read -r issue; do
+    [[ -n $issue ]] || continue
+    append_issue_json "$issue"
+  done < <(env HYPRBOLE_PATH="$HYPRBOLE_PATH" HYPRBOLE_UPDATE_WARNING_DAYS="$UPDATE_WARNING_DAYS" "$probe" --json-issues 2>/dev/null || true)
+}
+
 write_report() {
   local checked_at
   local status="ok"
@@ -336,6 +370,7 @@ write_report() {
     printf '"disk_block_threshold":%d,' "$DISK_BLOCK_THRESHOLD"
     printf '"nvme_wear_warning":%d,' "$NVME_WEAR_WARNING"
     printf '"nvme_wear_critical":%d,' "$NVME_WEAR_CRITICAL"
+    printf '"update_warning_days":%d,' "$UPDATE_WARNING_DAYS"
     printf '"issues":[%s]' "$issues_json"
     printf '}\n'
   } >"$tmp_file"
@@ -350,6 +385,8 @@ run_health_check() {
     return 1
   }
 
+  is_int "$UPDATE_WARNING_DAYS" || UPDATE_WARNING_DAYS=14
+
   issues_file="$(mktemp)"
 
   scan_disk_usage
@@ -357,6 +394,7 @@ run_health_check() {
   scan_nvme_health
   scan_smart_health
   scan_failed_system_units
+  scan_update_health
   write_report
 }
 

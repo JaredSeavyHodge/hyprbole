@@ -32,12 +32,14 @@ From a terminal, `hb disk-usage` runs `dua i` in the current terminal. Launcher 
 
 ## System Health
 
-`System Health` opens the cached hourly health report. The Waybar health indicator only appears when the report has warnings or critical issues.
+`System Health` opens the cached hourly health report. Waybar shows a health bell beside the date; it inherits the theme when there are no alerts, turns orange for warnings, and turns red for high alerts.
 
 Run it directly with:
 
 ```bash
 hb health
+hb health refresh
+hb health updates
 ```
 
 The Tools menu also includes `System Monitor` for `btop` and `System Info` for Hyprland system information.

@@ -5,6 +5,7 @@
 set -euo pipefail
 
 STATE_FILE="${HYPRBOLE_HEALTH_STATE_FILE:-/var/lib/hyprbole/health.json}"
+BELL_ICON=""
 
 emit() {
   local text="$1"
@@ -14,8 +15,13 @@ emit() {
   jq -cn --arg text "$text" --arg class "$class_name" --arg tooltip "$tooltip" '{text: $text, class: $class, tooltip: $tooltip}'
 }
 
-if [[ ! -f $STATE_FILE ]] || ! command -v jq >/dev/null 2>&1; then
-  emit "" hidden "Health check has not run yet"
+if ! command -v jq >/dev/null 2>&1; then
+  printf '{"text":"%s","class":"warning","tooltip":"Health indicator missing jq"}\n' "$BELL_ICON"
+  exit 0
+fi
+
+if [[ ! -f $STATE_FILE ]]; then
+  emit "$BELL_ICON" normal "No Alerts"
   exit 0
 fi
 
@@ -30,15 +36,15 @@ fi
 
 case "$status" in
   ok)
-    emit "" hidden "System health OK\nChecked: $checked_at"
+    emit "$BELL_ICON" normal "No Alerts"
     ;;
   warning)
-    emit "" warning "Health warnings: $warning_count\nChecked: $checked_at\n$issue_lines"
+    emit "$BELL_ICON" warning "Health warnings: $warning_count\nChecked: $checked_at\n$issue_lines"
     ;;
   critical)
-    emit "" critical "Health critical: $critical_count critical, $warning_count warning\nChecked: $checked_at\n$issue_lines"
+    emit "$BELL_ICON" critical "High alert: $critical_count critical, $warning_count warning\nChecked: $checked_at\n$issue_lines"
     ;;
   *)
-    emit "" warning "Health state unknown\nChecked: $checked_at"
+    emit "$BELL_ICON" warning "Health state unknown\nChecked: $checked_at"
     ;;
 esac

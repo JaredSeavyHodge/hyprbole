@@ -1,0 +1,216 @@
+#!/bin/bash
+
+# hyprbole:summary=Check package and Hyprbole update freshness
+# hyprbole:args=[--json-issues]
+
+set -euo pipefail
+
+HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
+PACMAN_LOG="${HYPRBOLE_PACMAN_LOG:-/var/log/pacman.log}"
+UPDATE_WARNING_DAYS="${HYPRBOLE_UPDATE_WARNING_DAYS:-14}"
+GIT_TIMEOUT="${HYPRBOLE_HEALTH_GIT_TIMEOUT:-8}"
+
+issues_file=""
+warning_count=0
+last_update_timestamp="unknown"
+last_update_age_days="unknown"
+repo_status="not checked"
+repo_details=""
+
+cleanup() {
+  [[ -n $issues_file && -f $issues_file ]] && rm -f "$issues_file"
+  return 0
+}
+trap cleanup EXIT
+
+is_int() {
+  [[ ${1:-} =~ ^[0-9]+$ ]]
+}
+
+add_issue() {
+  local severity="$1"
+  local category="$2"
+  local target="$3"
+  local message="$4"
+  local details="${5:-}"
+
+  if [[ $severity == warning ]]; then
+    warning_count=$((warning_count + 1))
+  fi
+
+  jq -cn \
+    --arg severity "$severity" \
+    --arg category "$category" \
+    --arg target "$target" \
+    --arg message "$message" \
+    --arg details "$details" \
+    '{severity: $severity, category: $category, target: $target, message: $message, details: $details}' >>"$issues_file"
+}
+
+last_full_system_upgrade() {
+  [[ -r $PACMAN_LOG ]] || return 1
+  sed -n 's/^\[\([^]]*\)\] \[PACMAN\] starting full system upgrade.*/\1/p' "$PACMAN_LOG" | tail -n 1
+}
+
+scan_system_update_age() {
+  local timestamp
+  local last_epoch
+  local now_epoch
+  local age_days
+
+  timestamp="$(last_full_system_upgrade || true)"
+  [[ -n $timestamp ]] || return 0
+
+  last_update_timestamp="$timestamp"
+  if ! last_epoch="$(date -d "$timestamp" +%s 2>/dev/null)"; then
+    last_update_age_days="unknown"
+    return 0
+  fi
+
+  now_epoch="$(date +%s)"
+  if (( now_epoch < last_epoch )); then
+    age_days=0
+  else
+    age_days=$(((now_epoch - last_epoch) / 86400))
+  fi
+  last_update_age_days="$age_days"
+
+  if (( age_days >= UPDATE_WARNING_DAYS )); then
+    add_issue warning updates pacman \
+      "System has not had a full package update in ${age_days} days" \
+      "last_full_system_upgrade=$timestamp; warning_days=$UPDATE_WARNING_DAYS"
+  fi
+}
+
+scan_hyprbole_repo() {
+  local upstream
+  local remote
+  local branch
+  local remote_url
+  local head_sha
+  local upstream_sha
+  local remote_sha
+  local git_cmd
+
+  repo_status="not a git checkout"
+  [[ -d $HYPRBOLE_PATH/.git ]] || return 0
+
+  if ! command -v git >/dev/null 2>&1; then
+    repo_status="git missing"
+    return 0
+  fi
+
+  git_cmd=(git -c "safe.directory=$HYPRBOLE_PATH" -C "$HYPRBOLE_PATH")
+  upstream="$(${git_cmd[@]} rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
+  if [[ -z $upstream || $upstream == "@{upstream}" ]]; then
+    repo_status="no upstream configured"
+    return 0
+  fi
+
+  remote="${upstream%%/*}"
+  branch="${upstream#*/}"
+  if [[ -z $remote || -z $branch || $remote == "$branch" ]]; then
+    repo_status="unsupported upstream: $upstream"
+    return 0
+  fi
+
+  remote_url="$(${git_cmd[@]} remote get-url "$remote" 2>/dev/null || true)"
+  if [[ -z $remote_url ]]; then
+    repo_status="remote missing: $remote"
+    return 0
+  fi
+
+  head_sha="$(${git_cmd[@]} rev-parse --verify HEAD 2>/dev/null || true)"
+  upstream_sha="$(${git_cmd[@]} rev-parse --verify "${upstream}^{commit}" 2>/dev/null || true)"
+  repo_details="upstream=$upstream; remote=$remote_url"
+
+  remote_sha="$(GIT_TERMINAL_PROMPT=0 timeout "$GIT_TIMEOUT" git ls-remote --heads "$remote_url" "refs/heads/$branch" 2>/dev/null | sed -n '1s/[[:space:]].*//p' || true)"
+  if [[ -z $remote_sha ]]; then
+    repo_status="remote unavailable"
+    return 0
+  fi
+
+  if [[ -n $head_sha && $remote_sha == "$head_sha" ]]; then
+    repo_status="up to date"
+    return 0
+  fi
+
+  if [[ -z $upstream_sha || $remote_sha != "$upstream_sha" ]]; then
+    repo_status="updates available"
+    add_issue warning updates "$HYPRBOLE_PATH" \
+      "Hyprbole repository has upstream updates available" \
+      "upstream=$upstream; local_tracking=${upstream_sha:-unknown}; remote=$remote_sha"
+    return 0
+  fi
+
+  if [[ -n $head_sha && $head_sha != "$upstream_sha" ]]; then
+    if ${git_cmd[@]} merge-base --is-ancestor "$head_sha" "$upstream_sha" 2>/dev/null; then
+      repo_status="behind upstream"
+      add_issue warning updates "$HYPRBOLE_PATH" \
+        "Hyprbole repository is behind upstream" \
+        "upstream=$upstream; head=$head_sha; upstream_head=$upstream_sha"
+      return 0
+    elif ${git_cmd[@]} merge-base --is-ancestor "$upstream_sha" "$head_sha" 2>/dev/null; then
+      repo_status="ahead of upstream"
+      return 0
+    else
+      repo_status="diverged from upstream"
+      return 0
+    fi
+  fi
+
+  repo_status="up to date"
+}
+
+run_checks() {
+  command -v jq >/dev/null 2>&1 || {
+    printf 'missing required command: jq\n' >&2
+    return 1
+  }
+
+  is_int "$UPDATE_WARNING_DAYS" || UPDATE_WARNING_DAYS=14
+  is_int "$GIT_TIMEOUT" || GIT_TIMEOUT=8
+
+  issues_file="$(mktemp)"
+  scan_system_update_age
+  scan_hyprbole_repo
+}
+
+print_report() {
+  printf 'Hyprbole update health\n\n'
+  printf 'Last full system upgrade: %s' "$last_update_timestamp"
+  if [[ $last_update_age_days != unknown ]]; then
+    printf ' (%s days ago)' "$last_update_age_days"
+  fi
+  printf '\n'
+  printf 'System update warning threshold: %s days\n' "$UPDATE_WARNING_DAYS"
+  printf 'Hyprbole repo: %s\n' "$repo_status"
+  if [[ -n $repo_details ]]; then
+    printf 'Repo details: %s\n' "$repo_details"
+  fi
+
+  if (( warning_count == 0 )); then
+    printf '\nNo update alerts.\n'
+    return 0
+  fi
+
+  printf '\nAlerts\n'
+  jq -r '"\n[\(.severity)] \(.message)\nTarget: \(.target)\nCategory: \(.category)\nDetails: \(.details)"' "$issues_file"
+}
+
+case "${1:-}" in
+  "")
+    run_checks
+    print_report
+    ;;
+  --json-issues)
+    run_checks
+    if [[ -s $issues_file ]]; then
+      cat "$issues_file"
+    fi
+    ;;
+  *)
+    printf 'Usage: hyprbole-health-updates [--json-issues]\n' >&2
+    exit 2
+    ;;
+esac

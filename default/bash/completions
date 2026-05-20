@@ -98,6 +98,12 @@ _hyprbole_complete() {
       fi
       return 0
       ;;
+    health)
+      if (( COMP_CWORD == 2 )); then
+        COMPREPLY=($(compgen -W 'refresh updates' -- "$cur"))
+      fi
+      return 0
+      ;;
     launch)
       if (( COMP_CWORD == 2 )); then
         COMPREPLY=($(compgen -W 'apps menu tools keybinds clipboard launcher disk-usage health themes my-wallpaper-menu wallpaper-menu update pkg-installed pkg-install pkg-aur-install pkg-remove' -- "$cur"))

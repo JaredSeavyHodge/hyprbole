@@ -9,7 +9,7 @@ STATE_FILE="${HYPRBOLE_HEALTH_STATE_FILE:-/var/lib/hyprbole/health.json}"
 if [[ ! -f $STATE_FILE ]]; then
   printf 'Hyprbole health\n\n'
   printf 'No cached health report found.\n'
-  printf 'Run: sudo systemctl start hyprbole-health-check.service\n'
+  printf 'Run: hb health refresh\n'
   exit 0
 fi
 
@@ -38,4 +38,4 @@ printf '\nIssues\n'
 jq -r '.issues[]? | "\n[\(.severity)] \(.message)\nTarget: \(.target)\nCategory: \(.category)\nDetails: \(.details)"' "$STATE_FILE"
 
 printf '\nTo run a fresh check:\n'
-printf 'sudo systemctl start hyprbole-health-check.service\n'
+printf 'hb health refresh\n'
