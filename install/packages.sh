@@ -32,6 +32,7 @@ HYPRBOLE_OFFICIAL_PACKAGES=(
   zoxide
   fzf
   bat
+  eza
   fd
   ripgrep
   unzip

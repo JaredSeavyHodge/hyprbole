@@ -20,6 +20,7 @@ DOCS_NAV=(
   "Install:install.md"
   "First Boot:first-boot.md"
   "Commands:commands.md"
+  "Terminal:terminal.md"
   "Hyprland:hyprland-config.md"
   "App Launcher:walker.md"
   "Neovim:neovim.md"
