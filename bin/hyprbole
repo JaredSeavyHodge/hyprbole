@@ -267,8 +267,7 @@ set_theme() {
   hyprbole-refresh-vscode >/dev/null 2>&1 || true
   hyprbole-restart-terminal >/dev/null 2>&1 || true
   hyprctl reload >/dev/null 2>&1 || true
-  pkill -x waybar >/dev/null 2>&1 || true
-  waybar >/dev/null 2>&1 & disown
+  hyprbole-restart-waybar >/dev/null 2>&1 || true
   hyprbole-restart-swayosd >/dev/null 2>&1 || true
 }
 
