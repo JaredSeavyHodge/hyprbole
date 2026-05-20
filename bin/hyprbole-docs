@@ -1,31 +1,910 @@
 #!/bin/bash
 
-# hyprbole:summary=Build and open the Hyprbole user guide
+# hyprbole:summary=Generate and open the Hyprbole user guide
+# hyprbole:args=[--no-open]
 
 set -euo pipefail
 
 HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
 HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
-DOCS_SOURCE_DIR="$HYPRBOLE_PATH/docs/user-guide"
-DOCS_SITE_DIR="$HYPRBOLE_CONFIG_PATH/docs/site"
-DOCS_INDEX="$DOCS_SITE_DIR/index.html"
+DOCS_SOURCE_DIR="$HYPRBOLE_PATH/docs/user-guide/src"
+DOCS_OUTPUT_DIR="$HYPRBOLE_CONFIG_PATH/docs"
+DOCS_INDEX="$DOCS_OUTPUT_DIR/index.html"
+THEME_COLORS_PATH="$HYPRBOLE_CONFIG_PATH/current/theme/colors.toml"
+OPEN_DOCS=1
 
-if ! command -v mkdocs >/dev/null 2>&1; then
-  printf 'missing required command: mkdocs\n' >&2
-  printf 'Install the official packages: sudo pacman -S mkdocs mkdocs-material\n' >&2
+DOCS_NAV=(
+  "Welcome:index.md"
+  "Install:install.md"
+  "First Boot:first-boot.md"
+  "Commands:commands.md"
+  "Themes:themes.md"
+  "Browser:browser.md"
+  "Keybinds:keybinds.md"
+  "Packages:packages.md"
+  "Secret Service:secret-service.md"
+  "Troubleshooting:troubleshooting.md"
+)
+
+while (( $# > 0 )); do
+  case "$1" in
+    --no-open)
+      OPEN_DOCS=0
+      ;;
+    *)
+      printf 'Usage: hyprbole-docs [--no-open]\n' >&2
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+json_string() {
+  jq -Rn --arg value "$1" '$value'
+}
+
+theme_color() {
+  local key="$1"
+
+  [[ -f $THEME_COLORS_PATH ]] || return 1
+  sed -n "s/^[[:space:]]*${key}[[:space:]]*=[[:space:]]*\"\(#[0-9A-Fa-f]\{6\}\)\".*/\1/p" "$THEME_COLORS_PATH" | head -n 1
+}
+
+hex_to_rgb_triplet() {
+  local hex="${1#\#}"
+
+  [[ $hex =~ ^[0-9A-Fa-f]{6}$ ]] || return 1
+  printf '%d, %d, %d\n' "0x${hex:0:2}" "0x${hex:2:2}" "0x${hex:4:2}"
+}
+
+color_luma() {
+  local hex="${1#\#}"
+  local r
+  local g
+  local b
+
+  [[ $hex =~ ^[0-9A-Fa-f]{6}$ ]] || return 1
+  r=$((16#${hex:0:2}))
+  g=$((16#${hex:2:2}))
+  b=$((16#${hex:4:2}))
+  printf '%d\n' $(((r * 299 + g * 587 + b * 114) / 1000))
+}
+
+darkest_theme_color() {
+  local key
+  local color
+  local luma
+  local best_color=""
+  local best_luma=999
+
+  for key in background color0 color8 selection_foreground active_tab_background accent color1 color2 color3 color4 color5 color6 color7 color9 color10 color11 color12 color13 color14 color15 foreground; do
+    color="$(theme_color "$key" || true)"
+    [[ -n $color ]] || continue
+    luma="$(color_luma "$color" || true)"
+    [[ -n $luma ]] || continue
+    if (( luma < best_luma )); then
+      best_luma=$luma
+      best_color="$color"
+    fi
+  done
+
+  [[ -n $best_color ]] || return 1
+  printf '%s\n' "$best_color"
+}
+
+emit_theme_css() {
+  local base_color
+  local base_rgb
+  local accent_color
+  local accent_rgb
+  local accent2_color
+  local accent2_rgb
+
+  base_color="$(darkest_theme_color || true)"
+  accent_color="$(theme_color accent || true)"
+  accent2_color="$(theme_color color6 || true)"
+
+  base_rgb="$(hex_to_rgb_triplet "${base_color:-#070910}" || printf '7, 9, 16\n')"
+  accent_rgb="$(hex_to_rgb_triplet "${accent_color:-#9bb1ff}" || printf '155, 177, 255\n')"
+  accent2_rgb="$(hex_to_rgb_triplet "${accent2_color:-#78e0c5}" || printf '120, 224, 197\n')"
+
+  printf '    :root {\n'
+  printf '      --theme-darkest: %s;\n' "${base_color:-#070910}"
+  printf '      --theme-darkest-rgb: %s;\n' "$base_rgb"
+  printf '      --theme-accent: %s;\n' "${accent_color:-#9bb1ff}"
+  printf '      --theme-accent-rgb: %s;\n' "$accent_rgb"
+  printf '      --theme-accent-2: %s;\n' "${accent2_color:-#78e0c5}"
+  printf '      --theme-accent-2-rgb: %s;\n' "$accent2_rgb"
+  printf '    }\n'
+}
+
+emit_docs_json() {
+  local entry
+  local title
+  local file
+  local id
+  local markdown_json
+  local first=1
+
+  printf '['
+  for entry in "${DOCS_NAV[@]}"; do
+    title="${entry%%:*}"
+    file="${entry#*:}"
+    id="${file%.md}"
+
+    if [[ ! -f $DOCS_SOURCE_DIR/$file ]]; then
+      printf 'missing guide page: %s\n' "$DOCS_SOURCE_DIR/$file" >&2
+      exit 1
+    fi
+
+    markdown_json="$(jq -Rs . <"$DOCS_SOURCE_DIR/$file")"
+
+    if (( first == 0 )); then
+      printf ','
+    fi
+    first=0
+
+    printf '{"id":%s,"title":%s,"path":%s,"markdown":%s}' \
+      "$(json_string "$id")" \
+      "$(json_string "$title")" \
+      "$(json_string "$file")" \
+      "$markdown_json"
+  done
+  printf ']'
+}
+
+if ! command -v jq >/dev/null 2>&1; then
+  printf 'missing required command: jq\n' >&2
   exit 1
 fi
 
-if [[ ! -f $DOCS_SOURCE_DIR/mkdocs.yml ]]; then
-  printf 'missing Hyprbole docs source: %s\n' "$DOCS_SOURCE_DIR/mkdocs.yml" >&2
+if [[ ! -d $DOCS_SOURCE_DIR ]]; then
+  printf 'missing Hyprbole docs source: %s\n' "$DOCS_SOURCE_DIR" >&2
   exit 1
 fi
 
-mkdocs build --clean --strict --config-file "$DOCS_SOURCE_DIR/mkdocs.yml" --site-dir "$DOCS_SITE_DIR" >/dev/null
+mkdir -p "$DOCS_OUTPUT_DIR"
 
-if [[ ! -f $DOCS_INDEX ]]; then
-  printf 'Hyprbole docs build did not create %s\n' "$DOCS_INDEX" >&2
-  exit 1
+{
+  cat <<'HTML'
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Hyprbole Guide</title>
+  <style>
+    :root {
+      --bg: #080a0f;
+      --bg-2: #0d111a;
+      --panel: rgba(16, 22, 34, 0.78);
+      --panel-strong: rgba(21, 29, 45, 0.94);
+      --text: #e6edf7;
+      --muted: #8f9caf;
+      --subtle: #5d6a7f;
+      --border: rgba(133, 151, 180, 0.18);
+      --accent: #9bb1ff;
+      --accent-2: #78e0c5;
+      --code: #111827;
+      --danger: #ff8a9a;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+      --radius: 20px;
+      --theme-darkest: #070910;
+      --theme-darkest-rgb: 7, 9, 16;
+      --theme-accent: #9bb1ff;
+      --theme-accent-rgb: 155, 177, 255;
+      --theme-accent-2: #78e0c5;
+      --theme-accent-2-rgb: 120, 224, 197;
+      color-scheme: dark;
+      font-family: Inter, "Open Sans", system-ui, sans-serif;
+    }
+
+HTML
+  emit_theme_css
+  cat <<'HTML'
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 18% -10%, rgba(var(--theme-accent-2-rgb), 0.16), transparent 34rem),
+        radial-gradient(circle at 92% 8%, rgba(var(--theme-accent-rgb), 0.15), transparent 36rem),
+        linear-gradient(145deg, var(--theme-darkest) 0%, rgba(var(--theme-darkest-rgb), 0.86) 42%, #05070b 100%);
+      color: var(--text);
+    }
+
+    a { color: var(--accent); }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 20rem minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 1.25rem;
+      border-right: 1px solid var(--border);
+      background: rgba(7, 10, 16, 0.44);
+      backdrop-filter: blur(22px);
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin-bottom: 1.25rem;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(145deg, rgba(155, 177, 255, 0.12), rgba(120, 224, 197, 0.08));
+      box-shadow: var(--shadow);
+    }
+
+    .brand-title {
+      margin: 0;
+      font-size: 1.35rem;
+      letter-spacing: -0.03em;
+    }
+
+    .brand-subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .search {
+      display: block;
+      position: relative;
+      margin-bottom: 1.3rem;
+    }
+
+    .search input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.82rem 1rem;
+      background: rgba(14, 20, 31, 0.94);
+      color: var(--text);
+      outline: none;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .search input:focus {
+      border-color: rgba(155, 177, 255, 0.68);
+      box-shadow: 0 0 0 3px rgba(155, 177, 255, 0.13);
+    }
+
+    .search-kbd {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      translate: 0 -50%;
+      color: var(--subtle);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.75rem;
+      pointer-events: none;
+    }
+
+    .nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .nav button,
+    .toc button,
+    .result button {
+      width: 100%;
+      border: 0;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .nav button {
+      border-radius: 0.9rem;
+      padding: 0.7rem 0.85rem;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .nav button:hover,
+    .nav button.active {
+      background: rgba(155, 177, 255, 0.12);
+      color: var(--text);
+    }
+
+    .nav button.active {
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    .content-wrap {
+      min-width: 0;
+      padding: 2rem;
+    }
+
+    .topbar {
+      display: none;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      margin: -2rem -2rem 1.25rem;
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(7, 10, 16, 0.88);
+      backdrop-filter: blur(18px);
+    }
+
+    .topbar button {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.55rem 0.85rem;
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 58rem) 15rem;
+      gap: 2rem;
+      align-items: start;
+      max-width: 78rem;
+      margin: 0 auto;
+    }
+
+    main {
+      min-width: 0;
+      padding: clamp(1.25rem, 3vw, 2.4rem);
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) + 8px);
+      background: rgba(9, 13, 21, 0.5);
+      box-shadow: var(--shadow);
+    }
+
+    .doc-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.25rem 0.55rem;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .doc h1,
+    .doc h2,
+    .doc h3 {
+      letter-spacing: -0.035em;
+      line-height: 1.05;
+    }
+
+    .doc h1 {
+      margin: 0 0 1.25rem;
+      font-size: clamp(2.1rem, 5.4vw, 3.9rem);
+    }
+
+    .doc h2 {
+      margin: 2.3rem 0 0.8rem;
+      padding-top: 0.35rem;
+      font-size: clamp(1.45rem, 3vw, 2rem);
+    }
+
+    .doc h3 {
+      margin: 1.8rem 0 0.65rem;
+      font-size: 1.2rem;
+    }
+
+    .doc p,
+    .doc li {
+      color: #d3dbea;
+      font-size: 1rem;
+      line-height: 1.76;
+    }
+
+    .doc p { margin: 1rem 0; }
+
+    .doc ul {
+      margin: 0.75rem 0 1rem;
+      padding-left: 1.25rem;
+    }
+
+    .doc li::marker { color: var(--accent-2); }
+
+    .doc code {
+      border: 1px solid rgba(133, 151, 180, 0.14);
+      border-radius: 0.45rem;
+      padding: 0.12rem 0.35rem;
+      background: rgba(17, 24, 39, 0.9);
+      color: #dce6ff;
+      font-family: "JetBrains Mono", "Cascadia Code", monospace;
+      font-size: 0.9em;
+    }
+
+    .codeblock {
+      margin: 1.6rem 0 2rem;
+      border: 1px solid var(--border);
+      border-radius: 1.1rem;
+      overflow: hidden;
+      background: var(--code);
+    }
+
+    .codebar {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid rgba(133, 151, 180, 0.14);
+      color: var(--muted);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.78rem;
+    }
+
+    .copy-code {
+      border: 0;
+      border-radius: 999px;
+      padding: 0.2rem 0.55rem;
+      background: rgba(155, 177, 255, 0.13);
+      color: var(--text);
+      cursor: pointer;
+      font: inherit;
+    }
+
+    pre {
+      margin: 0;
+      padding: 1rem;
+      overflow-x: auto;
+    }
+
+    pre code {
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: #e7eefc;
+      font-size: 0.9rem;
+      line-height: 1.65;
+    }
+
+    .table-wrap {
+      margin: 1rem 0 1.4rem;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 1.1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 32rem;
+    }
+
+    th,
+    td {
+      padding: 0.8rem 0.9rem;
+      border-bottom: 1px solid rgba(133, 151, 180, 0.14);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--text);
+      background: rgba(155, 177, 255, 0.08);
+      font-weight: 700;
+    }
+
+    td { color: #d3dbea; }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .toc {
+      position: sticky;
+      top: 2rem;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(9, 13, 21, 0.58);
+    }
+
+    .toc-title {
+      margin: 0 0 0.6rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .toc button {
+      border-radius: 0.7rem;
+      padding: 0.42rem 0.5rem;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.35;
+    }
+
+    .toc button:hover { color: var(--text); background: rgba(255, 255, 255, 0.04); }
+
+    .toc .level-3 { padding-left: 1.1rem; }
+
+    .results-title {
+      margin: 0 0 1rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .result {
+      margin: 0.8rem 0;
+      border: 1px solid var(--border);
+      border-radius: 1.1rem;
+      background: rgba(255, 255, 255, 0.03);
+      overflow: hidden;
+    }
+
+    .result button {
+      padding: 1rem;
+      background: transparent;
+    }
+
+    .result strong { display: block; font-size: 1.05rem; }
+
+    .result span {
+      display: block;
+      margin-top: 0.35rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    mark {
+      border-radius: 0.25rem;
+      padding: 0 0.15rem;
+      background: rgba(120, 224, 197, 0.25);
+      color: var(--text);
+    }
+
+    .empty {
+      padding: 2rem;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      color: var(--muted);
+    }
+
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar {
+        position: fixed;
+        z-index: 20;
+        inset: 0 auto 0 0;
+        width: min(86vw, 22rem);
+        transform: translateX(-105%);
+        transition: transform 160ms ease;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .content-wrap { padding: 1rem; }
+      .topbar { display: flex; align-items: center; justify-content: space-between; }
+      .layout { grid-template-columns: 1fr; }
+      .toc { display: none; }
+      main { border-radius: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar" aria-label="Guide navigation">
+      <section class="brand">
+        <h1 class="brand-title">Hyprbole Guide</h1>
+        <p class="brand-subtitle">Local desktop docs. No server, no framework, just the guide on disk.</p>
+      </section>
+      <label class="search">
+        <input id="search" type="search" placeholder="Search the guide" autocomplete="off">
+        <span class="search-kbd">/</span>
+      </label>
+      <nav class="nav" id="nav"></nav>
+    </aside>
+    <div class="content-wrap">
+      <div class="topbar">
+        <button id="menuButton" type="button">Guide Menu</button>
+        <span>Hyprbole Guide</span>
+      </div>
+      <div class="layout">
+        <main>
+          <div class="doc-meta" id="meta"></div>
+          <article class="doc" id="content"></article>
+        </main>
+        <aside class="toc" id="toc" aria-label="Page sections"></aside>
+      </div>
+    </div>
+  </div>
+  <script>
+    const docs =
+HTML
+  emit_docs_json
+  cat <<'HTML'
+;
+
+    const nav = document.getElementById('nav');
+    const content = document.getElementById('content');
+    const meta = document.getElementById('meta');
+    const toc = document.getElementById('toc');
+    const search = document.getElementById('search');
+    const sidebar = document.getElementById('sidebar');
+    const menuButton = document.getElementById('menuButton');
+    let currentId = docs[0]?.id || 'index';
+    let currentHeadings = [];
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function escapeRegExp(value) {
+      return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function slugify(value) {
+      return value.toLowerCase()
+        .replace(/`([^`]+)`/g, '$1')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-') || 'section';
+    }
+
+    function inlineMarkdown(value) {
+      let html = escapeHtml(value);
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => {
+        const safeUrl = escapeHtml(url);
+        return `<a href="${safeUrl}">${label}</a>`;
+      });
+      html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      return html;
+    }
+
+    function tableCells(line) {
+      return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(cell => cell.trim());
+    }
+
+    function isTableSeparator(line) {
+      return /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
+    }
+
+    function renderTable(lines) {
+      const header = tableCells(lines[0]);
+      const rows = lines.slice(2).map(tableCells);
+      return `<div class="table-wrap"><table><thead><tr>${header.map(cell => `<th>${inlineMarkdown(cell)}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${row.map(cell => `<td>${inlineMarkdown(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    }
+
+    function renderCodeBlock(language, code) {
+      const label = language || 'text';
+      return `<div class="codeblock"><div class="codebar"><span>${escapeHtml(label)}</span><button class="copy-code" type="button">copy</button></div><pre><code>${escapeHtml(code.replace(/\n$/, ''))}</code></pre></div>`;
+    }
+
+    function renderMarkdown(markdown) {
+      const lines = markdown.replace(/\r\n/g, '\n').split('\n');
+      const output = [];
+      const headings = [];
+      let i = 0;
+
+      while (i < lines.length) {
+        const line = lines[i];
+
+        if (!line.trim()) {
+          i += 1;
+          continue;
+        }
+
+        const fence = line.match(/^```\s*([^`]*)\s*$/);
+        if (fence) {
+          const code = [];
+          i += 1;
+          while (i < lines.length && !/^```\s*$/.test(lines[i])) {
+            code.push(lines[i]);
+            i += 1;
+          }
+          if (i < lines.length) i += 1;
+          output.push(renderCodeBlock(fence[1].trim(), code.join('\n')));
+          continue;
+        }
+
+        const heading = line.match(/^(#{1,3})\s+(.+)$/);
+        if (heading) {
+          const level = heading[1].length;
+          const text = heading[2].trim();
+          let id = slugify(text);
+          let suffix = 2;
+          while (headings.some(existing => existing.id === id)) {
+            id = `${slugify(text)}-${suffix}`;
+            suffix += 1;
+          }
+          headings.push({ level, text, id });
+          output.push(`<h${level} id="${id}">${inlineMarkdown(text)}</h${level}>`);
+          i += 1;
+          continue;
+        }
+
+        if (line.trim().startsWith('|') && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+          const table = [line, lines[i + 1]];
+          i += 2;
+          while (i < lines.length && lines[i].trim().startsWith('|')) {
+            table.push(lines[i]);
+            i += 1;
+          }
+          output.push(renderTable(table));
+          continue;
+        }
+
+        if (/^\s*-\s+/.test(line)) {
+          const items = [];
+          while (i < lines.length && /^\s*-\s+/.test(lines[i])) {
+            items.push(lines[i].replace(/^\s*-\s+/, ''));
+            i += 1;
+          }
+          output.push(`<ul>${items.map(item => `<li>${inlineMarkdown(item)}</li>`).join('')}</ul>`);
+          continue;
+        }
+
+        const paragraph = [line.trim()];
+        i += 1;
+        while (i < lines.length && lines[i].trim() && !/^#{1,3}\s+/.test(lines[i]) && !/^```/.test(lines[i]) && !/^\s*-\s+/.test(lines[i]) && !lines[i].trim().startsWith('|')) {
+          paragraph.push(lines[i].trim());
+          i += 1;
+        }
+        output.push(`<p>${inlineMarkdown(paragraph.join(' '))}</p>`);
+      }
+
+      return { html: output.join('\n'), headings };
+    }
+
+    function renderNav(activeId = currentId, filter = '') {
+      const query = filter.trim().toLowerCase();
+      nav.innerHTML = docs
+        .filter(doc => !query || `${doc.title}\n${doc.markdown}`.toLowerCase().includes(query))
+        .map(doc => `<button type="button" class="${doc.id === activeId ? 'active' : ''}" data-page="${doc.id}">${escapeHtml(doc.title)}</button>`)
+        .join('') || '<p class="empty">No pages match.</p>';
+    }
+
+    function renderToc() {
+      const sections = currentHeadings.filter(heading => heading.level > 1);
+      if (!sections.length) {
+        toc.innerHTML = '';
+        return;
+      }
+      toc.innerHTML = `<p class="toc-title">On This Page</p>${sections.map(heading => `<button type="button" class="level-${heading.level}" data-anchor="${heading.id}">${escapeHtml(heading.text.replace(/`/g, ''))}</button>`).join('')}`;
+    }
+
+    function setPage(id, push = true) {
+      const doc = docs.find(item => item.id === id) || docs[0];
+      currentId = doc.id;
+      const rendered = renderMarkdown(doc.markdown);
+      currentHeadings = rendered.headings;
+      document.title = `${doc.title} - Hyprbole Guide`;
+      meta.innerHTML = `<span class="pill">${escapeHtml(doc.path)}</span><span class="pill">local guide</span>`;
+      content.innerHTML = rendered.html;
+      renderNav(currentId, search.value);
+      renderToc();
+      if (push) history.replaceState(null, '', `#${doc.id}`);
+      sidebar.classList.remove('open');
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+
+    function excerpt(markdown, query) {
+      const text = markdown.replace(/```[\s\S]*?```/g, ' ').replace(/[#|`*_\-[\]()]/g, ' ').replace(/\s+/g, ' ').trim();
+      const lower = text.toLowerCase();
+      const index = lower.indexOf(query.toLowerCase());
+      const start = Math.max(0, index - 90);
+      const slice = text.slice(start, start + 220);
+      if (!query) return escapeHtml(slice);
+      return escapeHtml(slice).replace(new RegExp(escapeRegExp(escapeHtml(query)), 'ig'), match => `<mark>${match}</mark>`);
+    }
+
+    function renderSearchResults(query) {
+      const q = query.trim().toLowerCase();
+      if (!q) {
+        setPage(currentId, false);
+        return;
+      }
+      const results = docs
+        .map(doc => {
+          const haystack = `${doc.title}\n${doc.markdown}`.toLowerCase();
+          const titleScore = doc.title.toLowerCase().includes(q) ? 10 : 0;
+          const bodyScore = haystack.includes(q) ? 1 : 0;
+          return { doc, score: titleScore + bodyScore };
+        })
+        .filter(result => result.score > 0)
+        .sort((a, b) => b.score - a.score || a.doc.title.localeCompare(b.doc.title));
+
+      meta.innerHTML = `<span class="pill">${results.length} result${results.length === 1 ? '' : 's'}</span>`;
+      toc.innerHTML = '';
+      content.innerHTML = `<h1>Search</h1><p class="results-title">Results for ${escapeHtml(query)}</p>${results.map(result => `<section class="result"><button type="button" data-page="${result.doc.id}"><strong>${escapeHtml(result.doc.title)}</strong><span>${excerpt(result.doc.markdown, query)}</span></button></section>`).join('') || '<p class="empty">No matching pages.</p>'}`;
+      renderNav(currentId, query);
+    }
+
+    nav.addEventListener('click', event => {
+      const button = event.target.closest('[data-page]');
+      if (!button) return;
+      search.value = '';
+      setPage(button.dataset.page);
+    });
+
+    content.addEventListener('click', event => {
+      const pageButton = event.target.closest('[data-page]');
+      if (pageButton) {
+        search.value = '';
+        setPage(pageButton.dataset.page);
+        return;
+      }
+
+      const copyButton = event.target.closest('.copy-code');
+      if (copyButton) {
+        const code = copyButton.closest('.codeblock')?.querySelector('code')?.innerText || '';
+        navigator.clipboard?.writeText(code);
+        copyButton.textContent = 'copied';
+        setTimeout(() => { copyButton.textContent = 'copy'; }, 1200);
+      }
+    });
+
+    toc.addEventListener('click', event => {
+      const button = event.target.closest('[data-anchor]');
+      if (!button) return;
+      document.getElementById(button.dataset.anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    search.addEventListener('input', () => renderSearchResults(search.value));
+
+    menuButton.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+    document.addEventListener('keydown', event => {
+      if (event.key === '/' && document.activeElement !== search) {
+        event.preventDefault();
+        search.focus();
+      }
+      if (event.key === 'Escape') {
+        sidebar.classList.remove('open');
+        if (document.activeElement === search) {
+          search.value = '';
+          setPage(currentId, false);
+          search.blur();
+        }
+      }
+    });
+
+    const initialId = decodeURIComponent(location.hash.replace(/^#/, '')) || currentId;
+    renderNav(initialId);
+    setPage(initialId, false);
+  </script>
+</body>
+</html>
+HTML
+} >"$DOCS_INDEX"
+
+if (( OPEN_DOCS == 0 )); then
+  printf '%s\n' "$DOCS_INDEX"
+  exit 0
 fi
 
-exec "$HYPRBOLE_PATH/bin/hyprbole-launch-browser" "file://$DOCS_INDEX"
+exec "$HYPRBOLE_PATH/bin/hyprbole-launch-browser" --app="file://$DOCS_INDEX"

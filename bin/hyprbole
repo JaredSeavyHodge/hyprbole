@@ -955,7 +955,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Packages: system tools"
-  for package in yay-bin bash-completion mise mkdocs mkdocs-material starship zoxide fzf bat fd ripgrep unzip lazygit tree-sitter-cli wl-clipboard grim slurp satty pavucontrol nm-connection-editor network-manager-applet blueman gnome-keyring playerctl brightnessctl xdg-user-dirs xdg-utils gvfs gvfs-mtp libsecret git curl jq imagemagick libqalculate pacman-contrib limine gnome-themes-extra noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra rust ttf-cascadia-code ttf-dejavu ttf-fira-code ttf-hack ttf-jetbrains-mono ttf-jetbrains-mono-nerd ttf-liberation ttf-nerd-fonts-symbols ttf-opensans ttf-roboto ttf-ubuntu-font-family inter-font otf-font-awesome papirus-icon-theme adwaita-icon-theme hicolor-icon-theme base-devel snapper limine-snapper-sync limine-mkinitcpio-hook hyprsysteminfo; do
+  for package in yay-bin bash-completion mise starship zoxide fzf bat fd ripgrep unzip lazygit tree-sitter-cli wl-clipboard grim slurp satty pavucontrol nm-connection-editor network-manager-applet blueman gnome-keyring playerctl brightnessctl xdg-user-dirs xdg-utils gvfs gvfs-mtp libsecret git curl jq imagemagick libqalculate pacman-contrib limine gnome-themes-extra noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra rust ttf-cascadia-code ttf-dejavu ttf-fira-code ttf-hack ttf-jetbrains-mono ttf-jetbrains-mono-nerd ttf-liberation ttf-nerd-fonts-symbols ttf-opensans ttf-roboto ttf-ubuntu-font-family inter-font otf-font-awesome papirus-icon-theme adwaita-icon-theme hicolor-icon-theme base-devel snapper limine-snapper-sync limine-mkinitcpio-hook hyprsysteminfo; do
     if pacman -Q "$package" >/dev/null 2>&1; then
       doctor_report ok "$package"
     else
@@ -965,7 +965,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Commands"
-  for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper wf-recorder grim slurp satty mise mkdocs code nvim rg fd unzip lazygit tree-sitter walker elephant; do
+  for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper wf-recorder grim slurp satty mise code nvim rg fd unzip lazygit tree-sitter walker elephant; do
     if command -v "$binary" >/dev/null 2>&1; then
       doctor_report ok "$binary"
     else

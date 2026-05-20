@@ -28,7 +28,6 @@ HYPRBOLE_OFFICIAL_PACKAGES=(
   btop
   bash-completion
   mise
-  mkdocs-material
   starship
   zoxide
   fzf

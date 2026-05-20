@@ -44,7 +44,7 @@ Build and open the local guide with:
 hyprbole docs
 ```
 
-The generated site is written to `~/.config/hyprbole/docs/site`.
+The generated guide is written to `~/.config/hyprbole/docs/index.html`.
 
 ## Check Default Files
 
