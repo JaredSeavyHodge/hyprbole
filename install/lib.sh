@@ -156,7 +156,9 @@ write_install_diagnostics() {
       "$HOME/.config/gtk-4.0/settings.ini" \
       "$HOME/.config/code-flags.conf" \
       "$HOME/.config/brave-origin-nightly-flags.conf" \
+      "$HOME/.config/elephant/menus/hyprbole-tools.toml" \
       "$HOME/.local/share/applications/hyprbole-brave-origin-nightly.desktop" \
+      "$HOME/.local/share/applications/hyprbole-disk-usage.desktop" \
       "$HOME/.config/nvim/init.lua" \
       "$HOME/.config/nvim/lua/config/lazy.lua" \
       "$HOME/.config/nvim/lua/plugins/hyprbole-theme.lua" \

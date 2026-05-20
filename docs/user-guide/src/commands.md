@@ -11,6 +11,8 @@ hb verify
 hb docs
 hb update
 hb apps
+hb tools
+hb disk-usage
 hb keybinds
 hb menu
 hb lock
@@ -77,6 +79,17 @@ hb capture record-screen
 
 The short top-level commands `hb apps`, `hb clipboard`, and `hb keybinds` are aliases for common launcher actions.
 
+## Tools
+
+```bash
+hb tools
+hb disk-usage
+hb disk-usage ~/Downloads
+hb launch disk-usage
+```
+
+`hb tools` opens the Tools menu. `hb disk-usage` runs `dua i` in the current terminal. `hb launch disk-usage` opens it in the default terminal for menu and launcher workflows.
+
 ## Defaults
 
 ```bash
@@ -101,4 +114,4 @@ Snapshots use Snapper when available. `refresh-limine` refreshes Limine boot ent
 
 Prefer `hb doctor --fix` for supported repair flows. One-off setup commands are intentionally kept out of the public command surface unless they are normal user workflows.
 
-Use `hb verify` when you want a strict pass/fail check. Use `hb doctor --verbose` when you want a readable report with each section shown.
+Use `hb verify` when you want a strict pass/fail check. Use `hb doctor --verbose` when you want a readable report with each section shown. See the [Doctor](doctor.md) guide for the exact checks and repair behavior.

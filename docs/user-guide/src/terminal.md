@@ -121,6 +121,24 @@ zi
 
 Hyprbole also loads `fzf` shell completion and key bindings when the package files exist. Use `ff` for an interactive file picker with a `bat` preview.
 
+## Disk Usage
+
+Hyprbole installs `dua-cli` for terminal disk-usage inspection:
+
+```bash
+dua i
+dua i ~/Downloads
+```
+
+The Hyprbole wrapper opens the same interactive browser from the current terminal:
+
+```bash
+hb disk-usage
+hb disk-usage ~/.local/share/hyprbole
+```
+
+Use `hb launch disk-usage` when you want Hyprbole to open a new terminal window for it.
+
 ## Development Tooling
 
 Hyprbole initializes `mise` when available:

@@ -47,6 +47,7 @@ if (( include_user_configs == 1 )); then
     elephant/menus/hyprbole-power.toml \
     elephant/menus/hyprbole-system.toml \
     elephant/menus/hyprbole-theme.toml \
+    elephant/menus/hyprbole-tools.toml \
     elephant/menus/hyprbole.toml \
     elephant/menus/hyprbole-wallpaper-settings.toml \
     elephant/menus/hyprbolemywallpapers.lua \
@@ -79,6 +80,7 @@ fi
 
 hyprbole-refresh-btop >/dev/null 2>&1 || true
 hyprbole-refresh-browser-launchers >/dev/null 2>&1 || true
+hyprbole-refresh-tool-launchers >/dev/null 2>&1 || true
 hyprbole-refresh-gnome >/dev/null 2>&1 || true
 hyprbole-refresh-fonts >/dev/null 2>&1 || true
 hyprbole-refresh-vscode >/dev/null 2>&1 || true

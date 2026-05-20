@@ -1,0 +1,8 @@
+name = "hyprbole-tools"
+name_pretty = "Hyprbole Tools"
+hide_from_providerlist = true
+
+[[entries]]
+text = "Disk Usage"
+subtext = "Inspect disk space with dua"
+actions = { activate = "hyprbole-launch-disk-usage" }

@@ -26,6 +26,7 @@ HYPRBOLE_OFFICIAL_PACKAGES=(
   mpv
   ghostty
   btop
+  dua-cli
   bash-completion
   mise
   starship

@@ -19,6 +19,7 @@ EOF
   xdg-mime default org.gnome.Nautilus.desktop inode/directory || true
   xdg-mime default com.mitchellh.ghostty.desktop x-scheme-handler/terminal || true
   "$HYPRBOLE_PATH/bin/hyprbole-refresh-browser-launchers" >/dev/null 2>&1 || true
+  "$HYPRBOLE_PATH/bin/hyprbole-refresh-tool-launchers" >/dev/null 2>&1 || true
   xdg-mime default imv.desktop image/png || true
   xdg-mime default imv.desktop image/jpeg || true
   xdg-mime default imv.desktop image/gif || true

@@ -69,6 +69,7 @@ The top-level menu includes:
 | Apps | Browser, files, passwords |
 | Keybinds | Browse current keyboard shortcuts |
 | User Guide | Open this documentation |
+| Tools | Disk usage and local utilities |
 | Theme | Themes, wallpapers, and fonts |
 | Install | Package install and removal workflows |
 | Controls | Audio, network, Bluetooth, toggles |
@@ -83,7 +84,9 @@ Useful terminal equivalents:
 
 ```bash
 hb apps
+hb tools
 hb keybinds
+hb disk-usage
 hb launch themes
 hb launch wallpaper-menu
 hb launch my-wallpaper-menu
@@ -98,6 +101,10 @@ Use `/` to browse files through Walker's file provider.
 Use `:` or `SUPER + V` for clipboard history.
 
 Use `p:` or the 1Password entry from the Apps menu for password lookup. Password support depends on the 1Password and Elephant 1Password packages installed by Hyprbole.
+
+## Tools Menu
+
+Open `Tools` from the Hyprbole menu to launch utility workflows. `Disk Usage` opens `dua i` in the default terminal.
 
 ## Configuration
 

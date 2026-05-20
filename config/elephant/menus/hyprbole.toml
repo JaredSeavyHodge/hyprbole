@@ -18,6 +18,11 @@ subtext = "Open the Hyprbole documentation"
 actions = { activate = "hyprbole docs" }
 
 [[entries]]
+text = "Tools"
+subtext = "Disk usage and local utilities"
+submenu = "hyprbole-tools"
+
+[[entries]]
 text = "Theme"
 subtext = "Themes and wallpapers"
 submenu = "hyprbole-theme"
