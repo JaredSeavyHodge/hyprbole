@@ -8,10 +8,11 @@ Open a terminal and run:
 
 ```bash
 hb doctor
+hb health
 hb verify
 ```
 
-`doctor` gives a readable health report. `verify` is stricter and is useful after install, updates, and repairs.
+`doctor` gives a readable desktop report. `health` shows the cached hourly disk, OS, and update-freshness report. `verify` is stricter and is useful after install, updates, and repairs.
 
 ## Default Apps
 
@@ -87,3 +88,11 @@ If it reports missing generated theme state or browser launchers, run:
 hb refresh-all
 hb doctor
 ```
+
+If the Waybar health bell is orange or red, run:
+
+```bash
+hb health
+```
+
+Right-clicking the bell runs a fresh check.

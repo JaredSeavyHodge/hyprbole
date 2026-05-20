@@ -31,6 +31,16 @@ Update will pull the Hyprbole checkout, update system packages, update AUR packa
 
 Before updating packages, Hyprbole attempts to create a Snapper snapshot when Snapper is available. After updating, it refreshes runtime state with `hyprbole-refresh-all` and updates Limine entries when possible.
 
+Hyprbole checks local filesystem usage before package operations. If a local filesystem is at or above `98%` usage, package installs and updates are refused until you free space.
+
+Check update freshness without running an update:
+
+```bash
+hb health updates
+```
+
+The health update probe reads `/var/log/pacman.log` for the last full system upgrade and checks whether the Hyprbole repo has upstream changes available.
+
 The update command writes a terminal session log to:
 
 ```text

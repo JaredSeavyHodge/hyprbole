@@ -19,6 +19,13 @@ Use verbose output when you need the full checklist:
 hb doctor --verbose
 ```
 
+Use the health report when the Waybar bell shows an alert:
+
+```bash
+hb health
+hb health refresh
+```
+
 ## Fresh Install Looks Partial
 
 Run:
@@ -112,6 +119,40 @@ If user config files are intentionally being reset from Hyprbole defaults, use:
 ```bash
 hb refresh-all --include-user-configs
 ```
+
+## Waybar Health Bell Shows An Alert
+
+Open the cached report:
+
+```bash
+hb health
+```
+
+Run a fresh check:
+
+```bash
+hb health refresh
+```
+
+If you only care about update freshness, run:
+
+```bash
+hb health updates
+```
+
+The bell is orange for warnings and red for critical alerts. A clean report shows `No Alerts` in the tooltip.
+
+## Package Operation Refused For Disk Space
+
+Hyprbole refuses package installs and updates when a local filesystem is at or above `98%` usage.
+
+Open Disk Usage from the Tools menu or run:
+
+```bash
+hb disk-usage
+```
+
+Free space, then rerun the package operation.
 
 ## Installer Rerun
 

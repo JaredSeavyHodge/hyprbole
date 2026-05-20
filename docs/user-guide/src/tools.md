@@ -34,6 +34,8 @@ From a terminal, `hb disk-usage` runs `dua i` in the current terminal. Launcher 
 
 `System Health` opens the cached hourly health report. Waybar shows a health bell beside the date; it inherits the theme when there are no alerts, turns orange for warnings, and turns red for high alerts.
 
+Left-click the Waybar bell to open the report. Right-click it to refresh the health check and update the bell state.
+
 Run it directly with:
 
 ```bash
@@ -41,6 +43,8 @@ hb health
 hb health refresh
 hb health updates
 ```
+
+`hb health updates` is the quickest way to check whether your last full system update is stale or the Hyprbole repo has upstream updates available.
 
 The Tools menu also includes `System Monitor` for `btop` and `System Info` for Hyprland system information.
 

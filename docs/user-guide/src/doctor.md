@@ -1,6 +1,6 @@
 # Doctor
 
-`hb doctor` is Hyprbole's readable desktop health report. It checks packages, services, runtime processes, config files, generated theme state, browser policy, SDDM theme files, hourly health timer state, and Keyring/Secret Service behavior.
+`hb doctor` is Hyprbole's readable desktop health report. It checks packages, services, runtime processes, config files, generated theme state, browser policy, SDDM theme files, hourly health timer state, health helper scripts, and Keyring/Secret Service behavior.
 
 Use it after install, after a system update, or whenever something feels broken.
 
@@ -43,7 +43,7 @@ Doctor currently checks these sections:
 | Packages: apps | Default apps such as Ghostty, Nautilus, Neovim, VS Code, Brave Origin Nightly, 1Password, and media tools |
 | Packages: launcher | Walker and Elephant provider packages |
 | Packages: system tools | Shell tools, fonts, icons, Snapper/Limine tools, `eza`, `dua-cli`, `man-db`, and other support packages |
-| Commands | Required executables including `dua` are available on `PATH` |
+| Commands | Required executables and Hyprbole health helpers are available |
 | Services: user | PipeWire, WirePlumber, GNOME Keyring socket, SwayOSD, Polkit agent, Elephant, Walker, and SwayNC user units |
 | Runtime | Running Waybar, SwayNC, SwayOSD, Walker, Elephant, and wallpaper daemon processes during graphical sessions |
 | Services: system | SDDM, Polkit, Hyprbole health timer, Limine Snapper sync, and Snapper cleanup timer state |
@@ -87,6 +87,8 @@ hb refresh-all --include-user-configs
 Use `hb doctor` for a human-readable health report and supported repair flow.
 
 Use `hb verify` for a stricter install-oriented pass/fail check. `verify` exits with failure when required install state is missing or incorrect.
+
+Use `hb health` for cached disk, filesystem, systemd, and update-freshness alerts that feed the Waybar bell.
 
 Good post-install sequence:
 

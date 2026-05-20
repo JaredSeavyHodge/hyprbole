@@ -4,11 +4,13 @@ Hyprbole runs a lightweight system health check every hour.
 
 The check reads cached device, filesystem, and update-freshness metadata. It does not run surface scans, long SMART tests, or write-heavy diagnostics.
 
-## Waybar Alert
+## Waybar Bell
 
 Waybar shows a health bell to the left of the date. When the cached report is clean, it inherits the active theme colors and its tooltip says `No Alerts`.
 
 If warnings or critical issues are found, the bell turns orange for warnings and red for high alerts. Left-click it to open the health report. Right-click it to run a fresh health check and reset the bell state from the updated report.
+
+The bell reads the cached report in `/var/lib/hyprbole/health.json`; it does not run disk tools directly from Waybar.
 
 ## Commands
 
@@ -20,6 +22,8 @@ hb launch health
 ```
 
 `hb health` prints the cached report. `hb health refresh` runs a fresh check through the installed systemd service, then prints the updated report. `hb health updates` checks package update age and Hyprbole repo freshness directly. `hb launch health` opens the report in a floating terminal.
+
+Use `hb health updates` when you only want to know whether the system update is stale or the Hyprbole checkout has upstream changes.
 
 ## Checks
 
@@ -43,6 +47,30 @@ Package updates, package installs, and the installer refuse to start package ope
 
 Update freshness warnings come from the separate `hyprbole-health-updates` probe. It reads `/var/log/pacman.log` for the latest full system upgrade and performs a short-timeout git remote check for the Hyprbole repo. Network failures are ignored rather than shown as health warnings.
 
+If the Hyprbole checkout is ahead of upstream, the probe reports that state but does not warn. A local checkout being ahead is not treated as stale.
+
+## Alert Levels
+
+Health checks use two alert levels:
+
+| Level | Meaning | Waybar color |
+| --- | --- | --- |
+| `warning` | Needs attention soon, but the desktop can usually continue running | Orange |
+| `critical` | Immediate risk, such as a read-only root filesystem or drive health failure | Red |
+
+Update age and Hyprbole repo freshness are warnings, not critical alerts.
+
+## Package Safety Guard
+
+Hyprbole refuses package installs and updates when any local filesystem is at or above `98%` usage. This prevents package operations from making a nearly-full system worse.
+
+This guard runs before:
+
+- `hb update`
+- `hb pkg install`
+- `hb pkg aur-install`
+- installer package phases
+
 ## Fresh Check
 
 To run a fresh check manually:
@@ -58,3 +86,13 @@ The cached report lives at:
 ```text
 /var/lib/hyprbole/health.json
 ```
+
+## Systemd Timer
+
+The hourly check is owned by a system timer:
+
+```bash
+systemctl status hyprbole-health-check.timer
+```
+
+The timer runs `hyprbole-health-check.service`, which calls the checker from the Hyprbole checkout.
