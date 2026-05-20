@@ -1,4 +1,6 @@
-# Welcome To Hyprbole
+# hyprbole
+
+### _A hyprbole on Hyprland_
 
 Hyprbole is the desktop layer that runs after Arch Linux is installed. It owns the Hyprland session, default apps, themes, keybinds, browser launcher, and repair tools.
 
@@ -17,7 +19,7 @@ Must-have shortcuts:
 
 | Keybind | Action |
 | --- | --- |
-| `SUPER + SPACE` | Open Walker app launcher |
+| `SUPER + SPACE` | Open app launcher |
 | `SUPER + ALT + SPACE` | Open Hyprbole menu |
 | `SUPER + RETURN` | Open terminal |
 | `SUPER + SHIFT + F` | Open file manager |

@@ -1,8 +1,8 @@
-# Walker
+# App Launcher
 
 Walker is Hyprbole's launcher UI. It opens apps, web searches, calculations, files, clipboard history, 1Password entries, symbols, commands, and Hyprbole menus.
 
-## Open Walker
+## Open App Launcher
 
 Open the main launcher:
 

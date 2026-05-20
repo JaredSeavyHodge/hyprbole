@@ -71,17 +71,28 @@ Hyprbole also adds easier save and quit mappings:
 
 LazyVim is designed around leader-key menus. Press `Space` and pause to see available mappings.
 
-Useful starting points:
+Useful starting points from LazyVim and Hyprbole's extra mappings:
 
 | Key | Action |
 | --- | --- |
 | `Space f f` | Find files |
-| `Space f g` | Search text with grep |
-| `Space e` | Toggle file explorer |
+| `Space /` | Search text with grep |
+| `Space f g` | Find Git-tracked files |
+| `Space e` | Show line diagnostics |
 | `Space g g` | Open LazyGit when available |
-| `Space l` | Language tooling menu |
+| `Space l` | Open Lazy plugin manager |
 
-These are LazyVim defaults. If a plugin has not finished installing yet, let Lazy finish and restart Neovim.
+If a plugin has not finished installing yet, let Lazy finish and restart Neovim.
+
+Language tooling starts appearing when a language server attaches to a file. Common LazyVim mappings include:
+
+| Key | Action |
+| --- | --- |
+| `K` | Hover documentation |
+| `gd` | Go to definition |
+| `gr` | Show references |
+| `Space c a` | Code action |
+| `Space c r` | Rename symbol |
 
 ## Hyprbole Defaults
 
@@ -136,4 +147,4 @@ Hyprbole adds a few diagnostic mappings:
 | `[d` | Previous diagnostic |
 | `]d` | Next diagnostic |
 
-LazyVim also provides more language tooling under the `Space l` menu.
+LazyVim also provides more language tooling once a language server is attached.

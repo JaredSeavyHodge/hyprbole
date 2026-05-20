@@ -1,4 +1,4 @@
-# Hyprland Config
+# Hyprland
 
 Hyprbole uses Hyprland's Lua config path. The entrypoint is:
 
@@ -97,6 +97,18 @@ hl.config({
     },
   },
 })
+```
+
+## Keybindings
+
+Hyprbole loads shipped keybindings before `~/.config/hypr/bindings.lua`, so that file is where personal bindings and default binding overrides belong.
+
+Common defaults include `SUPER + SPACE` for the app launcher, `SUPER + RETURN` for the terminal, `SUPER + SHIFT + B` for the browser, `SUPER + SHIFT + F` for files, and `SUPER + Q` to close the focused window.
+
+For the full list and override examples, see the [Keybinds](keybinds.md) guide or run:
+
+```bash
+hb keybinds
 ```
 
 ## Layout And Look

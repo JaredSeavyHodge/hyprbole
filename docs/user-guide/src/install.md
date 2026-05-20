@@ -1,5 +1,7 @@
 # Install
 
+### _if you're here, you've probably done this._
+
 Hyprbole is installed after a minimal Arch Linux install. `archinstall` should create the OS, user, bootloader, filesystem, mirrors, locale, and networking. Hyprbole then installs and owns the desktop layer.
 
 ## Archinstall Choices

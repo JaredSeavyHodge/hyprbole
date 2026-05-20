@@ -18,8 +18,8 @@ DOCS_NAV=(
   "Install:install.md"
   "First Boot:first-boot.md"
   "Commands:commands.md"
-  "Hyprland Config:hyprland-config.md"
-  "Walker:walker.md"
+  "Hyprland:hyprland-config.md"
+  "App Launcher:walker.md"
   "Neovim:neovim.md"
   "Themes:themes.md"
   "Browser:browser.md"
@@ -177,7 +177,7 @@ mkdir -p "$DOCS_OUTPUT_DIR"
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>Hyprbole Guide</title>
+  <title>hyprbole guide</title>
   <style>
     :root {
       --bg: #080a0f;
@@ -418,6 +418,14 @@ HTML
       font-size: 1.2rem;
     }
 
+    .doc h3.subtitle {
+      margin: -0.85rem 0 1.45rem;
+      color: #b8c5d8;
+      font-size: clamp(1rem, 2.2vw, 1.35rem);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+
     .doc p,
     .doc li {
       color: #d3dbea;
@@ -617,7 +625,7 @@ HTML
   <div class="shell">
     <aside class="sidebar" id="sidebar" aria-label="Guide navigation">
       <section class="brand">
-        <h1 class="brand-title">Hyprbole Guide</h1>
+        <h1 class="brand-title">hyprbole guide</h1>
         <p class="brand-subtitle">Local desktop docs. No server, no framework, just the guide on disk.</p>
       </section>
       <label class="search">
@@ -629,7 +637,7 @@ HTML
     <div class="content-wrap">
       <div class="topbar">
         <button id="menuButton" type="button">Guide Menu</button>
-        <span>Hyprbole Guide</span>
+        <span>hyprbole guide</span>
       </div>
       <div class="layout">
         <main>
@@ -806,7 +814,7 @@ HTML
       currentId = doc.id;
       const rendered = renderMarkdown(doc.markdown);
       currentHeadings = rendered.headings;
-      document.title = `${doc.title} - Hyprbole Guide`;
+      document.title = `${doc.title} - hyprbole guide`;
       meta.innerHTML = `<span class="pill">${escapeHtml(doc.path)}</span><span class="pill">local guide</span>`;
       content.innerHTML = rendered.html;
       renderNav(currentId, search.value);
