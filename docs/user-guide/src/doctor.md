@@ -1,6 +1,6 @@
 # Doctor
 
-`hb doctor` is Hyprbole's readable desktop health report. It checks packages, services, runtime processes, config files, generated theme state, browser policy, SDDM theme files, and Keyring/Secret Service behavior.
+`hb doctor` is Hyprbole's readable desktop health report. It checks packages, services, runtime processes, config files, generated theme state, browser policy, SDDM theme files, hourly health timer state, and Keyring/Secret Service behavior.
 
 Use it after install, after a system update, or whenever something feels broken.
 
@@ -46,7 +46,7 @@ Doctor currently checks these sections:
 | Commands | Required executables including `dua` are available on `PATH` |
 | Services: user | PipeWire, WirePlumber, GNOME Keyring socket, SwayOSD, Polkit agent, Elephant, Walker, and SwayNC user units |
 | Runtime | Running Waybar, SwayNC, SwayOSD, Walker, Elephant, and wallpaper daemon processes during graphical sessions |
-| Services: system | SDDM, Polkit, Limine Snapper sync, and Snapper cleanup timer state |
+| Services: system | SDDM, Polkit, Hyprbole health timer, Limine Snapper sync, and Snapper cleanup timer state |
 | SDDM Theme | Installed Hyprbole SDDM theme files and generated background assets |
 | Configs | Expected config files, browser launchers, and gnome-libsecret flags |
 | Secret Service | GNOME Keyring/libsecret Secret Service ownership, default keyring files, PAM hooks, session opening, alias, and lock state |

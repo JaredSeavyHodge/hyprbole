@@ -13,6 +13,7 @@ hb update
 hb apps
 hb tools
 hb disk-usage
+hb health
 hb keybinds
 hb menu
 hb lock
@@ -86,9 +87,11 @@ hb tools
 hb disk-usage
 hb disk-usage ~/Downloads
 hb launch disk-usage
+hb health
+hb launch health
 ```
 
-`hb tools` opens the Tools menu. `hb disk-usage` runs `dua i` in the current terminal. `hb launch disk-usage` opens it in a floating terminal for menu and launcher workflows.
+`hb tools` opens the Tools menu. `hb disk-usage` runs `dua i` in the current terminal. `hb launch disk-usage` opens it in a floating terminal for menu and launcher workflows. `hb health` prints the cached hourly system health report.
 
 ## Defaults
 

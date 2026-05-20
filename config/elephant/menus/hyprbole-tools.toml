@@ -21,3 +21,9 @@ text = "󰋼  System Info"
 subtext = "Open Hyprland system information"
 actions = { activate = "hyprsysteminfo" }
 state = ["sublevel"]
+
+[[entries]]
+text = "  System Health"
+subtext = "Show disk and OS health warnings"
+actions = { activate = "hyprbole-launch-health" }
+state = ["sublevel"]

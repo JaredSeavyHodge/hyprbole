@@ -149,6 +149,8 @@ write_install_diagnostics() {
       "$HOME/.config/hypr/hyprland.conf" \
       "$HOME/.config/hyprbole/theme-sources.conf" \
       "$HOME/.config/waybar/config.jsonc" \
+      "$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.service" \
+      "$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.timer" \
       "$HOME/.config/swaync/config.json" \
       "$HOME/.config/elephant/menus/hyprbole-fonts.lua" \
       "$HOME/.config/elephant/menus/hyprbole-power-profiles.toml" \
@@ -175,7 +177,7 @@ write_install_diagnostics() {
     diagnostic_command systemctl --user list-units --state=failed --no-pager
 
     diagnostic_section "System Services"
-    diagnostic_unit_check "" sddm.service polkit.service limine-snapper-sync.service snapper-cleanup.timer snapper-timeline.timer
+    diagnostic_unit_check "" sddm.service polkit.service hyprbole-health-check.timer limine-snapper-sync.service snapper-cleanup.timer snapper-timeline.timer
     diagnostic_command systemctl list-units --state=failed --no-pager
 
     diagnostic_section "Authentication"

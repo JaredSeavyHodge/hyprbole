@@ -62,6 +62,8 @@ HYPRBOLE_OFFICIAL_PACKAGES=(
   git
   curl
   jq
+  nvme-cli
+  smartmontools
   man-db
   man-pages
   imagemagick
@@ -155,6 +157,10 @@ warn_profile_leftovers() {
 
 install_official_packages() {
   local pacman_args=(-Syu --needed --noconfirm)
+
+  if [[ -x ${HYPRBOLE_REPO_ROOT:-}/bin/hyprbole-health-check ]]; then
+    "$HYPRBOLE_REPO_ROOT/bin/hyprbole-health-check" --disk-space-guard
+  fi
 
   sudo pacman "${pacman_args[@]}" "${HYPRBOLE_OFFICIAL_PACKAGES[@]}"
 }

@@ -14,6 +14,7 @@ Examples use `hb`, the short alias for `hyprbole`. If the alias is not loaded in
 - Run `hb verify` after install or major changes.
 - Run `hb doctor --fix` for supported repairs.
 - Run `hb docs` to build and open this guide locally.
+- Run `hb health` to read the cached hourly disk and OS health report.
 
 Must-have shortcuts:
 

@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# hyprbole:summary=Print Waybar JSON for cached Hyprbole health state
+
+set -euo pipefail
+
+STATE_FILE="${HYPRBOLE_HEALTH_STATE_FILE:-/var/lib/hyprbole/health.json}"
+
+emit() {
+  local text="$1"
+  local class_name="$2"
+  local tooltip="$3"
+
+  jq -cn --arg text "$text" --arg class "$class_name" --arg tooltip "$tooltip" '{text: $text, class: $class, tooltip: $tooltip}'
+}
+
+if [[ ! -f $STATE_FILE ]] || ! command -v jq >/dev/null 2>&1; then
+  emit "" hidden "Health check has not run yet"
+  exit 0
+fi
+
+status="$(jq -r '.status // "unknown"' "$STATE_FILE" 2>/dev/null || printf 'unknown\n')"
+checked_at="$(jq -r '.checked_at // "unknown"' "$STATE_FILE" 2>/dev/null || printf 'unknown\n')"
+warning_count="$(jq -r '.warning_count // 0' "$STATE_FILE" 2>/dev/null || printf '0\n')"
+critical_count="$(jq -r '.critical_count // 0' "$STATE_FILE" 2>/dev/null || printf '0\n')"
+issue_lines="$(jq -r '.issues[:5][]? | "\(.severity): \(.message)"' "$STATE_FILE" 2>/dev/null || true)"
+if [[ -z $issue_lines ]]; then
+  issue_lines="No issue details available"
+fi
+
+case "$status" in
+  ok)
+    emit "" hidden "System health OK\nChecked: $checked_at"
+    ;;
+  warning)
+    emit "" warning "Health warnings: $warning_count\nChecked: $checked_at\n$issue_lines"
+    ;;
+  critical)
+    emit "" critical "Health critical: $critical_count critical, $warning_count warning\nChecked: $checked_at\n$issue_lines"
+    ;;
+  *)
+    emit "" warning "Health state unknown\nChecked: $checked_at"
+    ;;
+esac

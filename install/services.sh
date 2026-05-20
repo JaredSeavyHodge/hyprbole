@@ -3,6 +3,8 @@ enable_services() {
   local graphical_user_units=(swayosd-server.service polkit-gnome-agent.service elephant.service walker.service swaync.service)
   local start_graphical_units=0
   local unit
+  local service_source="$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.service"
+  local timer_source="$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.timer"
 
   xdg-user-dirs-update
 
@@ -39,6 +41,25 @@ enable_services() {
   if ! sudo systemctl enable sddm.service; then
     printf 'failed to enable system service: sddm.service\n' >&2
     failed=$((failed + 1))
+  fi
+
+  if [[ -f $service_source && -f $timer_source ]]; then
+    if ! sed "s|@HYPRBOLE_PATH@|$HYPRBOLE_PATH|g" "$service_source" | sudo install -Dm644 /dev/stdin /etc/systemd/system/hyprbole-health-check.service; then
+      printf 'failed to install system service: hyprbole-health-check.service\n' >&2
+      failed=$((failed + 1))
+    fi
+
+    if ! sudo install -Dm644 "$timer_source" /etc/systemd/system/hyprbole-health-check.timer; then
+      printf 'failed to install system timer: hyprbole-health-check.timer\n' >&2
+      failed=$((failed + 1))
+    fi
+
+    sudo systemctl daemon-reload
+
+    if ! sudo systemctl enable --now hyprbole-health-check.timer; then
+      printf 'failed to enable system timer: hyprbole-health-check.timer\n' >&2
+      failed=$((failed + 1))
+    fi
   fi
 
   if command -v limine-snapper-sync >/dev/null 2>&1 && ! sudo systemctl enable limine-snapper-sync.service; then

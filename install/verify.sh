@@ -131,7 +131,7 @@ verify_installation() {
     graphical_session_active=1
   fi
 
-  for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper sddm limine-update code nvim rg fd eza dua unzip lazygit tree-sitter man; do
+  for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper sddm limine-update code nvim rg fd eza dua unzip lazygit tree-sitter man nvme smartctl; do
     if ! cmd_present "$binary"; then
       printf 'missing command: %s\n' "$binary" >&2
       failures=$((failures + 1))
@@ -142,6 +142,10 @@ verify_installation() {
     "$HOME/.config/hypr/hyprland.lua" \
     "$HYPRBOLE_CONFIG_PATH/theme-sources.conf" \
     "$HOME/.config/waybar/config.jsonc" \
+    "$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.service" \
+    "$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.timer" \
+    "/etc/systemd/system/hyprbole-health-check.service" \
+    "/etc/systemd/system/hyprbole-health-check.timer" \
     "/etc/sddm.conf.d/hyprbole.conf" \
     "/usr/share/sddm/themes/hyprbole/Main.qml" \
     "/usr/share/sddm/themes/hyprbole/metadata.desktop" \
@@ -290,6 +294,10 @@ verify_installation() {
     if ! systemctl is-enabled snapper-cleanup.timer >/dev/null 2>&1; then
       printf 'warning: system timer is not enabled: snapper-cleanup.timer\n' >&2
     fi
+  fi
+
+  if ! systemctl is-enabled hyprbole-health-check.timer >/dev/null 2>&1; then
+    printf 'warning: system timer is not enabled: hyprbole-health-check.timer\n' >&2
   fi
 
   failed_units="$(systemctl --user list-units --state=failed --no-legend --plain 2>/dev/null || true)"

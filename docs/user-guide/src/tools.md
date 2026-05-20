@@ -30,6 +30,16 @@ hb disk-usage
 
 From a terminal, `hb disk-usage` runs `dua i` in the current terminal. Launcher and menu entries use `hb launch disk-usage` so a floating terminal opens for the tool.
 
+## System Health
+
+`System Health` opens the cached hourly health report. The Waybar health indicator only appears when the report has warnings or critical issues.
+
+Run it directly with:
+
+```bash
+hb health
+```
+
 The Tools menu also includes `System Monitor` for `btop` and `System Info` for Hyprland system information.
 
 To inspect a specific path, pass it to Hyprbole:

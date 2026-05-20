@@ -89,6 +89,7 @@ hyprbole-refresh-gnome >/dev/null 2>&1 || true
 hyprbole-refresh-fonts >/dev/null 2>&1 || true
 hyprbole-refresh-vscode >/dev/null 2>&1 || true
 hyprbole-refresh-shell >/dev/null 2>&1 || true
+chmod +x "$HYPRBOLE_PATH/bin"/* "$HYPRBOLE_PATH/default/waybar"/*.sh >/dev/null 2>&1 || true
 systemctl --user daemon-reload >/dev/null 2>&1 || true
 hyprctl reload >/dev/null 2>&1 || true
 hyprbole-restart-terminal >/dev/null 2>&1 || true

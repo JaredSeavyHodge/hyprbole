@@ -46,6 +46,7 @@ window#waybar {
 #custom-btop,
 #battery,
 #pulseaudio,
+#custom-health,
 #custom-update,
 #bluetooth,
 #custom-recording-indicator,
@@ -84,6 +85,18 @@ window#waybar {
 
 #custom-update {
   font-size: 10px;
+}
+
+#custom-health {
+  font-size: 11px;
+}
+
+window#waybar #custom-health.warning {
+  color: #ffb454;
+}
+
+window#waybar #custom-health.critical {
+  color: #ff4d5a;
 }
 
 #custom-recording-indicator {

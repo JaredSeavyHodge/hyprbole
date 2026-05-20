@@ -60,6 +60,7 @@ Packages:
 Tools:
   tools
   disk-usage [path...]
+  health
 
 Launch:
   apps
@@ -78,6 +79,7 @@ Launch:
   launch clipboard
   launch launcher
   launch disk-usage [path...]
+  launch health
   launch my-wallpaper-menu
   launch themes
   launch wallpaper-menu
@@ -1097,7 +1099,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Packages: system tools"
-  for package in yay-bin bash-completion mise starship zoxide fzf bat eza dua-cli fd ripgrep unzip lazygit tree-sitter-cli wl-clipboard grim slurp satty pavucontrol nm-connection-editor network-manager-applet blueman gnome-keyring playerctl brightnessctl xdg-user-dirs xdg-utils gvfs gvfs-mtp libsecret git curl jq man-db man-pages imagemagick libqalculate pacman-contrib limine gnome-themes-extra noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra rust ttf-cascadia-code ttf-dejavu ttf-fira-code ttf-hack ttf-jetbrains-mono ttf-jetbrains-mono-nerd ttf-liberation ttf-nerd-fonts-symbols ttf-opensans ttf-roboto ttf-ubuntu-font-family inter-font otf-font-awesome papirus-icon-theme adwaita-icon-theme hicolor-icon-theme base-devel snapper limine-snapper-sync limine-mkinitcpio-hook hyprsysteminfo; do
+  for package in yay-bin bash-completion mise starship zoxide fzf bat eza dua-cli fd ripgrep unzip lazygit tree-sitter-cli wl-clipboard grim slurp satty pavucontrol nm-connection-editor network-manager-applet blueman gnome-keyring playerctl brightnessctl xdg-user-dirs xdg-utils gvfs gvfs-mtp libsecret git curl jq nvme-cli smartmontools man-db man-pages imagemagick libqalculate pacman-contrib limine gnome-themes-extra noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra rust ttf-cascadia-code ttf-dejavu ttf-fira-code ttf-hack ttf-jetbrains-mono ttf-jetbrains-mono-nerd ttf-liberation ttf-nerd-fonts-symbols ttf-opensans ttf-roboto ttf-ubuntu-font-family inter-font otf-font-awesome papirus-icon-theme adwaita-icon-theme hicolor-icon-theme base-devel snapper limine-snapper-sync limine-mkinitcpio-hook hyprsysteminfo; do
     if pacman -Q "$package" >/dev/null 2>&1; then
       doctor_report ok "$package"
     else
@@ -1107,7 +1109,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Commands"
-  for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper wf-recorder grim slurp satty mise code nvim rg fd eza dua unzip lazygit tree-sitter man walker elephant; do
+  for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper wf-recorder grim slurp satty mise code nvim rg fd eza dua unzip lazygit tree-sitter man nvme smartctl walker elephant; do
     if command -v "$binary" >/dev/null 2>&1; then
       doctor_report ok "$binary"
     else
@@ -1184,6 +1186,12 @@ doctor() {
     doctor_report ok "snapper-cleanup.timer enabled"
   else
     doctor_report warn "snapper-cleanup.timer not enabled"
+  fi
+
+  if systemctl is-enabled hyprbole-health-check.timer >/dev/null 2>&1; then
+    doctor_report ok "hyprbole-health-check.timer enabled"
+  else
+    doctor_report warn "hyprbole-health-check.timer not enabled"
   fi
   doctor_section_finish
 
@@ -1375,6 +1383,14 @@ launch_disk_usage() {
   hyprbole_launch_floating_terminal com.hyprbole.disk-usage "Disk Usage" bash -lc 'if (($# == 0)); then cd "$HOME" || exit; fi; hyprbole disk-usage "$@"; status=$?; if (( status != 0 )); then printf "\nDisk Usage exited with status %d\n" "$status"; printf "\nPress Enter to close..."; read -r _; fi' hyprbole-disk-usage "$@"
 }
 
+health_report() {
+  exec hyprbole-health-report
+}
+
+launch_health() {
+  hyprbole_launch_floating_terminal com.hyprbole.system "System Health" bash -lc 'hyprbole health; printf "\nPress Enter to close..."; read -r _'
+}
+
 launch_launcher() {
   command -v walker >/dev/null 2>&1 || {
     printf 'missing required command: walker\n' >&2
@@ -1461,6 +1477,7 @@ pkg_install() {
   }
 
   if [[ -n $pkg_names ]]; then
+    hyprbole-health-check --disk-space-guard
     sudo_keepalive
     printf '%s\n' "$pkg_names" | tr '\n' ' ' | xargs sudo pacman -S --noconfirm
   fi
@@ -1536,6 +1553,7 @@ pkg_aur_install() {
   }
 
   if [[ -n $pkg_names ]]; then
+    hyprbole-health-check --disk-space-guard
     sudo_keepalive
     printf '%s\n' "$pkg_names" | sed 's/^/aur\//g' | tr '\n' ' ' | xargs yay -S --noconfirm
   fi
@@ -1777,6 +1795,7 @@ update_all() {
   fi
 
   hyprbole-snapshot create || [[ $? -eq 127 ]]
+  hyprbole-health-check --disk-space-guard
   sudo pacman -Syyu --noconfirm
   hyprbole-migrate
   update_aur_packages
@@ -1908,6 +1927,9 @@ main() {
       shift
       disk_usage "$@"
       ;;
+    health)
+      health_report
+      ;;
     clipboard)
       launch_clipboard
       ;;
@@ -1974,6 +1996,9 @@ main() {
         disk-usage)
           shift 2
           launch_disk_usage "$@"
+          ;;
+        health)
+          launch_health
           ;;
         themes)
           launch_themes

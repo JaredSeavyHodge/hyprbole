@@ -21,6 +21,7 @@ DOCS_NAV=(
   "First Boot:first-boot.md"
   "Commands:commands.md"
   "Doctor:doctor.md"
+  "System Health:health.md"
   "Terminal:terminal.md"
   "Hyprland:hyprland-config.md"
   "App Launcher:walker.md"
