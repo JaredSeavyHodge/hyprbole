@@ -9,6 +9,11 @@ export HYPRBOLE_CONFIG_BACKUP_KEEP="${HYPRBOLE_CONFIG_BACKUP_KEEP:-3}"
 HYPRBOLE_SETTINGS_PATH="$HYPRBOLE_CONFIG_PATH/settings.toml"
 HYPRBOLE_FALLBACK_THEME="default-theme"
 
+case ":$PATH:" in
+  *":$HYPRBOLE_PATH/bin:"*) ;;
+  *) export PATH="$HYPRBOLE_PATH/bin:$PATH" ;;
+esac
+
 hyprbole_log() {
   printf '%s\n' "$1"
 }
