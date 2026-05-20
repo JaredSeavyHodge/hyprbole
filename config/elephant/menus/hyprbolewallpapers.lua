@@ -1,6 +1,8 @@
 Name = "hyprbolewallpapers"
 NamePretty = "Hyprbole Wallpapers"
 HideFromProviderlist = true
+Parent = "hyprbole-wallpaper-settings"
+FixedOrder = true
 
 local function file_exists(path)
   local handle = io.open(path, "r")
@@ -59,12 +61,13 @@ function GetEntries()
 
       table.insert(entries, {
         Text = text,
-        Sub = current_theme,
+        Subtext = current_theme,
         Preview = path,
         PreviewType = "file",
         Actions = {
           activate = "hyprbole theme wallpaper set " .. shell_quote(current_theme) .. " " .. shell_quote(wallpaper_name),
         },
+        State = { "sublevel" },
       })
     end
   end

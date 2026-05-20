@@ -20,6 +20,7 @@ Must-have shortcuts:
 | Keybind | Action |
 | --- | --- |
 | `SUPER + SPACE` | Open app launcher |
+| `SUPER + SHIFT + SPACE` | Open app launcher |
 | `SUPER + ALT + SPACE` | Open Hyprbole menu |
 | `SUPER + RETURN` | Open terminal |
 | `SUPER + SHIFT + F` | Open file manager |
@@ -28,7 +29,7 @@ Must-have shortcuts:
 | `SUPER + left mouse drag` | Move window |
 | `SUPER + right mouse drag` | Resize window |
 
-For the full shortcut list, open Keybinds from the Hyprbole menu or run:
+For the full shortcut list, open `Help`, `Keybinds` from the Hyprbole menu or run:
 
 ```bash
 hb keybinds

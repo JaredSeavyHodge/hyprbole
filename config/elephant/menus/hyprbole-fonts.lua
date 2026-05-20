@@ -1,6 +1,8 @@
 Name = "hyprbole-fonts"
 NamePretty = "Hyprbole Fonts"
 HideFromProviderlist = true
+Parent = "hyprbole-theme"
+FixedOrder = true
 
 local function shell_quote(value)
   return string.format("'%s'", tostring(value):gsub("'", "'\\''"))
@@ -54,6 +56,7 @@ function GetEntries()
           Actions = {
             activate = "hyprbole theme font set all " .. shell_quote(font_family),
           },
+          State = { "sublevel" },
         })
       end
     end

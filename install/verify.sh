@@ -158,6 +158,8 @@ verify_installation() {
     "$HOME/.local/share/applications/hyprbole-disk-usage.desktop" \
     "$HOME/.config/elephant/menus/hyprbole-tools.toml" \
     "$HOME/.config/elephant/menus/hyprbole-fonts.lua" \
+    "$HOME/.config/elephant/menus/hyprbole-remove.toml" \
+    "$HOME/.config/elephant/menus/hyprbole-power-profiles.toml" \
     "$HOME/.config/nvim/init.lua" \
     "$HOME/.config/nvim/lua/config/lazy.lua" \
     "$HOME/.config/nvim/lua/plugins/hyprbole-theme.lua" \

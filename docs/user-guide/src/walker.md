@@ -8,6 +8,7 @@ Open the main launcher:
 
 ```text
 SUPER + SPACE
+SUPER + SHIFT + SPACE
 ```
 
 Open the Hyprbole menu:
@@ -66,15 +67,20 @@ The top-level menu includes:
 
 | Entry | Purpose |
 | --- | --- |
-| Apps | Browser, files, passwords |
-| Keybinds | Browse current keyboard shortcuts |
-| User Guide | Open this documentation |
-| Tools | Disk usage and local utilities |
-| Theme | Themes, wallpapers, and fonts |
-| Install | Package install and removal workflows |
-| Controls | Audio, network, Bluetooth, toggles |
+| Applications | Browser, files, passwords, app launcher |
+| Settings | Audio, network, Bluetooth, desktop controls |
+| Appearance | Themes, wallpapers, fonts |
+| Tools | Disk usage, monitor, system info |
 | Capture | Screenshots and recordings |
-| System | Refresh, update, lock, logout, power |
+| Install | Pacman and AUR package install workflows |
+| Remove | Package inspection and removal workflows |
+| Maintenance | Update and refresh Hyprbole |
+| Help | User guide and keybinds |
+| Power | Suspend, reboot, power off, profiles |
+| Lock | Lock the current session |
+| Logout | Log out to the display manager |
+
+Menu entries with a right-side marker open submenus. Press `Right` or `Enter` to open a submenu. Press `Left` to return to the parent menu without closing Walker.
 
 ## Menus And Commands
 
@@ -104,7 +110,7 @@ Use `p:` or the 1Password entry from the Apps menu for password lookup. Password
 
 ## Tools Menu
 
-Open `Tools` from the Hyprbole menu to launch utility workflows. `Disk Usage` opens `dua i` in the default terminal.
+Open `Tools` from the Hyprbole menu to launch utility workflows. `Disk Usage` opens `dua i` in a floating terminal.
 
 ## Configuration
 

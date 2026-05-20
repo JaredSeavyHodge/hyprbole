@@ -1,6 +1,8 @@
 Name = "hyprbole-apps"
-NamePretty = "Hyprbole Apps"
+NamePretty = "Hyprbole Applications"
 HideFromProviderlist = true
+Parent = "hyprbole"
+FixedOrder = true
 
 local function app_label(role)
   local handle = io.popen("hyprbole default-app " .. role .. " label 2>/dev/null")
@@ -16,25 +18,36 @@ end
 function GetEntries()
   return {
     {
+      Text = "App Launcher (Super + Shift + Space)",
+      Subtext = "Open Walker's main app launcher",
+      Actions = {
+        activate = "hyprbole launch launcher",
+      },
+      State = { "sublevel" },
+    },
+    {
       Text = "Browser",
-      Sub = app_label("browser"),
+      Subtext = app_label("browser"),
       Actions = {
         activate = "hyprbole-launch-browser",
       },
+      State = { "sublevel" },
     },
     {
       Text = "Files",
-      Sub = app_label("files"),
+      Subtext = app_label("files"),
       Actions = {
         activate = "hyprbole-launch-files",
       },
+      State = { "sublevel" },
     },
     {
       Text = "Passwords",
-      Sub = "Open 1Password",
+      Subtext = "Open 1Password",
       Actions = {
         activate = "hyprbole-launch-passwords",
       },
+      State = { "sublevel" },
     },
   }
 end

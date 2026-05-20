@@ -1,6 +1,8 @@
 Name = "hyprbolethemes"
 NamePretty = "Hyprbole Themes"
 HideFromProviderlist = true
+Parent = "hyprbole-theme"
+FixedOrder = true
 
 local function file_exists(path)
   local handle = io.open(path, "r")
@@ -148,10 +150,11 @@ function GetEntries()
 
   table.insert(entries, {
     Text = "Add Theme Repository",
-    Sub = "Edit theme-sources.conf, then run theme source sync",
+    Subtext = "Edit theme-sources.conf, then run theme source sync",
     Actions = {
       activate = "hyprbole theme source edit",
     },
+    State = { "sublevel" },
   })
 
   for _, theme in ipairs(themes) do
@@ -179,6 +182,7 @@ function GetEntries()
         Actions = {
           activate = "hyprbole theme set " .. theme_name,
         },
+        State = { "sublevel" },
       }
 
       if preview_path and preview_path ~= "" then

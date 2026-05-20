@@ -88,7 +88,7 @@ hb disk-usage ~/Downloads
 hb launch disk-usage
 ```
 
-`hb tools` opens the Tools menu. `hb disk-usage` runs `dua i` in the current terminal. `hb launch disk-usage` opens it in the default terminal for menu and launcher workflows.
+`hb tools` opens the Tools menu. `hb disk-usage` runs `dua i` in the current terminal. `hb launch disk-usage` opens it in a floating terminal for menu and launcher workflows.
 
 ## Defaults
 

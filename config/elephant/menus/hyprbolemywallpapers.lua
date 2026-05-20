@@ -1,6 +1,8 @@
 Name = "hyprbolemywallpapers"
 NamePretty = "Hyprbole My Wallpapers"
 HideFromProviderlist = true
+Parent = "hyprbole-wallpaper-settings"
+FixedOrder = true
 
 local function shell_quote(value)
   return string.format("'%s'", tostring(value):gsub("'", "'\\''"))
@@ -21,12 +23,13 @@ function GetEntries()
     if wallpaper_name then
       table.insert(entries, {
         Text = wallpaper_name,
-        Sub = path:gsub("^" .. home, "~"),
+        Subtext = path:gsub("^" .. home, "~"),
         Preview = path,
         PreviewType = "file",
         Actions = {
           activate = "hyprbole wallpaper set " .. shell_quote(path),
         },
+        State = { "sublevel" },
       })
     end
   end

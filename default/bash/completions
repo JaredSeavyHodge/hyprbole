@@ -30,7 +30,7 @@ _hyprbole_complete() {
 
   case "${COMP_WORDS[1]:-}" in
     "")
-      COMPREPLY=($(compgen -W 'theme themes wallpaper pkg apps clipboard keybinds lock logout menu suspend reboot poweroff launch capture power system docs guide doctor verify update refresh-limine snapshot refresh-config refresh-all refresh-shell migrate' -- "$cur"))
+      COMPREPLY=($(compgen -W 'theme themes wallpaper pkg apps clipboard keybinds tools disk-usage lock logout menu suspend reboot poweroff launch capture power system docs guide doctor verify update refresh-limine snapshot refresh-config refresh-all refresh-shell migrate' -- "$cur"))
       return 0
       ;;
     theme)
@@ -100,7 +100,7 @@ _hyprbole_complete() {
       ;;
     launch)
       if (( COMP_CWORD == 2 )); then
-        COMPREPLY=($(compgen -W 'apps menu keybinds clipboard launcher themes my-wallpaper-menu wallpaper-menu update pkg-installed pkg-install pkg-aur-install pkg-remove' -- "$cur"))
+        COMPREPLY=($(compgen -W 'apps menu tools keybinds clipboard launcher disk-usage themes my-wallpaper-menu wallpaper-menu update pkg-installed pkg-install pkg-aur-install pkg-remove' -- "$cur"))
       elif (( COMP_CWORD == 3 )) && [[ ${COMP_WORDS[2]:-} == "menu" ]]; then
         COMPREPLY=($(compgen -W "$(_hyprbole_complete_menu_names)" -- "$cur"))
       fi

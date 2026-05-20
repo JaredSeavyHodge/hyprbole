@@ -15,7 +15,7 @@ hb pkg aur-install
 hb pkg remove
 ```
 
-The Hyprbole menu also includes package install and removal entries.
+The Hyprbole menu also includes package workflows at the top level. Open `Install` for `Pacman` and `AUR`; open `Remove` for installed package inspection and removal.
 
 These commands open interactive picker workflows. Use normal `pacman` or `yay` directly when you already know the exact package operation you want.
 

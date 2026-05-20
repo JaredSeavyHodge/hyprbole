@@ -1,0 +1,17 @@
+name = "hyprbole-help"
+name_pretty = "Hyprbole Help"
+hide_from_providerlist = true
+parent = "hyprbole"
+fixed_order = true
+
+[[entries]]
+text = "User Guide"
+subtext = "Open the Hyprbole documentation"
+actions = { activate = "hyprbole docs" }
+state = ["sublevel"]
+
+[[entries]]
+text = "Keybinds"
+subtext = "Browse current keyboard shortcuts"
+submenu = "hyprbole-keybinds"
+state = ["sublevel", "submenu"]

@@ -58,6 +58,35 @@ child:selected .item-box * {
 
 .item-box {
   padding-left: 14px;
+  padding-right: 14px;
+}
+
+.sublevel {
+  box-shadow: inset 2px 0 0 @muted;
+}
+
+.submenu {
+  box-shadow: inset -2px 0 0 @muted;
+}
+
+.sublevel.submenu {
+  box-shadow: inset 2px 0 0 @muted, inset -2px 0 0 @muted;
+}
+
+child:selected .sublevel {
+  box-shadow: inset 4px 0 0 @accent, inset 10px 0 16px -14px @accent;
+}
+
+child:selected .submenu {
+  box-shadow: inset -4px 0 0 @accent, inset -10px 0 16px -14px @accent;
+}
+
+child:selected .sublevel.submenu {
+  box-shadow:
+    inset 4px 0 0 @accent,
+    inset 10px 0 16px -14px @accent,
+    inset -4px 0 0 @accent,
+    inset -10px 0 16px -14px @accent;
 }
 
 .item-text-box {

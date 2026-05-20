@@ -20,7 +20,7 @@ Open the keybind browser:
 hb keybinds
 ```
 
-or use the Keybinds entry in the Hyprbole menu.
+or use `Help`, `Keybinds` in the Hyprbole menu.
 
 ## Common Defaults
 
@@ -31,6 +31,7 @@ There are a few practical exceptions. `H/J/K/L` and `S` are already used for win
 | Keybind | Action |
 | --- | --- |
 | `SUPER + SPACE` | Walker launcher |
+| `SUPER + SHIFT + SPACE` | Walker launcher |
 | `SUPER + ALT + SPACE` | Hyprbole menu |
 | `SUPER + V` | Clipboard history |
 | `SUPER + RETURN` | Terminal |

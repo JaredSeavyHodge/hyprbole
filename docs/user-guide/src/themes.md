@@ -20,7 +20,7 @@ The shipped fallback theme is `default-theme`.
 
 ## Commands
 
-Open the Hyprbole menu with `SUPER + ALT + SPACE`, then choose Theme to browse theme, wallpaper, and font actions.
+Open the Hyprbole menu with `SUPER + ALT + SPACE`, then choose `Appearance` to browse theme, wallpaper, and font actions.
 
 ```bash
 hb theme list
@@ -105,9 +105,9 @@ Theme wallpapers come from the active merged theme under:
 ~/.config/hyprbole/current/theme/backgrounds
 ```
 
-From the menu, open `SUPER + ALT + SPACE`, then choose Theme, Wallpaper Settings, Theme Wallpaper. Pick a wallpaper to apply it. Use My Wallpaper in the same menu to choose from `~/Pictures/Wallpaper`.
+From the menu, open `SUPER + ALT + SPACE`, then choose `Appearance`, `Wallpaper`, `Theme Wallpaper`. Pick a wallpaper to apply it. Use `My Wallpaper` in the same menu to choose from `~/Pictures/Wallpaper`.
 
-Wallpaper cycling is also available from Theme, Wallpaper Settings, Cycle Wallpaper. Choose Theme Wallpaper or My Wallpaper for the source, then choose an interval.
+Wallpaper cycling is also available from `Appearance`, `Wallpaper`, `Wallpaper Cycling`. Choose `Theme Wallpaper` or `My Wallpaper` for the source, then choose an interval.
 
 Use:
 

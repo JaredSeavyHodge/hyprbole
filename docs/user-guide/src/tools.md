@@ -20,7 +20,7 @@ hb tools
 
 ## Disk Usage
 
-`Disk Usage` opens `dua i` in the default terminal. `dua` is a fast terminal disk-usage browser.
+`Disk Usage` opens `dua i` in a floating terminal. `dua` is a fast terminal disk-usage browser.
 
 Open it from the Tools menu, search for `Disk Usage` in the app launcher, or run:
 
@@ -28,7 +28,9 @@ Open it from the Tools menu, search for `Disk Usage` in the app launcher, or run
 hb disk-usage
 ```
 
-From a terminal, `hb disk-usage` runs `dua i` in the current terminal. Launcher and menu entries use `hb launch disk-usage` so a terminal window opens for the tool.
+From a terminal, `hb disk-usage` runs `dua i` in the current terminal. Launcher and menu entries use `hb launch disk-usage` so a floating terminal opens for the tool.
+
+The Tools menu also includes `System Monitor` for `btop` and `System Info` for Hyprland system information.
 
 To inspect a specific path, pass it to Hyprbole:
 

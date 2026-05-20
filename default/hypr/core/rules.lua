@@ -25,7 +25,7 @@ hl.window_rule({
 
 hl.window_rule({
   name = "float-disk-usage-terminal",
-  match = { class = "^com\\.hyprbole\\.disk%-usage$" },
+  match = { class = "^com\\.hyprbole\\.disk-usage$" },
   float = true,
 })
 

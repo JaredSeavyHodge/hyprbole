@@ -18,6 +18,13 @@ symbols = { input = "Search symbols", list = "No Symbols" }
 close = ["Escape"]
 quick_activate = []
 
+[providers.actions]
+fallback = [
+  { action = "menus:open", label = "open", bind = "Return", default = true, after = "Nothing" },
+  { action = "menus:open", label = "open", bind = "Right", after = "Nothing" },
+  { action = "menus:parent", label = "back", bind = "Left", after = "Nothing" },
+]
+
 [providers]
 max_results = 256
 default = [

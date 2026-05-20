@@ -25,6 +25,7 @@ hb verify
 ## Main Shortcuts
 
 - `SUPER + SPACE`: app launcher
+- `SUPER + SHIFT + SPACE`: app launcher
 - `SUPER + ALT + SPACE`: Hyprbole menu
 - `SUPER + V`: clipboard history
 - `SUPER + SHIFT + B`: browser
@@ -45,7 +46,7 @@ hb verify
 - `SUPER + left mouse drag`: move window
 - `SUPER + right mouse drag`: resize window
 
-Use the Keybinds entry in the Hyprbole menu to browse the current shortcuts.
+Use `Help`, `Keybinds` in the Hyprbole menu to browse the current shortcuts.
 
 ## Open The Guide
 

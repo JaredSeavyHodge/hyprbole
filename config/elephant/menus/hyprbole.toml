@@ -1,48 +1,74 @@
 name = "hyprbole"
 name_pretty = "Hyprbole"
 hide_from_providerlist = false
+fixed_order = true
 
 [[entries]]
-text = "Apps"
+text = "Applications"
 subtext = "Browser, files, passwords"
-actions = { activate = "hyprbole apps" }
+submenu = "hyprbole-apps"
+state = ["submenu"]
 
 [[entries]]
-text = "Keybinds"
-subtext = "Browse current keyboard shortcuts"
-actions = { activate = "hyprbole keybinds" }
+text = "Settings"
+subtext = "Audio, network, Bluetooth, desktop controls"
+submenu = "hyprbole-controls"
+state = ["submenu"]
 
 [[entries]]
-text = "User Guide"
-subtext = "Open the Hyprbole documentation"
-actions = { activate = "hyprbole docs" }
+text = "Appearance"
+subtext = "Themes, wallpapers, fonts"
+submenu = "hyprbole-theme"
+state = ["submenu"]
 
 [[entries]]
 text = "Tools"
-subtext = "Disk usage and local utilities"
+subtext = "Disk usage, monitor, system info"
 submenu = "hyprbole-tools"
-
-[[entries]]
-text = "Theme"
-subtext = "Themes and wallpapers"
-submenu = "hyprbole-theme"
-
-[[entries]]
-text = "Install"
-subtext = "Install or remove packages"
-submenu = "hyprbole-install"
-
-[[entries]]
-text = "Controls"
-subtext = "Audio, network, bluetooth, toggles"
-submenu = "hyprbole-controls"
+state = ["submenu"]
 
 [[entries]]
 text = "Capture"
 subtext = "Screenshots and recordings"
 submenu = "hyprbole-capture"
+state = ["submenu"]
 
 [[entries]]
-text = "System"
-subtext = "Refresh, update, lock, logout, power"
+text = "Install"
+subtext = "Pacman and AUR package workflows"
+submenu = "hyprbole-install"
+state = ["submenu"]
+
+[[entries]]
+text = "Remove"
+subtext = "Installed package removal workflows"
+submenu = "hyprbole-remove"
+state = ["submenu"]
+
+[[entries]]
+text = "Maintenance"
+subtext = "Update and refresh Hyprbole"
 submenu = "hyprbole-system"
+state = ["submenu"]
+
+[[entries]]
+text = "Help"
+subtext = "User guide and keybinds"
+submenu = "hyprbole-help"
+state = ["submenu"]
+
+[[entries]]
+text = "Power"
+subtext = "Suspend, reboot, power off, profiles"
+submenu = "hyprbole-power"
+state = ["submenu"]
+
+[[entries]]
+text = "Lock"
+subtext = "Lock the current session"
+actions = { activate = "hyprbole-system-lock" }
+
+[[entries]]
+text = "Logout"
+subtext = "Log out to the display manager"
+actions = { activate = "hyprbole-system-logout" }

@@ -1,18 +1,29 @@
 name = "hyprbole-power"
 name_pretty = "Hyprbole Power"
 hide_from_providerlist = true
+parent = "hyprbole"
+fixed_order = true
+
+[[entries]]
+text = "Profiles"
+subtext = "Future performance profile controls"
+submenu = "hyprbole-power-profiles"
+state = ["sublevel", "submenu"]
 
 [[entries]]
 text = "Suspend"
 subtext = "Lock and suspend the system"
 actions = { activate = "hyprbole-system-suspend" }
+state = ["sublevel"]
 
 [[entries]]
 text = "Reboot"
 subtext = "Restart the system"
 actions = { activate = "hyprbole-system-reboot" }
+state = ["sublevel"]
 
 [[entries]]
 text = "Power Off"
 subtext = "Shut down the system"
 actions = { activate = "hyprbole-system-poweroff" }
+state = ["sublevel"]

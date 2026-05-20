@@ -35,6 +35,7 @@ bindings.passwords = hl.bind("SUPER + SHIFT + SLASH", hl.dsp.exec_cmd(launch_pas
 bindings.clipboard = hl.bind("SUPER + V", hl.dsp.exec_cmd(launch_clipboard))
 bindings.menu = hl.bind("SUPER + ALT + SPACE", hl.dsp.exec_cmd(launch_menu))
 bindings.launcher = hl.bind("SUPER + SPACE", hl.dsp.exec_cmd(launcher))
+bindings.launcher_alt = hl.bind("SUPER + SHIFT + SPACE", hl.dsp.exec_cmd(launcher))
 bindings.close_window = hl.bind("SUPER + Q", hl.dsp.window.close())
 bindings.toggle_scratchpad = hl.bind("SUPER + S", hl.dsp.workspace.toggle_special("scratchpad"))
 bindings.move_to_scratchpad = hl.bind("SUPER + SHIFT + S", hl.dsp.window.move({ workspace = "special:scratchpad", follow = false }))

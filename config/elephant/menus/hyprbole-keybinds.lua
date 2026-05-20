@@ -1,6 +1,8 @@
 Name = "hyprbole-keybinds"
 NamePretty = "Hyprbole Keybinds"
 HideFromProviderlist = true
+Parent = "hyprbole-help"
+FixedOrder = true
 
 local function title_case(text)
   return (text:gsub("(%a)([%w_']*)", function(first, rest)
@@ -152,10 +154,11 @@ function GetEntries()
     return {
       {
         Text = "Unable to load keybinds",
-        Sub = tostring(err),
+        Subtext = tostring(err),
         Actions = {
           activate = "true",
         },
+        State = { "sublevel" },
       },
     }
   end
@@ -163,10 +166,11 @@ function GetEntries()
   for _, binding in ipairs(bindings) do
     table.insert(entries, {
       Text = string.format("%s  -  %s", binding.keys, binding.action),
-      Sub = binding.action,
+      Subtext = binding.action,
       Actions = {
         activate = "true",
       },
+      State = { "sublevel" },
     })
   end
 

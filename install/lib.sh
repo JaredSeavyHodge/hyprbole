@@ -151,6 +151,8 @@ write_install_diagnostics() {
       "$HOME/.config/waybar/config.jsonc" \
       "$HOME/.config/swaync/config.json" \
       "$HOME/.config/elephant/menus/hyprbole-fonts.lua" \
+      "$HOME/.config/elephant/menus/hyprbole-power-profiles.toml" \
+      "$HOME/.config/elephant/menus/hyprbole-remove.toml" \
       "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf" \
       "$HOME/.config/gtk-3.0/settings.ini" \
       "$HOME/.config/gtk-4.0/settings.ini" \
