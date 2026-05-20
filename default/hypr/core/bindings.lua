@@ -27,7 +27,6 @@ local launch_clipboard = hyprbole_path .. "/bin/hyprbole-launch-clipboard"
 local launch_menu = hyprbole_path .. "/bin/hyprbole-launch-menu"
 
 hl.bind("SUPER + RETURN", hl.dsp.exec_cmd(terminal))
-hl.bind("SUPER + SHIFT + RETURN", hl.dsp.exec_cmd(browser))
 hl.bind("SUPER + SHIFT + B", hl.dsp.exec_cmd(browser))
 hl.bind("SUPER + SHIFT + F", hl.dsp.exec_cmd(file_manager))
 hl.bind("SUPER + SHIFT + N", hl.dsp.exec_cmd(obsidian))

@@ -14,6 +14,8 @@ The generated desktop entry is:
 ~/.local/share/applications/hyprbole-brave-origin-nightly.desktop
 ```
 
+Normal Hyprbole browser shortcuts, menus, and default-browser launches should go through this desktop entry or wrapper instead of the package launcher directly.
+
 ## Required Flags
 
 The Hyprbole launcher always passes:
@@ -37,6 +39,34 @@ Put Hyprbole-specific extra Brave flags here:
 
 ```text
 ~/.config/hyprbole/brave-origin-nightly-flags.conf
+```
+
+Use one flag per line. Fully close Brave before testing changes because Chromium keeps one browser process alive for all windows.
+
+## Theme Policy
+
+Hyprbole writes the current browser theme policy to:
+
+```text
+~/.config/hyprbole/current/browser-policy.json
+```
+
+The managed Brave policy is linked at:
+
+```text
+/etc/brave/policies/managed/color.json
+```
+
+To reapply it:
+
+```bash
+hyprbole browser setup-theme-policy
+```
+
+If you do not want Hyprbole theme changes to update the browser policy, set this in `~/.config/hyprbole/settings.toml`:
+
+```toml
+skip_browser_theme_changes = true
 ```
 
 ## Fractional Scaling
@@ -67,3 +97,5 @@ or use:
 ```bash
 hyprbole doctor --fix
 ```
+
+Then close every Brave window and launch it again from the Hyprbole launcher, desktop entry, or browser keybind.

@@ -38,6 +38,22 @@ hyprbole doctor --fix
 
 Then relaunch affected apps such as Brave or VS Code.
 
+Do not run the internal setup script directly for normal repair. Use `hyprbole doctor --fix` so future supported checks can run in one place.
+
+## What Good Looks Like
+
+In `hyprbole doctor --verbose`, the Secret Service section should report:
+
+- `org.freedesktop.secrets owned`.
+- `Default_keyring.keyring` exists.
+- The default file selects `Default_keyring`.
+- `login.keyring` is absent.
+- SDDM auth and password GNOME Keyring hooks are removed.
+- SDDM session hooks are present.
+- The default collection is unlocked.
+
+If only `org.freedesktop.secrets owned` fails outside a graphical session, log into Hyprbole and check again.
+
 ## Files
 
 | Path | Purpose |
