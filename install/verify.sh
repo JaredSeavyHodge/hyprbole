@@ -131,7 +131,7 @@ verify_installation() {
     graphical_session_active=1
   fi
 
-  for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper sddm limine-update code nvim rg fd unzip lazygit tree-sitter; do
+  for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper sddm limine-update code nvim rg fd unzip lazygit tree-sitter man; do
     if ! cmd_present "$binary"; then
       printf 'missing command: %s\n' "$binary" >&2
       failures=$((failures + 1))
@@ -142,6 +142,7 @@ verify_installation() {
     "$HOME/.config/hypr/hyprland.lua" \
     "$HYPRBOLE_CONFIG_PATH/theme-sources.conf" \
     "$HOME/.config/waybar/config.jsonc" \
+    "$HYPRBOLE_PATH/assets/logo/circle-hyprbole-logo.svg" \
     "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf" \
     "$HOME/.config/gtk-3.0/settings.ini" \
     "$HOME/.config/gtk-4.0/settings.ini" \

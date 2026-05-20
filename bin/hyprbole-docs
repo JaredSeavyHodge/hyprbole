@@ -10,6 +10,8 @@ HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
 DOCS_SOURCE_DIR="$HYPRBOLE_PATH/docs/user-guide/src"
 DOCS_OUTPUT_DIR="$HYPRBOLE_CONFIG_PATH/docs"
 DOCS_INDEX="$DOCS_OUTPUT_DIR/index.html"
+DOCS_LOGO_SOURCE="$HYPRBOLE_PATH/assets/logo/hyprbole-logo.svg"
+DOCS_LOGO_OUTPUT="$DOCS_OUTPUT_DIR/assets/logo/hyprbole-logo.svg"
 THEME_COLORS_PATH="$HYPRBOLE_CONFIG_PATH/current/theme/colors.toml"
 OPEN_DOCS=1
 
@@ -167,7 +169,13 @@ if [[ ! -d $DOCS_SOURCE_DIR ]]; then
   exit 1
 fi
 
-mkdir -p "$DOCS_OUTPUT_DIR"
+if [[ ! -f $DOCS_LOGO_SOURCE ]]; then
+  printf 'missing Hyprbole docs logo: %s\n' "$DOCS_LOGO_SOURCE" >&2
+  exit 1
+fi
+
+mkdir -p "$DOCS_OUTPUT_DIR/assets/logo"
+cp "$DOCS_LOGO_SOURCE" "$DOCS_LOGO_OUTPUT"
 
 {
   cat <<'HTML'
@@ -243,27 +251,25 @@ HTML
 
     .brand {
       display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
+      align-items: center;
+      justify-content: center;
       margin-bottom: 1.25rem;
-      padding: 1rem;
+      padding: 1.1rem;
       border: 1px solid var(--border);
       border-radius: var(--radius);
       background: linear-gradient(145deg, rgba(155, 177, 255, 0.12), rgba(120, 224, 197, 0.08));
       box-shadow: var(--shadow);
+      overflow: hidden;
     }
 
-    .brand-title {
-      margin: 0;
-      font-size: 1.35rem;
-      letter-spacing: -0.03em;
-    }
-
-    .brand-subtitle {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.88rem;
-      line-height: 1.45;
+    .brand-logo {
+      display: block;
+      width: min(16.5rem, 100%);
+      max-height: 10.5rem;
+      object-fit: contain;
+      filter: drop-shadow(0 0.9rem 2.2rem rgba(var(--theme-accent-rgb), 0.18));
+      transform: scale(1.28);
+      transform-origin: center;
     }
 
     .search {
@@ -424,6 +430,18 @@ HTML
       font-size: clamp(1rem, 2.2vw, 1.35rem);
       font-weight: 500;
       letter-spacing: -0.02em;
+    }
+
+    .doc-image {
+      margin: -0.5rem 0 1.5rem;
+    }
+
+    .doc-image img {
+      display: block;
+      width: min(11rem, 46vw);
+      max-height: 7rem;
+      object-fit: contain;
+      filter: drop-shadow(0 0.9rem 2rem rgba(var(--theme-accent-rgb), 0.16));
     }
 
     .doc p,
@@ -625,8 +643,7 @@ HTML
   <div class="shell">
     <aside class="sidebar" id="sidebar" aria-label="Guide navigation">
       <section class="brand">
-        <h1 class="brand-title">hyprbole guide</h1>
-        <p class="brand-subtitle">Local desktop docs. No server, no framework, just the guide on disk.</p>
+        <img class="brand-logo" src="assets/logo/hyprbole-logo.svg" alt="Hyprbole">
       </section>
       <label class="search">
         <input id="search" type="search" placeholder="Search the guide" autocomplete="off">
@@ -694,6 +711,7 @@ HTML
         return `<a href="${safeUrl}">${label}</a>`;
       });
       html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/(^|\s)_([^_]+)_(?=\s|$|[.,!?])/g, '$1<em>$2</em>');
       return html;
     }
 
@@ -714,6 +732,10 @@ HTML
     function renderCodeBlock(language, code) {
       const label = language || 'text';
       return `<div class="codeblock"><div class="codebar"><span>${escapeHtml(label)}</span><button class="copy-code" type="button">copy</button></div><pre><code>${escapeHtml(code.replace(/\n$/, ''))}</code></pre></div>`;
+    }
+
+    function renderImage(alt, url) {
+      return `<figure class="doc-image"><img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}"></figure>`;
     }
 
     function renderMarkdown(markdown) {
@@ -754,7 +776,16 @@ HTML
             suffix += 1;
           }
           headings.push({ level, text, id });
-          output.push(`<h${level} id="${id}">${inlineMarkdown(text)}</h${level}>`);
+          const previous = output[output.length - 1] || '';
+          const className = level === 3 && /^<h1\b/.test(previous) ? ' class="subtitle"' : '';
+          output.push(`<h${level}${className} id="${id}">${inlineMarkdown(text)}</h${level}>`);
+          i += 1;
+          continue;
+        }
+
+        const image = line.trim().match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+        if (image) {
+          output.push(renderImage(image[1], image[2]));
           i += 1;
           continue;
         }
@@ -782,7 +813,7 @@ HTML
 
         const paragraph = [line.trim()];
         i += 1;
-        while (i < lines.length && lines[i].trim() && !/^#{1,3}\s+/.test(lines[i]) && !/^```/.test(lines[i]) && !/^\s*-\s+/.test(lines[i]) && !lines[i].trim().startsWith('|')) {
+        while (i < lines.length && lines[i].trim() && !/^#{1,3}\s+/.test(lines[i]) && !/^```/.test(lines[i]) && !/^\s*-\s+/.test(lines[i]) && !lines[i].trim().startsWith('|') && !/^!\[[^\]]*\]\([^)]+\)$/.test(lines[i].trim())) {
           paragraph.push(lines[i].trim());
           i += 1;
         }

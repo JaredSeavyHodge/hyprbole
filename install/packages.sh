@@ -60,6 +60,8 @@ HYPRBOLE_OFFICIAL_PACKAGES=(
   git
   curl
   jq
+  man-db
+  man-pages
   imagemagick
   libqalculate
   pacman-contrib
