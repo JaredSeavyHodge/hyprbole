@@ -5,13 +5,13 @@ parent = "hyprbole"
 fixed_order = true
 
 [[entries]]
-text = "Lock"
+text = "󰌾  Lock"
 subtext = "Lock the current session"
 actions = { activate = "hyprbole-system-lock" }
 state = ["sublevel"]
 
 [[entries]]
-text = "Logout"
+text = "󰍃  Logout"
 subtext = "Log out to the display manager"
 actions = { activate = "hyprbole-system-logout" }
 state = ["sublevel"]

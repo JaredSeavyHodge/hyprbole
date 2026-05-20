@@ -5,13 +5,13 @@ parent = "hyprbole"
 fixed_order = true
 
 [[entries]]
-text = "Pacman"
+text = "󰏖  Pacman"
 subtext = "Pick official repository packages with fzf"
 actions = { activate = "hyprbole-launch-pkg-install" }
 state = ["sublevel"]
 
 [[entries]]
-text = "AUR"
+text = "󰣇  AUR"
 subtext = "Pick AUR packages with fzf"
 actions = { activate = "hyprbole-launch-pkg-aur-install" }
 state = ["sublevel"]

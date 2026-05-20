@@ -5,7 +5,7 @@
 }
 
 * {
-  font-family: monospace;
+  font-family: monospace, "Symbols Nerd Font", "Font Awesome 6 Free";
   font-size: 18px;
   color: @foreground;
 }

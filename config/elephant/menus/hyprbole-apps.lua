@@ -18,7 +18,7 @@ end
 function GetEntries()
   return {
     {
-      Text = "App Launcher (Super + Shift + Space)",
+      Text = "󰀻  App Launcher (Super + Shift + Space)",
       Subtext = "Open Walker's main app launcher",
       Actions = {
         activate = "hyprbole launch launcher",
@@ -26,7 +26,7 @@ function GetEntries()
       State = { "sublevel" },
     },
     {
-      Text = "Browser",
+      Text = "󰖟  Browser",
       Subtext = app_label("browser"),
       Actions = {
         activate = "hyprbole-launch-browser",
@@ -34,7 +34,7 @@ function GetEntries()
       State = { "sublevel" },
     },
     {
-      Text = "Files",
+      Text = "󰉋  Files",
       Subtext = app_label("files"),
       Actions = {
         activate = "hyprbole-launch-files",
@@ -42,7 +42,7 @@ function GetEntries()
       State = { "sublevel" },
     },
     {
-      Text = "Passwords",
+      Text = "󰌆  Passwords",
       Subtext = "Open 1Password",
       Actions = {
         activate = "hyprbole-launch-passwords",

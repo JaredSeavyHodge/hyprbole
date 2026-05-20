@@ -4,71 +4,71 @@ hide_from_providerlist = false
 fixed_order = true
 
 [[entries]]
-text = "Applications"
+text = "󰀻  Applications"
 subtext = "Browser, files, passwords"
 submenu = "hyprbole-apps"
 state = ["submenu"]
 
 [[entries]]
-text = "Settings"
+text = "  Settings"
 subtext = "Audio, network, Bluetooth, desktop controls"
 submenu = "hyprbole-controls"
 state = ["submenu"]
 
 [[entries]]
-text = "Appearance"
+text = "󰔎  Appearance"
 subtext = "Themes, wallpapers, fonts"
 submenu = "hyprbole-theme"
 state = ["submenu"]
 
 [[entries]]
-text = "Tools"
+text = "󰈙  Tools"
 subtext = "Disk usage, monitor, system info"
 submenu = "hyprbole-tools"
 state = ["submenu"]
 
 [[entries]]
-text = "Capture"
+text = "󰄀  Capture"
 subtext = "Screenshots and recordings"
 submenu = "hyprbole-capture"
 state = ["submenu"]
 
 [[entries]]
-text = "Install"
+text = "󰏖  Install"
 subtext = "Pacman and AUR package workflows"
 submenu = "hyprbole-install"
 state = ["submenu"]
 
 [[entries]]
-text = "Remove"
+text = "󰆴  Remove"
 subtext = "Installed package removal workflows"
 submenu = "hyprbole-remove"
 state = ["submenu"]
 
 [[entries]]
-text = "Maintenance"
+text = "󰚰  Maintenance"
 subtext = "Update and refresh Hyprbole"
 submenu = "hyprbole-system"
 state = ["submenu"]
 
 [[entries]]
-text = "Help"
+text = "󰋖  Help"
 subtext = "User guide and keybinds"
 submenu = "hyprbole-help"
 state = ["submenu"]
 
 [[entries]]
-text = "Power"
+text = "  Power"
 subtext = "Suspend, reboot, power off, profiles"
 submenu = "hyprbole-power"
 state = ["submenu"]
 
 [[entries]]
-text = "Lock"
+text = "󰌾  Lock"
 subtext = "Lock the current session"
 actions = { activate = "hyprbole-system-lock" }
 
 [[entries]]
-text = "Logout"
+text = "󰍃  Logout"
 subtext = "Log out to the display manager"
 actions = { activate = "hyprbole-system-logout" }

@@ -5,43 +5,43 @@ parent = "hyprbole-wallpaper-settings"
 fixed_order = true
 
 [[entries]]
-text = "Theme Wallpaper"
+text = "󰸉  Theme Wallpaper"
 subtext = "Start timed cycling through current theme wallpapers"
 actions = { activate = "hyprbole wallpaper timer start theme" }
 state = ["sublevel"]
 
 [[entries]]
-text = "My Wallpaper"
+text = "  My Wallpaper"
 subtext = "Start timed cycling through ~/Pictures/Wallpaper"
 actions = { activate = "hyprbole wallpaper timer start custom" }
 state = ["sublevel"]
 
 [[entries]]
-text = "Every 5 Minutes"
+text = "󱑂  Every 5 Minutes"
 subtext = "Set wallpaper cycling interval to 5min"
 actions = { activate = "hyprbole wallpaper timer interval 5min" }
 state = ["sublevel"]
 
 [[entries]]
-text = "Every 10 Minutes"
+text = "󱑆  Every 10 Minutes"
 subtext = "Set wallpaper cycling interval to 10min"
 actions = { activate = "hyprbole wallpaper timer interval 10min" }
 state = ["sublevel"]
 
 [[entries]]
-text = "Every 30 Minutes"
+text = "󱑍  Every 30 Minutes"
 subtext = "Set wallpaper cycling interval to 30min"
 actions = { activate = "hyprbole wallpaper timer interval 30min" }
 state = ["sublevel"]
 
 [[entries]]
-text = "Every Hour"
+text = "󱑋  Every Hour"
 subtext = "Set wallpaper cycling interval to 1h"
 actions = { activate = "hyprbole wallpaper timer interval 1h" }
 state = ["sublevel"]
 
 [[entries]]
-text = "Stop Wallpaper Cycling"
+text = "󰓛  Stop Wallpaper Cycling"
 subtext = "Stop timed wallpaper cycling"
 actions = { activate = "hyprbole wallpaper timer stop" }
 state = ["sublevel"]

@@ -5,19 +5,19 @@ parent = "hyprbole"
 fixed_order = true
 
 [[entries]]
-text = "Themes"
+text = "󰔎  Themes"
 subtext = "Select and preview themes"
 submenu = "hyprbolethemes"
 state = ["sublevel", "submenu"]
 
 [[entries]]
-text = "Wallpaper"
+text = "󰸉  Wallpaper"
 subtext = "Theme, custom, and cycling wallpaper options"
 submenu = "hyprbole-wallpaper-settings"
 state = ["sublevel", "submenu"]
 
 [[entries]]
-text = "Fonts"
+text = "󰬴  Fonts"
 subtext = "Choose the Hyprbole font"
 submenu = "hyprbole-fonts"
 state = ["sublevel", "submenu"]

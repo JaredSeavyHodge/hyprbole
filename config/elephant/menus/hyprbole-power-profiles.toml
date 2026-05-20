@@ -5,7 +5,7 @@ parent = "hyprbole-power"
 fixed_order = true
 
 [[entries]]
-text = "Coming Soon"
+text = "󰇘  Coming Soon"
 subtext = "Performance profiles will land here"
 actions = { activate = "true" }
 state = ["sublevel"]

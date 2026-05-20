@@ -54,7 +54,7 @@ function GetEntries()
   for path in handle:lines() do
     local wallpaper_name = path:match(".*/(.+)$")
     if wallpaper_name then
-      local text = wallpaper_name
+      local text = "󰸉  " .. wallpaper_name
       if wallpaper_name == current_wallpaper then
         text = text .. "  (Current)"
       end

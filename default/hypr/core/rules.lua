@@ -30,6 +30,24 @@ hl.window_rule({
 })
 
 hl.window_rule({
+  name = "float-pkg-installed-terminal",
+  match = { class = "^com\\.hyprbole\\.pkg-installed$" },
+  float = true,
+})
+
+hl.window_rule({
+  name = "float-pkg-install-terminal",
+  match = { class = "^com\\.hyprbole\\.pkg-install$" },
+  float = true,
+})
+
+hl.window_rule({
+  name = "float-pkg-aur-install-terminal",
+  match = { class = "^com\\.hyprbole\\.pkg-aur-install$" },
+  float = true,
+})
+
+hl.window_rule({
   name = "float-system-terminal",
   match = { class = "^com\\.hyprbole\\.system$" },
   float = true,

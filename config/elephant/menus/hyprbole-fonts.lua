@@ -46,7 +46,7 @@ function GetEntries()
       if font_family ~= "" and not seen[font_family] then
         seen[font_family] = true
 
-        local text = font_family
+        local text = "󰬴  " .. font_family
         if all_current(fonts, font_family) then
           text = text .. "  (Current)"
         end

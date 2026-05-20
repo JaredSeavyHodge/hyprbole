@@ -5,31 +5,31 @@ parent = "hyprbole"
 fixed_order = true
 
 [[entries]]
-text = "Audio"
+text = "󰕾  Audio"
 subtext = "Open volume controls"
 actions = { activate = "hyprbole-launch-audio" }
 state = ["sublevel"]
 
 [[entries]]
-text = "Network"
+text = "󰤨  Network"
 subtext = "Open network controls"
 actions = { activate = "hyprbole-launch-network" }
 state = ["sublevel"]
 
 [[entries]]
-text = "Bluetooth"
+text = "󰂯  Bluetooth"
 subtext = "Open bluetooth controls"
 actions = { activate = "hyprbole-launch-bluetooth" }
 state = ["sublevel"]
 
 [[entries]]
-text = "Notifications"
+text = "󰂚  Notifications"
 subtext = "Silence or restore notifications"
 actions = { activate = "hyprbole-toggle-notifications" }
 state = ["sublevel"]
 
 [[entries]]
-text = "Idle Lock"
+text = "󰒲  Idle Lock"
 subtext = "Enable or disable hypridle"
 actions = { activate = "hyprbole-toggle-idle" }
 state = ["sublevel"]

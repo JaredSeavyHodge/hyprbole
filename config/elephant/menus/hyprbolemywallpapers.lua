@@ -22,7 +22,7 @@ function GetEntries()
     local wallpaper_name = path:match(".*/(.+)$")
     if wallpaper_name then
       table.insert(entries, {
-        Text = wallpaper_name,
+        Text = "  " .. wallpaper_name,
         Subtext = path:gsub("^" .. home, "~"),
         Preview = path,
         PreviewType = "file",

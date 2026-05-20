@@ -5,19 +5,19 @@ parent = "hyprbole"
 fixed_order = true
 
 [[entries]]
-text = "Disk Usage"
+text = "󰋊  Disk Usage"
 subtext = "Inspect disk space with dua"
 actions = { activate = "hyprbole-launch-disk-usage" }
 state = ["sublevel"]
 
 [[entries]]
-text = "System Monitor"
+text = "󰍛  System Monitor"
 subtext = "Open btop"
 actions = { activate = "hyprbole-launch-btop" }
 state = ["sublevel"]
 
 [[entries]]
-text = "System Info"
+text = "󰋼  System Info"
 subtext = "Open Hyprland system information"
 actions = { activate = "hyprsysteminfo" }
 state = ["sublevel"]

@@ -149,7 +149,7 @@ function GetEntries()
   collect_theme_dirs(hyprbole_path .. "/themes", themes, seen)
 
   table.insert(entries, {
-    Text = "Add Theme Repository",
+    Text = "󰇘  Add Theme Repository",
     Subtext = "Edit theme-sources.conf, then run theme source sync",
     Actions = {
       activate = "hyprbole theme source edit",
@@ -168,7 +168,7 @@ function GetEntries()
         end
       end
 
-      local display_name = theme_name:gsub("_", " "):gsub("%-", " ")
+      local display_name = "󰔎  " .. theme_name:gsub("_", " "):gsub("%-", " ")
       display_name = display_name:gsub("(%a)([%w_']*)", function(first, rest)
         return first:upper() .. rest:lower()
       end)

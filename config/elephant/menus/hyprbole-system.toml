@@ -5,19 +5,19 @@ parent = "hyprbole"
 fixed_order = true
 
 [[entries]]
-text = "Update System"
+text = "󰚰  Update System"
 subtext = "Run Hyprbole update flow"
 actions = { activate = "hyprbole-launch-update" }
 state = ["sublevel"]
 
 [[entries]]
-text = "Refresh Desktop"
+text = "󰑓  Refresh Desktop"
 subtext = "Refresh theme and runtime state"
 actions = { activate = "hyprbole-refresh-all" }
 state = ["sublevel"]
 
 [[entries]]
-text = "Refresh Shipped Configs"
+text = "󰑐  Refresh Shipped Configs"
 subtext = "Overwrite user configs with backups"
 actions = { activate = "hyprbole-refresh-all --include-user-configs" }
 state = ["sublevel"]

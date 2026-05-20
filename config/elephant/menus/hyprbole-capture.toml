@@ -5,25 +5,25 @@ parent = "hyprbole"
 fixed_order = true
 
 [[entries]]
-text = "Screenshot Region"
+text = "󰄀  Screenshot Region"
 subtext = "Capture and annotate a region"
 actions = { activate = "hyprbole-screenshot region" }
 state = ["sublevel"]
 
 [[entries]]
-text = "Screenshot Screen"
+text = "󰹑  Screenshot Screen"
 subtext = "Capture and annotate the current screen"
 actions = { activate = "hyprbole-screenshot screen" }
 state = ["sublevel"]
 
 [[entries]]
-text = "Record Region"
+text = "󰻃  Record Region"
 subtext = "Toggle regional screen recording"
 actions = { activate = "hyprbole-record-toggle region" }
 state = ["sublevel"]
 
 [[entries]]
-text = "Record Screen"
+text = "󰻂  Record Screen"
 subtext = "Toggle fullscreen recording"
 actions = { activate = "hyprbole-record-toggle screen" }
 state = ["sublevel"]

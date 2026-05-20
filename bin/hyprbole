@@ -9,6 +9,7 @@ source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
 
 UPDATE_ORPHANS_REMOVED=0
 UPDATE_CACHE_RECLAIMED_BYTES=0
+HYPRBOLE_SUDO_KEEPALIVE_PID=""
 HYPRBOLE_CORE_USER_UNITS=(pipewire.service pipewire-pulse.service wireplumber.service gnome-keyring-daemon.socket)
 HYPRBOLE_GRAPHICAL_USER_UNITS=(swayosd-server.service polkit-gnome-agent.service elephant.service walker.service swaync.service)
 HYPRBOLE_USER_UNITS=("${HYPRBOLE_CORE_USER_UNITS[@]}" "${HYPRBOLE_GRAPHICAL_USER_UNITS[@]}")
@@ -226,6 +227,25 @@ update_repo() {
   fi
 
   git -C "$HYPRBOLE_PATH" pull --ff-only
+}
+
+sudo_keepalive() {
+  sudo -v
+
+  while true; do
+    sudo -n true || break
+    sleep 60
+  done 2>/dev/null &
+
+  HYPRBOLE_SUDO_KEEPALIVE_PID=$!
+  trap 'if [[ -n ${HYPRBOLE_SUDO_KEEPALIVE_PID:-} ]]; then kill "$HYPRBOLE_SUDO_KEEPALIVE_PID" 2>/dev/null || true; fi' EXIT
+}
+
+aur_accessible() {
+  command -v curl >/dev/null 2>&1 || return 1
+
+  curl -sf --connect-timeout 30 --retry 3 --retry-delay 3 -A "hyprbole-update" \
+    "https://aur.archlinux.org/rpc/?v=5&type=info&arg=base" >/dev/null
 }
 
 set_theme() {
@@ -1396,15 +1416,15 @@ launch_update() {
 }
 
 launch_pkg_installed() {
-  hyprbole_launch_terminal_shell 'hyprbole pkg installed; status=$?; if (( status != 0 )); then printf "\nInstalled package browser exited with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
+  hyprbole_launch_floating_terminal com.hyprbole.pkg-installed "Installed Packages" hyprbole-pkg-installed
 }
 
 launch_pkg_install() {
-  hyprbole_launch_terminal_shell 'hyprbole pkg install; status=$?; if (( status != 0 )); then printf "\nPackage install failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
+  hyprbole_launch_floating_terminal com.hyprbole.pkg-install "Install Packages" hyprbole-pkg-install
 }
 
 launch_pkg_aur_install() {
-  hyprbole_launch_terminal_shell 'hyprbole pkg aur-install; status=$?; if (( status != 0 )); then printf "\nAUR package install failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
+  hyprbole_launch_floating_terminal com.hyprbole.pkg-aur-install "Install AUR Packages" hyprbole-pkg-aur-install
 }
 
 launch_pkg_remove() {
@@ -1430,9 +1450,18 @@ pkg_install() {
   )
 
   local pkg_names
-  pkg_names=$(pacman -Slq | fzf "${fzf_args[@]}")
+  local fzf_status
+
+  pkg_names=$(pacman -Slq | fzf "${fzf_args[@]}") || {
+    fzf_status=$?
+    case "$fzf_status" in
+      1|130) return 0 ;;
+      *) return "$fzf_status" ;;
+    esac
+  }
 
   if [[ -n $pkg_names ]]; then
+    sudo_keepalive
     printf '%s\n' "$pkg_names" | tr '\n' ' ' | xargs sudo pacman -S --noconfirm
   fi
 }
@@ -1459,7 +1488,15 @@ pkg_installed() {
     --color 'pointer:blue'
   )
 
-  yay -Qqe | fzf "${fzf_args[@]}" >/dev/null
+  local fzf_status
+
+  yay -Qqe | fzf "${fzf_args[@]}" >/dev/null || {
+    fzf_status=$?
+    case "$fzf_status" in
+      1|130) return 0 ;;
+      *) return "$fzf_status" ;;
+    esac
+  }
 }
 
 pkg_aur_install() {
@@ -1488,9 +1525,18 @@ pkg_aur_install() {
   )
 
   local pkg_names
-  pkg_names=$(yay -Slqa | fzf "${fzf_args[@]}")
+  local fzf_status
+
+  pkg_names=$(yay -Slqa | fzf "${fzf_args[@]}") || {
+    fzf_status=$?
+    case "$fzf_status" in
+      1|130) return 0 ;;
+      *) return "$fzf_status" ;;
+    esac
+  }
 
   if [[ -n $pkg_names ]]; then
+    sudo_keepalive
     printf '%s\n' "$pkg_names" | sed 's/^/aur\//g' | tr '\n' ' ' | xargs yay -S --noconfirm
   fi
 }
@@ -1519,9 +1565,18 @@ pkg_remove() {
   )
 
   local pkg_names
-  pkg_names=$(yay -Qqe | fzf "${fzf_args[@]}")
+  local fzf_status
+
+  pkg_names=$(yay -Qqe | fzf "${fzf_args[@]}") || {
+    fzf_status=$?
+    case "$fzf_status" in
+      1|130) return 0 ;;
+      *) return "$fzf_status" ;;
+    esac
+  }
 
   if [[ -n $pkg_names ]]; then
+    sudo_keepalive
     printf '%s\n' "$pkg_names" | tr '\n' ' ' | xargs sudo pacman -Rns --noconfirm
   fi
 }
@@ -1657,6 +1712,48 @@ print_update_summary() {
   printf 'Update log: /tmp/hyprbole-update.log\n'
 }
 
+update_system_time() {
+  command -v systemctl >/dev/null 2>&1 || return 0
+  systemctl list-unit-files systemd-timesyncd.service >/dev/null 2>&1 || return 0
+
+  printf 'Updating time...\n'
+  sudo systemctl restart systemd-timesyncd.service || true
+}
+
+update_arch_keyring() {
+  printf '\nUpdate Arch signing keys\n'
+  # This sync is immediately followed by a full system upgrade.
+  sudo pacman -Sy --noconfirm archlinux-keyring >/dev/null 2> >(grep -vE '^warning: archlinux-keyring-[^ ]+ is up to date -- reinstalling$' >&2)
+  printf 'Keys are correct\n'
+}
+
+update_aur_packages() {
+  pacman -Qem >/dev/null 2>&1 || return 0
+
+  command -v yay >/dev/null 2>&1 || {
+    printf 'missing required command: yay\n' >&2
+    return 1
+  }
+
+  if aur_accessible; then
+    printf '\nUpdate AUR packages\n'
+    yay -Sua --cleanafter --noconfirm --answerclean None --answerdiff None --answeredit None --answerupgrade None
+    printf '\n'
+  else
+    printf '\nAUR is unavailable; skipping AUR package updates\n\n' >&2
+  fi
+}
+
+analyze_update_log() {
+  local update_log=/tmp/hyprbole-update.log
+
+  [[ -f $update_log ]] || return 0
+
+  if grep -q 'Updating linux initcpios' "$update_log" && ! grep -q 'Initcpio image generation successful' "$update_log"; then
+    printf '\nError: initramfs generation may have failed. Review logs before restart.\n\n' >&2
+  fi
+}
+
 update_all() {
   local pacman_log_start_line
 
@@ -1672,19 +1769,22 @@ update_all() {
   trap 'hyprctl dispatch tagwindow -- -noidle >/dev/null 2>&1 || true' RETURN
 
   update_repo
+  sudo_keepalive
+  update_system_time
 
   if command -v pacman >/dev/null 2>&1; then
-    sudo pacman -Sy --noconfirm archlinux-keyring >/dev/null 2>&1 || true
+    update_arch_keyring
   fi
 
   hyprbole-snapshot create || [[ $? -eq 127 ]]
   sudo pacman -Syyu --noconfirm
   hyprbole-migrate
-  yay -Sua --cleanafter --noconfirm --answerclean None --answerdiff None --answeredit None --answerupgrade None
+  update_aur_packages
   cleanup_orphan_packages
   cleanup_package_cache
   hyprbole-refresh-all
   hyprbole-refresh-limine >/dev/null 2>&1 || true
+  analyze_update_log
   print_update_summary "$pacman_log_start_line"
 }
 

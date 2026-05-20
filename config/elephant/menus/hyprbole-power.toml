@@ -5,25 +5,25 @@ parent = "hyprbole"
 fixed_order = true
 
 [[entries]]
-text = "Profiles"
+text = "󰾅  Profiles"
 subtext = "Future performance profile controls"
 submenu = "hyprbole-power-profiles"
 state = ["sublevel", "submenu"]
 
 [[entries]]
-text = "Suspend"
+text = "󰒲  Suspend"
 subtext = "Lock and suspend the system"
 actions = { activate = "hyprbole-system-suspend" }
 state = ["sublevel"]
 
 [[entries]]
-text = "Reboot"
+text = "󰜉  Reboot"
 subtext = "Restart the system"
 actions = { activate = "hyprbole-system-reboot" }
 state = ["sublevel"]
 
 [[entries]]
-text = "Power Off"
+text = "  Power Off"
 subtext = "Shut down the system"
 actions = { activate = "hyprbole-system-poweroff" }
 state = ["sublevel"]

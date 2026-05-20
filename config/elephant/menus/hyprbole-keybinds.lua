@@ -153,7 +153,7 @@ function GetEntries()
   if not bindings then
     return {
       {
-        Text = "Unable to load keybinds",
+        Text = "󰅚  Unable to load keybinds",
         Subtext = tostring(err),
         Actions = {
           activate = "true",
