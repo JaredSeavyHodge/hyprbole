@@ -114,11 +114,11 @@ write_install_diagnostics() {
 
     diagnostic_section "Source Checkout"
     diagnostic_path_check "${HYPRBOLE_REPO_ROOT:-}/.git" "${HYPRBOLE_PATH:-}/.git" "${HYPRBOLE_PATH:-}/bin/hyprbole"
-    if [[ -d ${HYPRBOLE_REPO_ROOT:-}/.git ]]; then
+    if git_worktree "${HYPRBOLE_REPO_ROOT:-}"; then
       diagnostic_command git -C "$HYPRBOLE_REPO_ROOT" rev-parse --short HEAD
       diagnostic_command git -C "$HYPRBOLE_REPO_ROOT" status --short --branch
     fi
-    if [[ -d ${HYPRBOLE_PATH:-}/.git ]]; then
+    if git_worktree "${HYPRBOLE_PATH:-}"; then
       diagnostic_command git -C "$HYPRBOLE_PATH" rev-parse --short HEAD
       diagnostic_command git -C "$HYPRBOLE_PATH" status --short --branch
     fi
@@ -214,6 +214,10 @@ write_install_diagnostics() {
 
 cmd_present() {
   command -v "$1" >/dev/null 2>&1
+}
+
+git_worktree() {
+  [[ -n ${1:-} ]] && git -C "$1" rev-parse --is-inside-work-tree >/dev/null 2>&1
 }
 
 require_command() {

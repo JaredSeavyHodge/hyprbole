@@ -47,26 +47,30 @@ ensure_hyprbole_checkout() {
   local target_path
   local backup_path
   local source_origin_url
-
-  [[ -d $HYPRBOLE_REPO_ROOT/.git ]] || die "installer source must be a git checkout: $HYPRBOLE_REPO_ROOT"
+  local clone_source
 
   source_path=$(cd "$HYPRBOLE_REPO_ROOT" && pwd -P)
 
   if [[ -d $HYPRBOLE_PATH ]]; then
     target_path=$(cd "$HYPRBOLE_PATH" && pwd -P)
     if [[ $target_path == "$source_path" ]]; then
-      log_info "using source checkout at $HYPRBOLE_PATH"
+      if git_worktree "$HYPRBOLE_PATH"; then
+        log_info "using source checkout at $HYPRBOLE_PATH"
+        return 0
+      fi
+    elif git_worktree "$HYPRBOLE_PATH"; then
+      git -C "$HYPRBOLE_PATH" pull --ff-only
       return 0
     fi
   fi
 
-  if [[ -d $HYPRBOLE_PATH/.git ]]; then
-    git -C "$HYPRBOLE_PATH" pull --ff-only
-    return 0
-  fi
-
-  if [[ -n $(git -C "$HYPRBOLE_REPO_ROOT" status --porcelain) ]]; then
-    die "source checkout has uncommitted changes; commit or stash before installing to a separate HYPRBOLE_PATH"
+  if git_worktree "$HYPRBOLE_REPO_ROOT"; then
+    if [[ -n $(git -C "$HYPRBOLE_REPO_ROOT" status --porcelain) ]]; then
+      die "source checkout has uncommitted changes; commit or stash before installing to a separate HYPRBOLE_PATH"
+    fi
+    clone_source="$HYPRBOLE_REPO_ROOT"
+  else
+    clone_source="$HYPRBOLE_REPO_URL"
   fi
 
   if [[ -e $HYPRBOLE_PATH ]]; then
@@ -76,10 +80,13 @@ ensure_hyprbole_checkout() {
   fi
 
   mkdir -p "$(dirname "$HYPRBOLE_PATH")"
-  git clone "$HYPRBOLE_REPO_ROOT" "$HYPRBOLE_PATH"
+  git clone "$clone_source" "$HYPRBOLE_PATH"
 
-  source_origin_url=$(git -C "$HYPRBOLE_REPO_ROOT" remote get-url origin 2>/dev/null || true)
-  if [[ -n $source_origin_url ]]; then
+  source_origin_url=""
+  if git_worktree "$HYPRBOLE_REPO_ROOT"; then
+    source_origin_url=$(git -C "$HYPRBOLE_REPO_ROOT" remote get-url origin 2>/dev/null || true)
+  fi
+  if [[ -n $source_origin_url && $clone_source == "$HYPRBOLE_REPO_ROOT" ]]; then
     git -C "$HYPRBOLE_PATH" remote set-url origin "$source_origin_url"
   fi
 }
