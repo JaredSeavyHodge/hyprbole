@@ -5,19 +5,19 @@
   "spacing": 0,
   "height": 26,
   "modules-left": ["custom/hyprbole", "hyprland/workspaces"],
-  "modules-center": ["custom/health", "clock#horizontal", "custom/recording-indicator"],
-  "modules-right": ["tray", "custom/update", "custom/idle-indicator", "custom/notification-indicator", "bluetooth", "pulseaudio", "battery", "custom/btop"],
+  "modules-center": ["custom/update", "custom/health", "clock#horizontal", "custom/recording-indicator"],
+  "modules-right": ["tray", "custom/idle-indicator", "custom/notification-indicator", "bluetooth", "pulseaudio", "battery", "custom/btop"],
   "custom/hyprbole": {
     "format": "HB",
     "tooltip-format": "Hyprbole",
     "on-click": "hyprsysteminfo"
   },
   "custom/update": {
-    "format": "{}",
-    "exec": "$HOME/.local/share/hyprbole/bin/hyprbole-package-updates",
-    "interval": 21600,
-    "tooltip-format": "Updates available",
-    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-launch-terminal $HOME/.local/share/hyprbole/bin/hyprbole update"
+    "exec": "$HOME/.local/share/hyprbole/bin/hyprbole-update-indicator",
+    "exec-if": "$HOME/.local/share/hyprbole/bin/hyprbole-update-indicator --has-updates",
+    "return-type": "json",
+    "interval": 60,
+    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-launch-update"
   },
   "custom/health": {
     "exec": "$HOME/.local/share/hyprbole/bin/hyprbole-health-indicator",

@@ -143,6 +143,7 @@ verify_installation() {
     "$HYPRBOLE_PATH/bin/hyprbole-health-indicator" \
     "$HYPRBOLE_PATH/bin/hyprbole-health-report" \
     "$HYPRBOLE_PATH/bin/hyprbole-health-updates" \
+    "$HYPRBOLE_PATH/bin/hyprbole-update-indicator" \
     "$HOME/.config/hypr/hyprland.lua" \
     "$HYPRBOLE_CONFIG_PATH/theme-sources.conf" \
     "$HOME/.config/waybar/config.jsonc" \

@@ -10,8 +10,10 @@ hb doctor --fix
 hb verify
 hb docs
 hb update
+hb launch update
 hb apps
 hb tools
+hb utilities
 hb disk-usage
 hb health
 hb health updates
@@ -85,6 +87,7 @@ The short top-level commands `hb apps`, `hb clipboard`, and `hb keybinds` are al
 
 ```bash
 hb tools
+hb utilities
 hb disk-usage
 hb disk-usage ~/Downloads
 hb launch disk-usage
@@ -94,7 +97,7 @@ hb health updates
 hb launch health
 ```
 
-`hb tools` opens the Tools menu. `hb disk-usage` runs `dua i` in the current terminal. `hb launch disk-usage` opens it in a floating terminal for menu and launcher workflows.
+`hb tools` and `hb utilities` open the Utilities menu. `hb disk-usage` runs `dua i` in the current terminal. `hb launch disk-usage` opens it in a floating terminal for menu and launcher workflows.
 
 Health commands:
 

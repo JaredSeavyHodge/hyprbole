@@ -10,21 +10,9 @@ submenu = "hyprbole-apps"
 state = ["submenu"]
 
 [[entries]]
-text = "  Settings"
-subtext = "Audio, network, Bluetooth, desktop controls"
-submenu = "hyprbole-controls"
-state = ["submenu"]
-
-[[entries]]
 text = "󰔎  Appearance"
 subtext = "Themes, wallpapers, fonts"
 submenu = "hyprbole-theme"
-state = ["submenu"]
-
-[[entries]]
-text = "󰈙  Tools"
-subtext = "Disk usage, monitor, system info"
-submenu = "hyprbole-tools"
 state = ["submenu"]
 
 [[entries]]
@@ -46,8 +34,8 @@ submenu = "hyprbole-remove"
 state = ["submenu"]
 
 [[entries]]
-text = "󰚰  Maintenance"
-subtext = "Update and refresh Hyprbole"
+text = "  System"
+subtext = "Settings, utilities, power, session"
 submenu = "hyprbole-system"
 state = ["submenu"]
 
@@ -56,19 +44,3 @@ text = "󰋖  Help"
 subtext = "User guide and keybinds"
 submenu = "hyprbole-help"
 state = ["submenu"]
-
-[[entries]]
-text = "  Power"
-subtext = "Suspend, reboot, power off, profiles"
-submenu = "hyprbole-power"
-state = ["submenu"]
-
-[[entries]]
-text = "󰌾  Lock"
-subtext = "Lock the current session"
-actions = { activate = "hyprbole-system-lock" }
-
-[[entries]]
-text = "󰍃  Logout"
-subtext = "Log out to the display manager"
-actions = { activate = "hyprbole-system-logout" }

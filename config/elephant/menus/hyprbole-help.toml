@@ -5,13 +5,13 @@ parent = "hyprbole"
 fixed_order = true
 
 [[entries]]
-text = "󰈙  User Guide"
-subtext = "Open the Hyprbole documentation"
-actions = { activate = "hyprbole docs" }
-state = ["sublevel"]
-
-[[entries]]
 text = "󰌌  Keybinds"
 subtext = "Browse current keyboard shortcuts"
 submenu = "hyprbole-keybinds"
 state = ["sublevel", "submenu"]
+
+[[entries]]
+text = "󰈙  User Guide"
+subtext = "Open the Hyprbole documentation"
+actions = { activate = "hyprbole docs" }
+state = ["sublevel"]

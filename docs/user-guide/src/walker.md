@@ -68,19 +68,14 @@ The top-level menu includes:
 | Entry | Purpose |
 | --- | --- |
 | Applications | Browser, files, passwords, app launcher |
-| Settings | Audio, network, Bluetooth, desktop controls |
 | Appearance | Themes, wallpapers, fonts |
-| Tools | Disk usage, monitor, system info |
 | Capture | Screenshots and recordings |
 | Install | Pacman and AUR package install workflows |
 | Remove | Package inspection and removal workflows |
-| Maintenance | Update and refresh Hyprbole |
+| System | Settings, utilities, power, update, session actions |
 | Help | User guide and keybinds |
-| Power | Suspend, reboot, power off, profiles |
-| Lock | Lock the current session |
-| Logout | Log out to the display manager |
 
-Menu entries with a right-side marker open submenus. Press `Right` or `Enter` to open a submenu. Press `Left` to return to the parent menu without closing Walker.
+Menu entries with a right-side marker open submenus. Press `Enter` to open or activate the selected item. Press `Escape` to return to the parent menu or close Walker at the top level.
 
 ## Menus And Commands
 
@@ -91,6 +86,7 @@ Useful terminal equivalents:
 ```bash
 hb apps
 hb tools
+hb utilities
 hb keybinds
 hb disk-usage
 hb launch themes
@@ -108,9 +104,9 @@ Use `:` or `SUPER + V` for clipboard history.
 
 Use `p:` or the 1Password entry from the Apps menu for password lookup. Password support depends on the 1Password and Elephant 1Password packages installed by Hyprbole.
 
-## Tools Menu
+## Utilities Menu
 
-Open `Tools` from the Hyprbole menu to launch utility workflows. `Disk Usage` opens `dua i` in a floating terminal.
+Open `System`, `Utilities` from the Hyprbole menu to launch utility and maintenance workflows. `Disk Usage` opens `dua i` in a floating terminal. `Refresh Desktop` reapplies Hyprbole runtime state. `Refresh Shipped Configs` also refreshes shipped user config files and can overwrite local customizations after creating backups.
 
 ## Configuration
 

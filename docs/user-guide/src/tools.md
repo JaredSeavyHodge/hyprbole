@@ -1,8 +1,8 @@
-# Tools
+# Utilities
 
-Hyprbole's Tools menu groups useful local utilities that are not primary apps. The first tool is Disk Usage, powered by `dua-cli`.
+Hyprbole's Utilities menu groups useful local system utilities and maintenance actions that are not primary apps. The first utility is Disk Usage, powered by `dua-cli`.
 
-## Open Tools
+## Open Utilities
 
 Open the Hyprbole menu:
 
@@ -10,19 +10,20 @@ Open the Hyprbole menu:
 SUPER + ALT + SPACE
 ```
 
-Then choose `Tools`.
+Then choose `System`, `Utilities`.
 
 From a terminal, use:
 
 ```bash
 hb tools
+hb utilities
 ```
 
 ## Disk Usage
 
 `Disk Usage` opens `dua i` in a floating terminal. `dua` is a fast terminal disk-usage browser.
 
-Open it from the Tools menu, search for `Disk Usage` in the app launcher, or run:
+Open it from the Utilities menu, search for `Disk Usage` in the app launcher, or run:
 
 ```bash
 hb disk-usage
@@ -46,7 +47,9 @@ hb health updates
 
 `hb health updates` is the quickest way to check whether your last full system update is stale or the Hyprbole repo has upstream updates available.
 
-The Tools menu also includes `System Monitor` for `btop` and `System Info` for Hyprland system information.
+The Utilities menu also includes `System Monitor` for `btop`, `System Info` for Hyprland system information, and refresh actions for Hyprbole runtime state and shipped configs.
+
+`Refresh Desktop` reapplies theme and runtime state. `Refresh Shipped Configs` runs the same refresh with user config files included, which can overwrite local customizations after backing them up.
 
 To inspect a specific path, pass it to Hyprbole:
 

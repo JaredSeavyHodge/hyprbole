@@ -9,6 +9,7 @@ HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
 PACMAN_LOG="${HYPRBOLE_PACMAN_LOG:-/var/log/pacman.log}"
 UPDATE_WARNING_DAYS="${HYPRBOLE_UPDATE_WARNING_DAYS:-14}"
 GIT_TIMEOUT="${HYPRBOLE_HEALTH_GIT_TIMEOUT:-8}"
+PACKAGE_TIMEOUT="${HYPRBOLE_PACKAGE_UPDATE_TIMEOUT:-45}"
 
 issues_file=""
 warning_count=0
@@ -16,6 +17,9 @@ last_update_timestamp="unknown"
 last_update_age_days="unknown"
 repo_status="not checked"
 repo_details=""
+package_update_status="not checked"
+package_update_count="unknown"
+package_update_details=""
 
 cleanup() {
   [[ -n $issues_file && -f $issues_file ]] && rm -f "$issues_file"
@@ -80,6 +84,47 @@ scan_system_update_age() {
       "System has not had a full package update in ${age_days} days" \
       "last_full_system_upgrade=$timestamp; warning_days=$UPDATE_WARNING_DAYS"
   fi
+}
+
+scan_package_updates() {
+  local output
+  local status
+  local count
+  local summary
+
+  if ! command -v checkupdates >/dev/null 2>&1; then
+    package_update_status="checkupdates missing"
+    return 0
+  fi
+
+  output="$(timeout "$PACKAGE_TIMEOUT" checkupdates --nocolor 2>/dev/null)" && status=0 || status=$?
+  case "$status" in
+    0)
+      count="$(printf '%s\n' "$output" | sed '/^[[:space:]]*$/d' | wc -l)"
+      package_update_count="$count"
+      if (( count > 0 )); then
+        package_update_status="updates available"
+        summary="$(printf '%s\n' "$output" | sed '/^[[:space:]]*$/d; s/[[:space:]][^[:space:]]* -> .*//' | head -n 8 | paste -sd ',' -)"
+        summary="${summary//,/, }"
+        package_update_details="count=$count; packages=$summary"
+        add_issue warning updates pacman \
+          "Official package updates are available" \
+          "$package_update_details"
+      else
+        package_update_status="up to date"
+      fi
+      ;;
+    2)
+      package_update_status="up to date"
+      package_update_count=0
+      ;;
+    124)
+      package_update_status="timed out"
+      ;;
+    *)
+      package_update_status="unavailable"
+      ;;
+  esac
 }
 
 scan_hyprbole_repo() {
@@ -170,8 +215,10 @@ run_checks() {
 
   is_int "$UPDATE_WARNING_DAYS" || UPDATE_WARNING_DAYS=14
   is_int "$GIT_TIMEOUT" || GIT_TIMEOUT=8
+  is_int "$PACKAGE_TIMEOUT" || PACKAGE_TIMEOUT=45
 
   issues_file="$(mktemp)"
+  scan_package_updates
   scan_system_update_age
   scan_hyprbole_repo
 }
@@ -181,6 +228,11 @@ print_report() {
   printf 'Last full system upgrade: %s' "$last_update_timestamp"
   if [[ $last_update_age_days != unknown ]]; then
     printf ' (%s days ago)' "$last_update_age_days"
+  fi
+  printf '\n'
+  printf 'Official package updates: %s' "$package_update_status"
+  if [[ $package_update_count != unknown ]]; then
+    printf ' (%s)' "$package_update_count"
   fi
   printf '\n'
   printf 'System update warning threshold: %s days\n' "$UPDATE_WARNING_DAYS"

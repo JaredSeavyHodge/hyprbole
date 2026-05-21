@@ -1,8 +1,26 @@
 name = "hyprbole-system"
-name_pretty = "Hyprbole Maintenance"
+name_pretty = "Hyprbole System"
 hide_from_providerlist = true
 parent = "hyprbole"
 fixed_order = true
+
+[[entries]]
+text = "  Settings"
+subtext = "Audio, network, Bluetooth, desktop controls"
+submenu = "hyprbole-controls"
+state = ["sublevel", "submenu"]
+
+[[entries]]
+text = "󰈙  Utilities"
+subtext = "Disk usage, monitor, system info"
+submenu = "hyprbole-tools"
+state = ["sublevel", "submenu"]
+
+[[entries]]
+text = "  Power"
+subtext = "Suspend, reboot, power off, profiles"
+submenu = "hyprbole-power"
+state = ["sublevel", "submenu"]
 
 [[entries]]
 text = "󰚰  Update System"
@@ -11,13 +29,13 @@ actions = { activate = "hyprbole-launch-update" }
 state = ["sublevel"]
 
 [[entries]]
-text = "󰑓  Refresh Desktop"
-subtext = "Refresh theme and runtime state"
-actions = { activate = "hyprbole-refresh-all" }
+text = "󰌾  Lock"
+subtext = "Lock the current session"
+actions = { activate = "hyprbole-system-lock" }
 state = ["sublevel"]
 
 [[entries]]
-text = "󰑐  Refresh Shipped Configs"
-subtext = "Overwrite user configs with backups"
-actions = { activate = "hyprbole-refresh-all --include-user-configs" }
+text = "󰍃  Logout"
+subtext = "Log out to the display manager"
+actions = { activate = "hyprbole-system-logout" }
 state = ["sublevel"]

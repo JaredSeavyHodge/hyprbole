@@ -59,6 +59,7 @@ Packages:
 
 Tools:
   tools
+  utilities
   disk-usage [path...]
   health [refresh|updates]
 
@@ -75,6 +76,7 @@ Launch:
   launch apps
   launch menu [menu] [placeholder]
   launch tools
+  launch utilities
   launch keybinds
   launch clipboard
   launch launcher
@@ -225,7 +227,7 @@ update_repo() {
   if [[ -n $(git -C "$HYPRBOLE_PATH" status --porcelain) ]]; then
     printf 'HYPRBOLE_PATH has uncommitted changes: %s\n' "$HYPRBOLE_PATH" >&2
     printf 'Commit or stash local changes before updating.\n' >&2
-    return 1
+    return 11
   fi
 
   git -C "$HYPRBOLE_PATH" pull --ff-only
@@ -1115,7 +1117,7 @@ doctor() {
       doctor_report miss "$binary"
     fi
   done
-  for binary in hyprbole-health-check hyprbole-health-indicator hyprbole-health-report hyprbole-health-updates; do
+  for binary in hyprbole-health-check hyprbole-health-indicator hyprbole-health-report hyprbole-health-updates hyprbole-update-indicator; do
     if [[ -x $HYPRBOLE_PATH/bin/$binary ]]; then
       doctor_report ok "$binary"
     else
@@ -1373,7 +1375,7 @@ launch_keybinds() {
 }
 
 launch_tools() {
-  launch_menu "hyprbole-tools" "Tools"
+  launch_menu "hyprbole-tools" "Utilities"
 }
 
 disk_usage() {
@@ -1453,7 +1455,7 @@ launch_my_wallpaper_menu() {
 }
 
 launch_update() {
-  hyprbole_launch_terminal_shell 'hyprbole update; status=$?; if (( status != 0 )); then printf "\nUpdate failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
+  exec hyprbole-launch-update
 }
 
 launch_pkg_installed() {
@@ -1800,7 +1802,7 @@ analyze_update_log() {
 update_all() {
   local pacman_log_start_line
 
-  trap 'printf "\nUpdate failed. Review the output above and retry after fixing the issue.\nLog: /tmp/hyprbole-update.log\n" >&2' ERR
+  trap 'status=$?; if (( status != 11 )); then printf "\nUpdate failed. Review the output above and retry after fixing the issue.\nLog: /tmp/hyprbole-update.log\n" >&2; fi; return "$status"' ERR
 
   UPDATE_ORPHANS_REMOVED=0
   UPDATE_CACHE_RECLAIMED_BYTES=0
@@ -1830,6 +1832,7 @@ update_all() {
   hyprbole-refresh-limine >/dev/null 2>&1 || true
   analyze_update_log
   print_update_summary "$pacman_log_start_line"
+  sudo systemctl start hyprbole-health-check.service >/dev/null 2>&1 || true
 }
 
 main() {
@@ -1948,6 +1951,9 @@ main() {
     tools)
       launch_tools
       ;;
+    utilities)
+      launch_tools
+      ;;
     disk-usage)
       shift
       disk_usage "$@"
@@ -2007,6 +2013,9 @@ main() {
           launch_menu "${3:-hyprbole}" "${4:-Hyprbole menu}"
           ;;
         tools)
+          launch_tools
+          ;;
+        utilities)
           launch_tools
           ;;
         keybinds)

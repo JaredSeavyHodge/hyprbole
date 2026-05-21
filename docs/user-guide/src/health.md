@@ -4,13 +4,15 @@ Hyprbole runs a lightweight system health check every hour.
 
 The check reads cached device, filesystem, and update-freshness metadata. It does not run surface scans, long SMART tests, or write-heavy diagnostics.
 
-## Waybar Bell
+## Waybar Indicators
 
 Waybar shows a health bell to the left of the date. When the cached report is clean, it inherits the active theme colors and its tooltip says `No Alerts`.
 
-If warnings or critical issues are found, the bell turns orange for warnings and red for high alerts. Left-click it to open the health report. Right-click it to run a fresh health check and reset the bell state from the updated report.
+If non-update warnings or critical issues are found, the bell turns orange for warnings and red for high alerts. Left-click it to open the health report. Right-click it to run a fresh health check and reset the bell state from the updated report.
 
 The bell reads the cached report in `/var/lib/hyprbole/health.json`; it does not run disk tools directly from Waybar.
+
+When the cached report recommends an update, Waybar shows an update icon to the left of the health bell. Click it to open a floating update window with a confirmation prompt before `hb update` starts.
 
 ## Commands
 
@@ -58,7 +60,7 @@ Health checks use two alert levels:
 | `warning` | Needs attention soon, but the desktop can usually continue running | Orange |
 | `critical` | Immediate risk, such as a read-only root filesystem or drive health failure | Red |
 
-Update age and Hyprbole repo freshness are warnings, not critical alerts.
+Update age and Hyprbole repo freshness are warnings, not critical alerts. Waybar shows those warnings with the update icon instead of turning the general health bell orange by itself.
 
 ## Package Safety Guard
 

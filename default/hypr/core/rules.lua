@@ -54,6 +54,12 @@ hl.window_rule({
 })
 
 hl.window_rule({
+  name = "float-update-terminal",
+  match = { class = "^com\\.hyprbole\\.update$" },
+  float = true,
+})
+
+hl.window_rule({
   name = "float-satty",
   match = { class = "^com\\.gabm\\.satty$" },
   float = true,

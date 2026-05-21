@@ -146,7 +146,7 @@ The bell is orange for warnings and red for critical alerts. A clean report show
 
 Hyprbole refuses package installs and updates when a local filesystem is at or above `98%` usage.
 
-Open Disk Usage from the Tools menu or run:
+Open Disk Usage from the Utilities menu or run:
 
 ```bash
 hb disk-usage

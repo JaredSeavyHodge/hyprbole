@@ -83,14 +83,21 @@ window#waybar {
   font-size: 10px;
 }
 
-#custom-update {
-  font-size: 10px;
-}
-
 #custom-health,
+#custom-update,
 #pulseaudio {
   font-family: "JetBrainsMono Nerd Font", "Symbols Nerd Font", "Font Awesome 7 Free", "Font Awesome 6 Free", "JetBrains Mono";
   font-size: 14px;
+}
+
+#custom-update {
+  margin-left: 0;
+  margin-right: 8px;
+  color: @accent;
+}
+
+window#waybar #custom-update.recommended {
+  color: @accent;
 }
 
 #custom-health {

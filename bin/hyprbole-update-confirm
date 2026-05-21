@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# hyprbole:summary=Prompt before starting a Hyprbole update
+
+set -euo pipefail
+
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+
+colors_path="$HYPRBOLE_CONFIG_PATH/current/theme/colors.toml"
+accent="#faa968"
+muted="#134e5a"
+theme_value=""
+
+theme_color() {
+  local key="$1"
+
+  [[ -f $colors_path ]] || return 1
+  sed -n "s/^[[:space:]]*${key}[[:space:]]*=[[:space:]]*\"\(#[0-9A-Fa-f]\{6\}\)\".*/\1/p" "$colors_path" | head -n 1
+}
+
+theme_value="$(theme_color accent || true)"
+[[ -n $theme_value ]] && accent="$theme_value"
+theme_value="$(theme_color muted || true)"
+[[ -n $theme_value ]] || theme_value="$(theme_color color8 || true)"
+[[ -n $theme_value ]] && muted="$theme_value"
+
+fallback_confirm() {
+  local answer
+
+  printf 'Ready to update Hyprbole and system packages? [y/N] '
+  read -r answer
+  case "$answer" in
+    y|Y|yes|YES) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+fzf_confirm() {
+  local choice
+
+  choice="$({ printf 'Start update\n'; printf 'Not yet\n'; } | fzf \
+    --height=8 \
+    --border \
+    --prompt='Update? ' \
+    --header='Ready to update Hyprbole and system packages')" || return 1
+  [[ $choice == "Start update" ]]
+}
+
+if command -v gum >/dev/null 2>&1; then
+  gum style \
+    --border rounded \
+    --border-foreground "$accent" \
+    --padding "1 2" \
+    --margin "1 0" \
+    --width 72 \
+    "Ready to update?" \
+    "" \
+    "This will update the Hyprbole checkout, official packages, and AUR packages." \
+    "Hyprbole will create a snapshot first when Snapper is available." \
+    "" \
+    "Keep the computer powered on until the update finishes."
+  printf '\n'
+
+  gum confirm \
+    --affirmative "Start update" \
+    --negative "Not yet" \
+    --selected.background "$accent" \
+    --unselected.foreground "$muted" \
+    "Continue with update?"
+else
+  if command -v fzf >/dev/null 2>&1; then
+    fzf_confirm
+  else
+    fallback_confirm
+  fi
+fi

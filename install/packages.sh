@@ -32,6 +32,7 @@ HYPRBOLE_OFFICIAL_PACKAGES=(
   starship
   zoxide
   fzf
+  gum
   bat
   eza
   fd

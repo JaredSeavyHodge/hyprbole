@@ -10,6 +10,8 @@ log_path="${XDG_STATE_HOME:-$HOME/.local/state}/hyprbole/waybar.log"
 
 mkdir -p "$(dirname "$log_path")"
 
+systemctl --user stop waybar.service >/dev/null 2>&1 || true
+
 if systemctl --user list-unit-files hyprbole-waybar.service >/dev/null 2>&1 || systemctl --user status hyprbole-waybar.service >/dev/null 2>&1; then
   systemctl --user stop hyprbole-waybar.service >/dev/null 2>&1 || true
   for _ in {1..20}; do
