@@ -55,6 +55,15 @@ window#waybar {
   margin: 0 7px;
 }
 
+#custom-btop,
+#battery,
+#pulseaudio,
+#bluetooth,
+#custom-idle-indicator,
+#custom-notification-indicator {
+  padding: 0 3px;
+}
+
 #custom-hyprbole {
   min-width: 28px;
   margin-left: 0;

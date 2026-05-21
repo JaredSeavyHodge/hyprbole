@@ -3,7 +3,7 @@
   "layer": "top",
   "position": "top",
   "spacing": 0,
-  "height": 26,
+  "height": 32,
   "modules-left": ["custom/hyprbole", "ext/workspaces"],
   "modules-center": ["custom/update", "custom/health", "clock#horizontal", "custom/recording-indicator"],
   "modules-right": ["tray", "custom/idle-indicator", "custom/notification-indicator", "bluetooth", "pulseaudio", "battery", "custom/btop"],
