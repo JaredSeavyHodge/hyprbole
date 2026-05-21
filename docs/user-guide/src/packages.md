@@ -30,7 +30,7 @@ hb launch update
 
 Update will pull the Hyprbole checkout, update system packages, update AUR packages, run migrations, refresh Hyprbole runtime state, and print a summary.
 
-`hb launch update` opens the same update flow in a floating terminal and asks for confirmation before starting. The Waybar update icon uses this launcher.
+`hb launch update` opens the same update flow in a floating terminal and asks for confirmation before starting. The Waybar update icon uses this launcher when the last full system update is older than the configured warning threshold.
 
 Before updating packages, Hyprbole attempts to create a Snapper snapshot when Snapper is available. After updating, it refreshes runtime state with `hyprbole-refresh-all` and updates Limine entries when possible.
 

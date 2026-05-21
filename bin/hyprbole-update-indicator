@@ -11,7 +11,7 @@ UPDATE_ICON="󰚰"
 has_update_issues() {
   [[ -f $STATE_FILE ]] || return 1
   command -v jq >/dev/null 2>&1 || return 1
-  jq -e '[.issues[]? | select(.category == "updates")] | length > 0' "$STATE_FILE" >/dev/null 2>&1
+  jq -e '[.issues[]? | select(.category == "updates" and .target == "pacman" and (.message | test("full package update")))] | length > 0' "$STATE_FILE" >/dev/null 2>&1
 }
 
 emit() {
@@ -19,7 +19,7 @@ emit() {
   local tooltip
 
   checked_at="$(jq -r '.checked_at // "unknown"' "$STATE_FILE" 2>/dev/null || printf 'unknown\n')"
-  tooltip="$(jq -r '[.issues[]? | select(.category == "updates") | .message][0:4][]' "$STATE_FILE" 2>/dev/null || true)"
+  tooltip="$(jq -r '[.issues[]? | select(.category == "updates" and .target == "pacman" and (.message | test("full package update"))) | .message][0:4][]' "$STATE_FILE" 2>/dev/null || true)"
   if [[ -z $tooltip ]]; then
     tooltip="Updates recommended"
   fi

@@ -120,11 +120,11 @@ window#waybar #custom-health.critical {
 }
 
 window#waybar #custom-recording-indicator.inactive {
-  color: @muted;
+  color: @foreground;
 }
 
 window#waybar #custom-recording-indicator.inactive label {
-  color: @muted;
+  color: @foreground;
 }
 
 #custom-idle-indicator.active,

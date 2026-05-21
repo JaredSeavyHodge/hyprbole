@@ -12,7 +12,7 @@ If non-update warnings or critical issues are found, the bell turns orange for w
 
 The bell reads the cached report in `/var/lib/hyprbole/health.json`; it does not run disk tools directly from Waybar.
 
-When the cached report recommends an update, Waybar shows an update icon to the left of the health bell. Click it to open a floating update window with a confirmation prompt before `hb update` starts.
+When the cached report says the last full system update is older than the warning threshold, Waybar shows an update icon to the left of the health bell. Click it to open a floating update window with a confirmation prompt before `hb update` starts.
 
 ## Commands
 
@@ -23,7 +23,7 @@ hb health updates
 hb launch health
 ```
 
-`hb health` prints the cached report. `hb health refresh` runs a fresh check through the installed systemd service, then prints the updated report. `hb health updates` checks package update age and Hyprbole repo freshness directly. `hb launch health` opens the report in a floating terminal.
+`hb health` prints the cached report. `hb health refresh` runs a fresh check through the installed systemd service, then prints the updated report. `hb health updates` checks system update age and Hyprbole repo freshness directly. `hb launch health` opens the report in a floating terminal.
 
 Use `hb health updates` when you only want to know whether the system update is stale or the Hyprbole checkout has upstream changes.
 
@@ -60,7 +60,7 @@ Health checks use two alert levels:
 | `warning` | Needs attention soon, but the desktop can usually continue running | Orange |
 | `critical` | Immediate risk, such as a read-only root filesystem or drive health failure | Red |
 
-Update age and Hyprbole repo freshness are warnings, not critical alerts. Waybar shows those warnings with the update icon instead of turning the general health bell orange by itself.
+Update age and Hyprbole repo freshness are warnings, not critical alerts. Waybar shows the update icon only for stale full-system update age, not for every available package update.
 
 ## Package Safety Guard
 
