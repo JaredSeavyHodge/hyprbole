@@ -4,7 +4,7 @@
   "position": "top",
   "spacing": 0,
   "height": 26,
-  "modules-left": ["custom/hyprbole", "hyprland/workspaces"],
+  "modules-left": ["custom/hyprbole", "ext/workspaces"],
   "modules-center": ["custom/update", "custom/health", "clock#horizontal", "custom/recording-indicator"],
   "modules-right": ["tray", "custom/idle-indicator", "custom/notification-indicator", "bluetooth", "pulseaudio", "battery", "custom/btop"],
   "custom/hyprbole": {
@@ -32,10 +32,10 @@
     "interval": 2,
     "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-record-toggle region"
   },
-  "hyprland/workspaces": {
+  "ext/workspaces": {
     "format": "{icon}",
-    "move-to-monitor": true,
-    "sort-by": "number",
+    "on-click": "activate",
+    "sort-by-id": true,
     "format-icons": {
       "default": "•",
       "1": "1",
@@ -49,9 +49,6 @@
       "9": "9",
       "10": "0",
       "active": "◉"
-    },
-    "persistent-workspaces": {
-      "*": 5
     }
   },
   "clock#horizontal": {

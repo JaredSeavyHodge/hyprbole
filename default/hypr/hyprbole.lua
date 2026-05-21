@@ -1,5 +1,6 @@
 require("default.hypr.core.env")
 require("default.hypr.core.monitors")
+require("default.hypr.core.workspaces")
 require("default.hypr.core.looknfeel")
 require("default.hypr.core.theme")
 require("default.hypr.core.input")
