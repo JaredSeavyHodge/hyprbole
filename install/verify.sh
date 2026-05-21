@@ -174,7 +174,6 @@ verify_installation() {
     "$HOME/.config/nvim/lua/plugins/hyprbole-theme.lua" \
     "$HYPRBOLE_CONFIG_PATH/current/theme/neovim.lua" \
     "$HYPRBOLE_CONFIG_PATH/current/theme/vscode.json" \
-    "$HYPRBOLE_PATH/.git" \
     "$HYPRBOLE_PATH/default" \
     "$HYPRBOLE_PATH/themes"; do
     if [[ ! -e $path ]]; then
@@ -182,6 +181,11 @@ verify_installation() {
       failures=$((failures + 1))
     fi
   done
+
+  if ! git_checkout "$HYPRBOLE_PATH"; then
+    printf 'HYPRBOLE_PATH is not a git checkout root: %s\n' "$HYPRBOLE_PATH" >&2
+    failures=$((failures + 1))
+  fi
 
   if [[ -f /usr/share/sddm/themes/hyprbole/Main.qml ]] && ! cmp -s "$HYPRBOLE_PATH/default/sddm/theme/Main.qml" /usr/share/sddm/themes/hyprbole/Main.qml; then
     printf 'SDDM Main.qml differs from Hyprbole default: %s\n' "/usr/share/sddm/themes/hyprbole/Main.qml" >&2

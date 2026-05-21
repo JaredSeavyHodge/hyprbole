@@ -22,6 +22,19 @@ hyprbole_cmd_present() {
   command -v "$1" >/dev/null 2>&1
 }
 
+hyprbole_git_checkout() {
+  local path="${1:-}"
+  local path_root
+  local checkout_root
+
+  [[ -n $path && -d $path ]] || return 1
+  path_root=$(cd "$path" && pwd -P) || return 1
+  checkout_root=$(git -C "$path_root" rev-parse --show-toplevel 2>/dev/null) || return 1
+  checkout_root=$(cd "$checkout_root" && pwd -P) || return 1
+
+  [[ $path_root == "$checkout_root" ]]
+}
+
 hyprbole_setting_value() {
   local key="$1"
 

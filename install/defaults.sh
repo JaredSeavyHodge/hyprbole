@@ -54,24 +54,21 @@ ensure_hyprbole_checkout() {
   if [[ -d $HYPRBOLE_PATH ]]; then
     target_path=$(cd "$HYPRBOLE_PATH" && pwd -P)
     if [[ $target_path == "$source_path" ]]; then
-      if git_worktree "$HYPRBOLE_PATH"; then
-        log_info "using source checkout at $HYPRBOLE_PATH"
-        return 0
-      fi
-    elif git_worktree "$HYPRBOLE_PATH"; then
+      git_checkout "$HYPRBOLE_PATH" || die "installer source must be a git checkout: $HYPRBOLE_REPO_ROOT"
+      log_info "using source checkout at $HYPRBOLE_PATH"
+      return 0
+    elif git_checkout "$HYPRBOLE_PATH"; then
       git -C "$HYPRBOLE_PATH" pull --ff-only
       return 0
     fi
   fi
 
-  if git_worktree "$HYPRBOLE_REPO_ROOT"; then
-    if [[ -n $(git -C "$HYPRBOLE_REPO_ROOT" status --porcelain) ]]; then
-      die "source checkout has uncommitted changes; commit or stash before installing to a separate HYPRBOLE_PATH"
-    fi
-    clone_source="$HYPRBOLE_REPO_ROOT"
-  else
-    clone_source="$HYPRBOLE_REPO_URL"
+  git_checkout "$HYPRBOLE_REPO_ROOT" || die "installer source must be a git checkout: $HYPRBOLE_REPO_ROOT"
+
+  if [[ -n $(git -C "$HYPRBOLE_REPO_ROOT" status --porcelain) ]]; then
+    die "source checkout has uncommitted changes; commit or stash before installing to a separate HYPRBOLE_PATH"
   fi
+  clone_source="$HYPRBOLE_REPO_ROOT"
 
   if [[ -e $HYPRBOLE_PATH ]]; then
     backup_path="$HYPRBOLE_PATH.pre-git-checkout.$(date +%Y%m%d%H%M%S)"
@@ -82,11 +79,8 @@ ensure_hyprbole_checkout() {
   mkdir -p "$(dirname "$HYPRBOLE_PATH")"
   git clone "$clone_source" "$HYPRBOLE_PATH"
 
-  source_origin_url=""
-  if git_worktree "$HYPRBOLE_REPO_ROOT"; then
-    source_origin_url=$(git -C "$HYPRBOLE_REPO_ROOT" remote get-url origin 2>/dev/null || true)
-  fi
-  if [[ -n $source_origin_url && $clone_source == "$HYPRBOLE_REPO_ROOT" ]]; then
+  source_origin_url=$(git -C "$HYPRBOLE_REPO_ROOT" remote get-url origin 2>/dev/null || true)
+  if [[ -n $source_origin_url ]]; then
     git -C "$HYPRBOLE_PATH" remote set-url origin "$source_origin_url"
   fi
 }

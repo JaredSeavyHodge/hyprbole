@@ -216,8 +216,25 @@ cmd_present() {
   command -v "$1" >/dev/null 2>&1
 }
 
+git_worktree_root() {
+  [[ -n ${1:-} ]] && git -C "$1" rev-parse --show-toplevel 2>/dev/null
+}
+
 git_worktree() {
-  [[ -n ${1:-} ]] && git -C "$1" rev-parse --is-inside-work-tree >/dev/null 2>&1
+  git_worktree_root "${1:-}" >/dev/null
+}
+
+git_checkout() {
+  local path="${1:-}"
+  local path_root
+  local checkout_root
+
+  [[ -n $path && -d $path ]] || return 1
+  path_root=$(cd "$path" && pwd -P) || return 1
+  checkout_root=$(git_worktree_root "$path_root") || return 1
+  checkout_root=$(cd "$checkout_root" && pwd -P) || return 1
+
+  [[ $path_root == "$checkout_root" ]]
 }
 
 require_command() {

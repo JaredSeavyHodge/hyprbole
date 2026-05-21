@@ -218,8 +218,8 @@ theme_source() {
 }
 
 update_repo() {
-  [[ -d $HYPRBOLE_PATH/.git ]] || {
-    printf 'HYPRBOLE_PATH is not a git checkout: %s\n' "$HYPRBOLE_PATH" >&2
+  hyprbole_git_checkout "$HYPRBOLE_PATH" || {
+    printf 'HYPRBOLE_PATH is not a git checkout root: %s\n' "$HYPRBOLE_PATH" >&2
     printf 'Run install.sh from a git checkout to convert older partial deployments.\n' >&2
     return 1
   }

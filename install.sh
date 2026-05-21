@@ -19,7 +19,6 @@ if [[ -z ${HYPRBOLE_INSTALL_LOGGED:-} ]] && [[ -t 1 ]] && command -v script >/de
 fi
 
 export HYPRBOLE_REPO_ROOT="$SCRIPT_DIR"
-export HYPRBOLE_REPO_URL="${HYPRBOLE_REPO_URL:-https://github.com/jaredseavyhodge/hyprbole.git}"
 export HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
 export HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
 export HYPRBOLE_ASSUME_YES=0
