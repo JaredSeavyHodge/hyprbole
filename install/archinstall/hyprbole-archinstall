@@ -1,0 +1,136 @@
+#!/bin/bash
+
+# hyprbole:summary=Run guided archinstall with Hyprbole base defaults
+
+set -euo pipefail
+
+CONFIG_PATH=""
+DRY_RUN=0
+EXTRA_ARGS=()
+
+usage() {
+  cat <<'EOF'
+Usage: hyprbole-archinstall [--config-path <path>] [--dry-run] [-- <archinstall args...>]
+
+Runs guided archinstall with Hyprbole's base-system defaults preselected.
+Disk layout, encryption, users, passwords, mirrors, locale, timezone, and
+other machine-specific choices remain editable in the archinstall TUI.
+
+Options:
+  --config-path <path>  Write the generated Hyprbole archinstall config there.
+  --dry-run             Pass --dry-run to archinstall.
+  --                    Pass remaining arguments through to archinstall.
+EOF
+}
+
+die() {
+  printf 'error: %s\n' "$1" >&2
+  exit 1
+}
+
+while (( $# > 0 )); do
+  case "$1" in
+    --config-path|--config)
+      [[ -n ${2:-} ]] || die "$1 requires a path"
+      CONFIG_PATH="$2"
+      shift 2
+      ;;
+    --dry-run)
+      DRY_RUN=1
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      EXTRA_ARGS+=("$@")
+      break
+      ;;
+    *)
+      die "unknown argument: $1"
+      ;;
+  esac
+done
+
+[[ $EUID -eq 0 ]] || die 'run this from the Arch ISO as root'
+command -v archinstall >/dev/null 2>&1 || die 'archinstall is not available; install it with: pacman -Sy archinstall'
+command -v python >/dev/null 2>&1 || die 'python is not available'
+
+if [[ -n $CONFIG_PATH ]]; then
+  mkdir -p "$(dirname "$CONFIG_PATH")"
+else
+  CONFIG_PATH="$(mktemp /tmp/hyprbole-archinstall.XXXXXX.json)"
+fi
+
+python - "$CONFIG_PATH" <<'PY'
+import json
+import sys
+
+config = {
+    "archinstall-language": "English",
+    "app_config": {
+        "audio_config": {"audio": "pipewire"},
+    },
+    "bootloader_config": {
+        "bootloader": "limine",
+        "uki": False,
+        "removable": False,
+    },
+    "debug": False,
+    "hostname": "hyprbole",
+    "kernels": ["linux"],
+    "locale_config": {
+        "kb_layout": "us",
+        "sys_enc": "UTF-8",
+        "sys_lang": "en_US",
+    },
+    "mirror_config": {},
+    "network_config": {"type": "nm"},
+    "no_pkg_lookups": False,
+    "ntp": True,
+    "offline": False,
+    "packages": ["git"],
+    "pacman_config": {
+        "parallel_downloads": 5,
+        "color": True,
+    },
+    "profile_config": None,
+    "script": "guided",
+    "silent": False,
+    "swap": {
+        "enabled": True,
+        "algorithm": "zstd",
+    },
+    "timezone": "UTC",
+}
+
+with open(sys.argv[1], "w", encoding="utf-8") as file:
+    json.dump(config, file, indent=2)
+    file.write("\n")
+PY
+
+printf 'Hyprbole archinstall wrapper\n\n'
+printf 'Generated config: %s\n\n' "$CONFIG_PATH"
+printf 'Preselected defaults:\n'
+printf '  - guided archinstall TUI\n'
+printf '  - no desktop profile\n'
+printf '  - Limine bootloader\n'
+printf '  - linux kernel\n'
+printf '  - PipeWire audio\n'
+printf '  - NetworkManager\n'
+printf '  - zram swap\n'
+printf '  - NTP enabled\n'
+printf '  - git as the only bootstrap package\n\n'
+printf 'Still choose carefully in archinstall:\n'
+printf '  - disk layout and filesystem, preferably Btrfs for Hyprbole snapshots\n'
+printf '  - disk encryption\n'
+printf '  - user account with sudo/admin access\n'
+printf '  - locale, keyboard, mirrors, timezone, and hostname if the defaults are wrong\n\n'
+
+if (( DRY_RUN == 1 )); then
+  archinstall --dry-run --config "$CONFIG_PATH" "${EXTRA_ARGS[@]}"
+else
+  archinstall --config "$CONFIG_PATH" "${EXTRA_ARGS[@]}"
+fi

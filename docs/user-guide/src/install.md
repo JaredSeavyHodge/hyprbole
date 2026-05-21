@@ -4,7 +4,44 @@
 
 Hyprbole is installed after a minimal Arch Linux install. `archinstall` should create the OS, user, bootloader, filesystem, mirrors, locale, and networking. Hyprbole then installs and owns the desktop layer.
 
-## Archinstall Choices
+## Archinstall Wrapper
+
+From the Arch ISO, connect networking first, then run Hyprbole's archinstall wrapper:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jaredseavyhodge/hyprbole/master/install/archinstall/hyprbole-archinstall -o /tmp/hyprbole-archinstall
+chmod +x /tmp/hyprbole-archinstall
+/tmp/hyprbole-archinstall
+```
+
+The wrapper launches guided `archinstall` with Hyprbole base defaults preselected. It does not automate disk, encryption, user, password, locale, mirror, or timezone decisions; review those choices in the TUI before installing.
+
+If you want to inspect the generated config first, run:
+
+```bash
+/tmp/hyprbole-archinstall --config-path /tmp/hyprbole-base.json --dry-run
+```
+
+Preselected defaults:
+
+- Profile: no desktop profile.
+- Bootloader: Limine.
+- Kernel: `linux`.
+- Audio: PipeWire.
+- Network configuration: NetworkManager.
+- Swap: zram with `zstd`.
+- Packages: `git` only.
+
+Still choose carefully in `archinstall`:
+
+- Disk layout and filesystem, preferably Btrfs for Hyprbole snapshots.
+- Disk encryption.
+- Authentication, including a normal user with administrator or sudo access.
+- Locale, keyboard, mirrors, timezone, and hostname if the defaults are wrong.
+
+After `archinstall` finishes, reboot into the installed system. You should land at a non-desktop terminal TTY, not a graphical login screen.
+
+## Manual Archinstall Choices
 
 From the Arch ISO, run `archinstall` without selecting a desktop profile. Hyprbole expects to install Hyprland, UWSM, Waybar, browser, file manager, and desktop services itself.
 

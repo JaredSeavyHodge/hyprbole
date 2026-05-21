@@ -1,13 +1,17 @@
 {
   "archinstall-language": "English",
-  "audio_config": null,
+  "app_config": {
+    "audio_config": {
+      "audio": "pipewire"
+    }
+  },
   "bootloader_config": {
     "bootloader": "limine",
     "uki": false,
     "removable": false
   },
   "debug": false,
-  "hostname": "archlinux",
+  "hostname": "hyprbole",
   "kernels": [
     "linux"
   ],
@@ -17,13 +21,19 @@
     "sys_lang": "en_US"
   },
   "mirror_config": {},
+  "network_config": {
+    "type": "nm"
+  },
   "no_pkg_lookups": false,
   "ntp": true,
   "offline": false,
   "packages": [
     "git"
   ],
-  "parallel downloads": 5,
+  "pacman_config": {
+    "parallel_downloads": 5,
+    "color": true
+  },
   "profile_config": null,
   "script": "guided",
   "silent": false,
@@ -31,6 +41,5 @@
     "enabled": true,
     "algorithm": "zstd"
   },
-  "timezone": "UTC",
-  "version": "2.8.6"
+  "timezone": "UTC"
 }

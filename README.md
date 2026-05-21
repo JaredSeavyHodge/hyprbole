@@ -6,7 +6,7 @@ Hyprbole is a curated post-install desktop layer for Arch Linux built around Hyp
 
 ## Current Scope
 
-- Post-`archinstall` bootstrap only
+- Guided `archinstall` wrapper plus post-install desktop bootstrap
 - Hyprland Lua config as the primary compositor config format
 - Waybar as the default status bar
 - `hyprbole` as the primary human-facing command surface
@@ -66,6 +66,16 @@ Examples of equivalent grouped routes:
 Leaf scripts under `bin/hyprbole-*` still exist for desktop plumbing such as Hyprland binds, Walker/Elephant menus, systemd units, and Nautilus actions.
 
 ## Install And Verify
+
+From the Arch ISO, Hyprbole can preseed safe guided `archinstall` defaults:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jaredseavyhodge/hyprbole/master/install/archinstall/hyprbole-archinstall -o /tmp/hyprbole-archinstall
+chmod +x /tmp/hyprbole-archinstall
+/tmp/hyprbole-archinstall
+```
+
+After rebooting into the base system, clone Hyprbole and run the desktop installer.
 
 Run the installer from a normal user account, not with `sudo`:
 
