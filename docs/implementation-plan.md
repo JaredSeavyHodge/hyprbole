@@ -35,6 +35,7 @@
 - Keep one-off repair commands behind `hyprbole doctor --fix` rather than public routes. In progress.
 - Open the local user guide automatically on first login after fresh install. Done.
 - Remove the temporary `hyprbole-mount-share` script. Done.
+- Add troubleshooting guidance for refreshing a single user-owned `.config` file. Done.
 
 ## Future Features
 
@@ -50,7 +51,6 @@
 - Continue user-guide cleanup before the next fresh install test.
 - Add a simple TUI for mounting NAS NFS or SMB shares with proper permissions.
 - Discuss whether a deeply integrated optional agentic OS layer, similar to Hermes, is viable with efficient access to Hyprland, Hyprbole, and Linux while preserving security and avoiding excessive tool calls or token use.
-- Add troubleshooting guidance for "I messed up a config," including examples for refreshing a single user-owned `.config` file.
 - Consider changing the Waybar alarm bell indicator to a heart if it better matches the intended meaning.
 - Investigate a lightweight Waybar notification bell integration for `swaync`-processed notifications, including right-click dismissal if supported cleanly.
 - Evaluate lightweight, nicely themable default apps for common MIME types, especially a simple notepad-style editor and a beautiful PDF viewer/signer that can fit the current theme system.

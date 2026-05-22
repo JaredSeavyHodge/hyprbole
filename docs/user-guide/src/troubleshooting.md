@@ -97,6 +97,41 @@ or switch back to the fallback:
 hb theme set default-theme
 ```
 
+## I Messed Up A Config
+
+If one editable file under `~/.config` is broken, refresh that single file from Hyprbole's shipped default instead of resetting everything.
+
+Use the path relative to the repo `config/` directory. For example, `~/.config/waybar/config.jsonc` becomes `waybar/config.jsonc`:
+
+```bash
+hb refresh-config waybar/config.jsonc
+```
+
+Common examples:
+
+```bash
+hb refresh-config hypr/bindings.lua
+hb refresh-config hypr/monitors.lua
+hb refresh-config hypr/input.lua
+hb refresh-config waybar/style.css
+hb refresh-config ghostty/config
+hb refresh-config walker/config.toml
+```
+
+When the destination already exists, Hyprbole saves a timestamped backup next to it before replacing it, such as:
+
+```text
+~/.config/waybar/config.jsonc.bak.20260522143000
+```
+
+To find refreshable paths, inspect the shipped config tree:
+
+```bash
+fd --type f . ~/.local/share/hyprbole/config
+```
+
+Use `hb refresh-all --include-user-configs` only when you intentionally want to refresh many editable config files from Hyprbole defaults.
+
 ## Waybar Or Wallpaper Missing
 
 Restart runtime components:
