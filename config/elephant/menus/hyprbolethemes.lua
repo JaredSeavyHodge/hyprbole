@@ -125,6 +125,7 @@ end
 
 function GetEntries()
   local entries = {}
+  local theme_entries = {}
   local themes = {}
   local home = os.getenv("HOME")
   local hyprbole_path = os.getenv("HYPRBOLE_PATH") or (os.getenv("HOME") .. "/.local/share/hyprbole")
@@ -153,6 +154,15 @@ function GetEntries()
     Subtext = "Edit theme-sources.conf, then run theme source sync",
     Actions = {
       activate = "hyprbole theme source edit",
+    },
+    State = { "sublevel" },
+  })
+
+  table.insert(entries, {
+    Text = "󰑓  Sync Theme Repos",
+    Subtext = "Download or refresh themes from configured sources",
+    Actions = {
+      activate = "hyprbole theme source sync",
     },
     State = { "sublevel" },
   })
@@ -190,12 +200,16 @@ function GetEntries()
         entry.PreviewType = "file"
       end
 
-      table.insert(entries, entry)
+      table.insert(theme_entries, entry)
   end
 
-  table.sort(entries, function(a, b)
+  table.sort(theme_entries, function(a, b)
     return a.Text < b.Text
   end)
+
+  for _, entry in ipairs(theme_entries) do
+    table.insert(entries, entry)
+  end
 
   return entries
 end

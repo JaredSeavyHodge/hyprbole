@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Start with the built-in checks:
+Start with the built-in checks. `doctor` is the human-readable report; `verify` is stricter and useful after installs, updates, and repairs.
 
 ```bash
 hb doctor
@@ -134,10 +134,10 @@ Use `hb refresh-all --include-user-configs` only when you intentionally want to 
 
 ## Waybar Or Wallpaper Missing
 
-Restart runtime components:
+Refresh Hyprbole-owned runtime state:
 
 ```bash
-hyprbole-refresh-all
+hb refresh-all
 ```
 
 If a single component needs a restart, use:

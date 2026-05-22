@@ -64,9 +64,9 @@ hb refresh-config <path>
 hb refresh-shell
 ```
 
-`refresh-all` normally refreshes Hyprbole-owned runtime state. Use `--include-user-configs` only when you intentionally want Hyprbole to refresh editable user config files under `~/.config` from the repo defaults; this can overwrite local customizations.
+`refresh-all` normally refreshes Hyprbole-owned runtime state without replacing editable user config. Use `--include-user-configs` only when you intentionally want Hyprbole to refresh editable files under `~/.config` from repo defaults; this can overwrite local customizations after backups are created.
 
-`refresh-config <path>` takes a path relative to the repo `config/` directory, such as `waybar/config.jsonc` or `hypr/bindings.lua`.
+`refresh-config <path>` refreshes one editable file and takes a path relative to the repo `config/` directory, such as `waybar/config.jsonc` or `hypr/bindings.lua`.
 
 ## Launch And Capture
 

@@ -1,6 +1,6 @@
 # Quick Start
 
-This page covers the basic things you need to use Hyprbole as a desktop.
+This page covers the basic controls you need after the first-login checklist.
 
 ## Open Apps
 
@@ -11,7 +11,7 @@ This page covers the basic things you need to use Hyprbole as a desktop.
 - Press `SUPER + SHIFT + B` to open the browser.
 - Press `SUPER + V` to open clipboard history.
 
-The launcher is the fastest way to find applications. The Hyprbole menu is where common system actions, tools, themes, and help entries live.
+The launcher is the fastest way to find applications. The Hyprbole menu is where common system actions, tools, themes, installs, and help entries live.
 
 ## Use Workspaces
 
@@ -65,6 +65,6 @@ Screenshots open in Satty for annotation when appropriate.
 
 ## Get Help
 
-Open `Help`, `Keybinds` from the Hyprbole menu for the full shortcut list.
+Open `Help`, `Keybinds` from the Hyprbole menu for the full shortcut list, or run `hb keybinds`.
 
-If something looks broken or incomplete, open [Troubleshooting](troubleshooting.md).
+If something looks broken, incomplete, or misconfigured, open [Troubleshooting](troubleshooting.md).

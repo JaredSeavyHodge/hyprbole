@@ -2,6 +2,16 @@
 
 Log in from SDDM. Hyprbole configures SDDM to start Hyprland through UWSM, which loads the Lua config entrypoint at `~/.config/hypr/hyprland.lua`.
 
+On a fresh install, Hyprbole opens the local guide automatically on the first Hyprland login. If it does not open, press `SUPER + RETURN` and run `hb docs`.
+
+## First Five Minutes
+
+1. Make sure the guide opened, or run `hb docs`.
+2. Press `SUPER + SPACE` to open the app launcher.
+3. Press `SUPER + ALT + SPACE` to open the Hyprbole menu.
+4. Press `SUPER + RETURN` to open a terminal.
+5. Run the first checks below.
+
 ## First Checks
 
 Open a terminal and run:
@@ -20,11 +30,7 @@ Read [Quick Start](quick-start.md) for basic desktop usage: launching apps, swit
 
 Use `Help`, `Keybinds` in the Hyprbole menu when you want the complete shortcut list.
 
-## Open The Guide
-
-On a fresh install, Hyprbole opens this local guide automatically on the first Hyprland login.
-
-To rebuild and reopen it later, run:
+To rebuild and reopen this guide later, run:
 
 ```bash
 hb docs
@@ -32,9 +38,9 @@ hb docs
 
 The generated guide is written to `~/.config/hyprbole/docs/index.html`.
 
-## Check Default Files
+## First Files To Know
 
-Hyprbole copies editable defaults into `~/.config` only when missing. The most useful first Hyprland files to inspect are:
+Hyprbole copies editable defaults into `~/.config` only when missing. Start with these files when you want to tune monitors, input, keybinds, or startup behavior:
 
 | File | Purpose |
 | --- | --- |
@@ -45,7 +51,7 @@ Hyprbole copies editable defaults into `~/.config` only when missing. The most u
 | `~/.config/hypr/autostart.lua` | Personal startup commands |
 | `~/.config/hypr/overrides.lua` | One-off local experiments |
 
-Run `hyprctl reload` after editing Hyprland config.
+Run `hyprctl reload` after editing Hyprland config. If you break one file, see [Troubleshooting](troubleshooting.md) for `hb refresh-config` examples.
 
 ## If Something Looks Incomplete
 
@@ -55,7 +61,7 @@ Run:
 hb doctor --verbose
 ```
 
-If it reports missing generated theme state or browser launchers, run:
+If it reports missing generated theme state, browser launchers, or runtime state, run:
 
 ```bash
 hb refresh-all
