@@ -17,20 +17,25 @@ OPEN_DOCS=1
 
 DOCS_NAV=(
   "Welcome:index.md"
+  "@Getting Started"
+  "Quick Start:quick-start.md"
   "Install:install.md"
   "First Boot:first-boot.md"
+  "@Using Hyprbole"
+  "Keybinds:keybinds.md"
+  "App Launcher:walker.md"
+  "Terminal:terminal.md"
+  "Browser:browser.md"
+  "Tools:tools.md"
+  "Themes:themes.md"
+  "Packages:packages.md"
+  "Neovim:neovim.md"
+  "@System Reference"
+  "System Overview:system.md"
   "Commands:commands.md"
   "Doctor:doctor.md"
   "System Health:health.md"
-  "Terminal:terminal.md"
   "Hyprland:hyprland-config.md"
-  "App Launcher:walker.md"
-  "Tools:tools.md"
-  "Neovim:neovim.md"
-  "Themes:themes.md"
-  "Browser:browser.md"
-  "Keybinds:keybinds.md"
-  "Packages:packages.md"
   "Snapshots:snapshots.md"
   "Keyring:keyring.md"
   "Troubleshooting:troubleshooting.md"
@@ -133,11 +138,17 @@ emit_docs_json() {
   local title
   local file
   local id
+  local group=""
   local markdown_json
   local first=1
 
   printf '['
   for entry in "${DOCS_NAV[@]}"; do
+    if [[ $entry == @* ]]; then
+      group="${entry#@}"
+      continue
+    fi
+
     title="${entry%%:*}"
     file="${entry#*:}"
     id="${file%.md}"
@@ -154,10 +165,11 @@ emit_docs_json() {
     fi
     first=0
 
-    printf '{"id":%s,"title":%s,"path":%s,"markdown":%s}' \
+    printf '{"id":%s,"title":%s,"path":%s,"group":%s,"markdown":%s}' \
       "$(json_string "$id")" \
       "$(json_string "$title")" \
       "$(json_string "$file")" \
+      "$(json_string "$group")" \
       "$markdown_json"
   done
   printf ']'
@@ -315,6 +327,20 @@ HTML
       gap: 0.25rem;
     }
 
+    .nav-group {
+      margin: 1.15rem 0 0.35rem;
+      padding: 0 0.6rem;
+      color: #b8c5d8;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .nav-group:first-child {
+      margin-top: 0;
+    }
+
     .nav button,
     .toc button,
     .result button {
@@ -328,7 +354,7 @@ HTML
 
     .nav button {
       border-radius: 0.9rem;
-      padding: 0.7rem 0.85rem;
+      padding: 0.65rem 0.85rem 0.65rem 1.35rem;
       background: transparent;
       color: var(--muted);
     }
@@ -711,7 +737,8 @@ HTML
       let html = escapeHtml(value);
       html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
       html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => {
-        const safeUrl = escapeHtml(url);
+        const internalDoc = docs.find(doc => doc.path === url || `${doc.id}.md` === url);
+        const safeUrl = escapeHtml(internalDoc ? `#${internalDoc.id}` : url);
         return `<a href="${safeUrl}">${label}</a>`;
       });
       html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -829,10 +856,21 @@ HTML
 
     function renderNav(activeId = currentId, filter = '') {
       const query = filter.trim().toLowerCase();
-      nav.innerHTML = docs
-        .filter(doc => !query || `${doc.title}\n${doc.markdown}`.toLowerCase().includes(query))
-        .map(doc => `<button type="button" class="${doc.id === activeId ? 'active' : ''}" data-page="${doc.id}">${escapeHtml(doc.title)}</button>`)
-        .join('') || '<p class="empty">No pages match.</p>';
+      const filteredDocs = docs.filter(doc => !query || `${doc.title}\n${doc.markdown}`.toLowerCase().includes(query));
+      let previousGroup = null;
+      const parts = [];
+
+      for (const doc of filteredDocs) {
+        if (doc.group && doc.group !== previousGroup) {
+          parts.push(`<div class="nav-group">${escapeHtml(doc.group)}</div>`);
+          previousGroup = doc.group;
+        } else if (!doc.group) {
+          previousGroup = null;
+        }
+        parts.push(`<button type="button" class="${doc.id === activeId ? 'active' : ''}" data-page="${doc.id}">${escapeHtml(doc.title)}</button>`);
+      }
+
+      nav.innerHTML = parts.join('') || '<p class="empty">No pages match.</p>';
     }
 
     function renderToc() {

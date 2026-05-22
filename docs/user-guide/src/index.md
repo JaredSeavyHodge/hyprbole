@@ -2,71 +2,47 @@
 
 ### _A hyprbole on Hyprland_
 
-Hyprbole is the desktop layer that runs after Arch Linux is installed. It owns the Hyprland session, default apps, themes, keybinds, browser launcher, and repair tools.
+Hyprbole is a Hyprland desktop for Arch Linux. It gives you a keyboard-first desktop with a top bar, app launcher, terminal, browser, file manager, notifications, themes, and repair tools already wired together.
 
-Use this guide when you want to understand what Hyprbole installed, how to change the everyday defaults, and how to repair the common desktop services.
-
-Examples use `hb`, the short alias for `hyprbole`. If the alias is not loaded in a shell yet, use `hyprbole` instead.
+Use this guide when you want to learn how to use the system, change everyday defaults, or understand what Hyprbole installed.
 
 ## Start Here
 
-- Run `hb doctor` to check the desktop state.
-- Run `hb verify` after install or major changes.
-- Run `hb doctor --fix` for supported repairs.
-- Run `hb docs` to build and open this guide locally.
-- Run `hb health` to read the cached hourly disk, OS, and update-freshness report.
-- Run `hb health updates` to check package update age and Hyprbole repo freshness directly.
+- New to Hyprbole? Start with [Quick Start](quick-start.md).
+- Just installed? Read [First Boot](first-boot.md).
+- Need every shortcut? Open [Keybinds](keybinds.md).
+- Something looks broken? Open [Troubleshooting](troubleshooting.md).
 
-Must-have shortcuts:
+## Must Know
 
 | Keybind | Action |
 | --- | --- |
 | `SUPER + SPACE` | Open app launcher |
-| `SUPER + SHIFT + SPACE` | Open app launcher |
 | `SUPER + ALT + SPACE` | Open Hyprbole menu |
 | `SUPER + RETURN` | Open terminal |
-| `SUPER + SHIFT + F` | Open file manager |
-| `SUPER + SHIFT + B` | Open browser |
 | `SUPER + Q` | Close focused window |
-| `SUPER + left mouse drag` | Move window |
-| `SUPER + right mouse drag` | Resize window |
+| `SUPER + 1..0` | Switch workspace |
+| `SUPER + SHIFT + 1..0` | Move focused window to workspace |
 
-For the full shortcut list, open `Help`, `Keybinds` from the Hyprbole menu or run:
+The top-left bar shows workspaces. The right side of the bar shows system status, audio, Bluetooth, notifications, battery, updates, and health alerts.
 
-```bash
-hb keybinds
-```
+## Default Apps
 
-## What Hyprbole Owns
-
-- Hyprland with Lua configuration.
-- Waybar status bar.
-- The Waybar health bell beside the date.
-- Walker launcher and clipboard picker.
-- SwayNC notifications.
-- Ghostty terminal.
-- Brave Origin Nightly browser through a Hyprbole wrapper.
-- Nautilus file manager.
-- Theme and wallpaper state under `~/.config/hyprbole/current`.
-- Keyring setup for GNOME Keyring/libsecret Secret Service integration.
-
-## Important Paths
-
-| Path | Purpose |
+| Role | App |
 | --- | --- |
-| `~/.local/share/hyprbole` | Hyprbole git checkout and vendor defaults |
-| `~/.config` | User-editable config copied from `config/` |
-| `~/.config/hyprbole/current` | Generated Hyprbole runtime state |
-| `~/.config/hyprbole/settings.toml` | User runtime choices |
-| `~/.config/hyprbole/theme-sources.conf` | External theme source registry |
-| `~/.config/hypr` | User-editable Hyprland Lua config |
-| `~/.local/share/hyprbole/default` | Hyprbole framework defaults |
-| `~/.local/share/hyprbole/themes` | Bundled theme packs |
+| Terminal | Ghostty |
+| Browser | Brave Origin Nightly |
+| File manager | Nautilus |
+| Launcher | Walker |
+| Notifications | SwayNC |
+| Password manager | 1Password |
 
-Hyprbole should be understandable from files on disk. When in doubt, inspect the relevant file under these paths.
+## Where To Go Next
 
-## Editing Rule Of Thumb
-
-Edit files under `~/.config` for your own machine. Treat `~/.local/share/hyprbole/default` and `~/.local/share/hyprbole/bin` as Hyprbole-owned framework files unless you are developing Hyprbole itself.
-
-If you are unsure whether a change belongs in user config or Hyprbole defaults, prefer user config first. You can always reset or refresh Hyprbole-owned runtime state with `hb refresh-all`.
+- Read [Quick Start](quick-start.md) for basic daily use.
+- Read [First Boot](first-boot.md) for first-login checks.
+- Read [Keybinds](keybinds.md) when you want the full keyboard map.
+- Read [Themes](themes.md) when you want to change the look and wallpaper.
+- Read [Terminal](terminal.md) for shell defaults and terminal behavior.
+- Read [System Overview](system.md) when you want to understand what Hyprbole owns and where files live.
+- Read [Troubleshooting](troubleshooting.md) if something looks incomplete or broken.

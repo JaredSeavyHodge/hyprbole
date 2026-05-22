@@ -14,40 +14,11 @@ hb verify
 
 `doctor` gives a readable desktop report. `health` shows the cached hourly disk, OS, and update-freshness report. `verify` is stricter and is useful after install, updates, and repairs.
 
-## Default Apps
+## Learn The Desktop
 
-- Terminal: Ghostty
-- Browser: Brave Origin Nightly through the Hyprbole launcher
-- File manager: Nautilus
-- Launcher: Walker
-- Notifications: SwayNC
-- Password manager: 1Password
+Read [Quick Start](quick-start.md) for basic desktop usage: launching apps, switching workspaces, moving windows, using the top bar, and taking screenshots.
 
-## Main Shortcuts
-
-- `SUPER + SPACE`: app launcher
-- `SUPER + SHIFT + SPACE`: app launcher
-- `SUPER + ALT + SPACE`: Hyprbole menu
-- `SUPER + V`: clipboard history
-- `SUPER + SHIFT + B`: browser
-- `SUPER + RETURN`: terminal
-- `Print`: region screenshot
-- `Shift + Print`: full screen screenshot
-
-## Window Management Shortcuts
-
-- `SUPER + Q`: close focused window
-- `SUPER + T`: toggle floating window
-- `SUPER + F`: toggle fullscreen
-- `SUPER + H/J/K/L`: move focus left/down/up/right
-- `SUPER + 1..0`: focus workspace 1 through 10
-- `SUPER + SHIFT + 1..0`: move focused window to workspace 1 through 10
-- `SUPER + S`: toggle scratchpad workspace
-- `SUPER + SHIFT + S`: move focused window to scratchpad
-- `SUPER + left mouse drag`: move window
-- `SUPER + right mouse drag`: resize window
-
-Use `Help`, `Keybinds` in the Hyprbole menu to browse the current shortcuts.
+Use `Help`, `Keybinds` in the Hyprbole menu when you want the complete shortcut list.
 
 ## Open The Guide
 
