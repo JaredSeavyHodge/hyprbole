@@ -22,7 +22,9 @@ Use `Help`, `Keybinds` in the Hyprbole menu when you want the complete shortcut 
 
 ## Open The Guide
 
-Build and open the local guide with:
+On a fresh install, Hyprbole opens this local guide automatically on the first Hyprland login.
+
+To rebuild and reopen it later, run:
 
 ```bash
 hb docs

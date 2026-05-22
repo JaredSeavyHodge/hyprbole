@@ -3,6 +3,7 @@ deploy_defaults() {
   local source_path
   local destination_path
   local copied_count=0
+  local first_install=0
 
   mkdir -p "$HYPRBOLE_CONFIG_PATH" "$HOME/.local/bin" "$HOME/Pictures/Wallpaper"
 
@@ -36,7 +37,12 @@ deploy_defaults() {
 
   mkdir -p "$HYPRBOLE_CONFIG_PATH/metadata"
   if [[ ! -f $HYPRBOLE_CONFIG_PATH/metadata/installed-at ]]; then
+    first_install=1
     date --iso-8601=seconds >"$HYPRBOLE_CONFIG_PATH/metadata/installed-at"
+  fi
+
+  if (( first_install == 1 )); then
+    date --iso-8601=seconds >"$HYPRBOLE_CONFIG_PATH/metadata/open-user-guide-on-first-login"
   fi
 
   log_info "copied $copied_count user config file(s) that were missing"

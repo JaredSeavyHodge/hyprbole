@@ -1,0 +1,13 @@
+[Unit]
+Description=Open Hyprbole user guide on first login
+PartOf=graphical-session.target
+After=graphical-session.target
+ConditionEnvironment=WAYLAND_DISPLAY
+ConditionPathExists=%h/.config/hyprbole/metadata/open-user-guide-on-first-login
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -lc 'exec "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-first-login-guide"'
+
+[Install]
+WantedBy=graphical-session.target

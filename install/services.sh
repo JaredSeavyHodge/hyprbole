@@ -1,6 +1,7 @@
 enable_services() {
   local failed=0
   local graphical_user_units=(swayosd-server.service polkit-gnome-agent.service elephant.service walker.service swaync.service)
+  local first_login_units=(hyprbole-first-login-guide.service)
   local start_graphical_units=0
   local unit
   local service_source="$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.service"
@@ -30,6 +31,13 @@ enable_services() {
 
     if (( start_graphical_units == 1 )) && ! systemctl --user start "$unit"; then
       printf 'failed to start user service: %s\n' "$unit" >&2
+      failed=$((failed + 1))
+    fi
+  done
+
+  for unit in "${first_login_units[@]}"; do
+    if ! systemctl --user enable "$unit"; then
+      printf 'failed to enable user service: %s\n' "$unit" >&2
       failed=$((failed + 1))
     fi
   done

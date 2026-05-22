@@ -125,7 +125,8 @@ verify_installation() {
   local unit
   local active_user_units=(pipewire.service pipewire-pulse.service wireplumber.service)
   local graphical_user_units=(swayosd-server.service polkit-gnome-agent.service elephant.service walker.service swaync.service)
-  local enabled_user_units=(gnome-keyring-daemon.socket "${graphical_user_units[@]}")
+  local first_login_units=(hyprbole-first-login-guide.service)
+  local enabled_user_units=(gnome-keyring-daemon.socket "${graphical_user_units[@]}" "${first_login_units[@]}")
 
   if systemctl --user is-active --quiet graphical-session.target; then
     graphical_session_active=1
@@ -144,7 +145,9 @@ verify_installation() {
     "$HYPRBOLE_PATH/bin/hyprbole-health-report" \
     "$HYPRBOLE_PATH/bin/hyprbole-health-updates" \
     "$HYPRBOLE_PATH/bin/hyprbole-update-indicator" \
+    "$HYPRBOLE_PATH/bin/hyprbole-first-login-guide" \
     "$HOME/.config/hypr/hyprland.lua" \
+    "$HOME/.config/systemd/user/hyprbole-first-login-guide.service" \
     "$HYPRBOLE_CONFIG_PATH/theme-sources.conf" \
     "$HOME/.config/waybar/config.jsonc" \
     "$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.service" \

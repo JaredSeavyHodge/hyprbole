@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# hyprbole:summary=Open the Hyprbole user guide once after install
+
+set -euo pipefail
+
+HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
+HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
+
+metadata_path="$HYPRBOLE_CONFIG_PATH/metadata"
+pending_path="$metadata_path/open-user-guide-on-first-login"
+opened_path="$metadata_path/user-guide-opened-at"
+
+[[ -f $pending_path ]] || exit 0
+
+mkdir -p "$metadata_path"
+
+docs_index="$($HYPRBOLE_PATH/bin/hyprbole-docs --no-open)"
+
+rm -f "$pending_path"
+date --iso-8601=seconds >"$opened_path"
+
+(
+  sleep 2
+  "$HYPRBOLE_PATH/bin/hyprbole-launch-browser" --app="file://$docs_index"
+) >/dev/null 2>&1 &
+
+exit 0
