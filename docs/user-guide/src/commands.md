@@ -19,6 +19,7 @@ hb health
 hb health updates
 hb keybinds
 hb menu
+hb restart waybar
 hb lock
 hb suspend
 ```
@@ -82,6 +83,19 @@ hb capture record-screen
 ```
 
 The short top-level commands `hb apps`, `hb clipboard`, and `hb keybinds` are aliases for common launcher actions.
+
+## Restart UI Components
+
+```bash
+hb restart all
+hb restart waybar
+hb restart wallpaper
+hb restart swaync
+hb restart swayosd
+hb restart menus
+```
+
+`hb restart menus` restarts both Walker and Elephant. Use `hb restart walker` or `hb restart elephant` when you only need one side of the menu stack.
 
 ## Tools
 

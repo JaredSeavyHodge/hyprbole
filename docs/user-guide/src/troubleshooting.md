@@ -143,10 +143,10 @@ hb refresh-all
 If a single component needs a restart, use:
 
 ```bash
-hyprbole-restart-waybar
-hyprbole-restart-wallpaper
-hyprbole-restart-swaync
-hyprbole-restart-swayosd
+hb restart waybar
+hb restart wallpaper
+hb restart swaync
+hb restart swayosd
 ```
 
 If user config files are intentionally being reset from Hyprbole defaults, use:

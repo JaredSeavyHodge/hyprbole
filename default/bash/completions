@@ -35,7 +35,7 @@ _hyprbole_complete() {
 
   case "${COMP_WORDS[1]:-}" in
     "")
-      COMPREPLY=($(compgen -W 'theme themes wallpaper pkg apps clipboard keybinds tools utilities disk-usage health lock logout menu suspend reboot poweroff launch capture power system docs guide doctor verify update refresh-limine snapshot refresh-config refresh-all refresh-shell migrate' -- "$cur"))
+      COMPREPLY=($(compgen -W 'theme themes wallpaper pkg apps clipboard keybinds tools utilities disk-usage health lock logout menu suspend reboot poweroff launch capture power system restart docs guide doctor verify update refresh-limine snapshot refresh-config refresh-all refresh-shell migrate' -- "$cur"))
       return 0
       ;;
     theme)
@@ -132,6 +132,12 @@ _hyprbole_complete() {
     system)
       if (( COMP_CWORD == 2 )); then
         COMPREPLY=($(compgen -W 'lock logout' -- "$cur"))
+      fi
+      return 0
+      ;;
+    restart)
+      if (( COMP_CWORD == 2 )); then
+        COMPREPLY=($(compgen -W 'all waybar bar wallpaper wallpapers swaync notifications swayosd osd hypridle idle terminal term walker launcher elephant menus menu' -- "$cur"))
       fi
       return 0
       ;;

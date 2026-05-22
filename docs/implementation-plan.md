@@ -37,6 +37,7 @@
 - Remove the temporary `hyprbole-mount-share` script. Done.
 - Add troubleshooting guidance for refreshing a single user-owned `.config` file. Done.
 - Do a focused user-guide cleanup before the next fresh install test. Done.
+- Add high-value `hb restart` routes for common UI workflows. Done.
 
 ## Future Features
 
@@ -48,7 +49,6 @@
 - Let the default-app menu install missing supported alternatives, update `settings.toml`, refresh MIME associations, and restart or reload affected runtime components.
 - Add a CLI cleanup pass before broadening the public `hyprbole` command surface.
 - Consider an opt-in browser scaling helper that writes Chromium fractional-scaling flags to `~/.config/hyprbole/brave-origin-nightly-flags.conf`.
-- Add more high-value `hb` routes for user interface workflows that make sense, such as restarting Waybar and managing `swaync` or `swayosd`.
 - Add a simple TUI for mounting NAS NFS or SMB shares with proper permissions.
 - Discuss whether a deeply integrated optional agentic OS layer, similar to Hermes, is viable with efficient access to Hyprland, Hyprbole, and Linux while preserving security and avoiding excessive tool calls or token use.
 - Consider changing the Waybar alarm bell indicator to a heart if it better matches the intended meaning.

@@ -103,6 +103,10 @@ System:
   power suspend
   power reboot
   power off
+  restart <target>
+
+Restart targets:
+  all waybar wallpaper swaync swayosd hypridle terminal walker elephant menus
 
 Maintenance:
   docs
@@ -1329,6 +1333,48 @@ refresh_config() {
   hyprbole_refresh_config_path "$1"
 }
 
+restart_component() {
+  local target="${1:-}"
+
+  case "$target" in
+    all)
+      hyprbole-restart-all
+      ;;
+    waybar|bar)
+      hyprbole-restart-waybar
+      ;;
+    wallpaper|wallpapers)
+      hyprbole-restart-wallpaper
+      ;;
+    swaync|notifications)
+      systemctl --user restart swaync.service
+      ;;
+    swayosd|osd)
+      hyprbole-restart-swayosd
+      ;;
+    hypridle|idle)
+      hyprbole-restart-hypridle
+      ;;
+    terminal|term)
+      hyprbole-restart-terminal
+      ;;
+    walker|launcher)
+      systemctl --user restart walker.service
+      ;;
+    elephant)
+      systemctl --user restart elephant.service
+      ;;
+    menus|menu)
+      systemctl --user restart elephant.service walker.service
+      ;;
+    *)
+      [[ -n $target ]] && printf 'unknown restart target: %s\n' "$target" >&2
+      usage
+      return 1
+      ;;
+  esac
+}
+
 verify_system() {
   source "$HYPRBOLE_PATH/install/lib.sh"
   source "$HYPRBOLE_PATH/install/verify.sh"
@@ -2125,6 +2171,9 @@ main() {
     refresh-all)
       shift
       hyprbole-refresh-all "$@"
+      ;;
+    restart)
+      restart_component "${2:-}"
       ;;
     refresh-shell)
       hyprbole-refresh-shell
