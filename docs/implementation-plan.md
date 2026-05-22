@@ -38,6 +38,7 @@
 - Add troubleshooting guidance for refreshing a single user-owned `.config` file. Done.
 - Do a focused user-guide cleanup before the next fresh install test. Done.
 - Add high-value `hb restart` routes for common UI workflows. Done.
+- Change the Waybar health indicator from a bell to a heart. Done.
 
 ## Future Features
 
@@ -51,7 +52,6 @@
 - Consider an opt-in browser scaling helper that writes Chromium fractional-scaling flags to `~/.config/hyprbole/brave-origin-nightly-flags.conf`.
 - Add a simple TUI for mounting NAS NFS or SMB shares with proper permissions.
 - Discuss whether a deeply integrated optional agentic OS layer, similar to Hermes, is viable with efficient access to Hyprland, Hyprbole, and Linux while preserving security and avoiding excessive tool calls or token use.
-- Consider changing the Waybar alarm bell indicator to a heart if it better matches the intended meaning.
 - Investigate a lightweight Waybar notification bell integration for `swaync`-processed notifications, including right-click dismissal if supported cleanly.
 - Evaluate lightweight, nicely themable default apps for common MIME types, especially a simple notepad-style editor and a beautiful PDF viewer/signer that can fit the current theme system.
 - Add a Walker `Install` submenu for office suites, including LibreOffice and any better alternatives, with an option to consider a Brave-powered Microsoft Office web app.

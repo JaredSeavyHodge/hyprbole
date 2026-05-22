@@ -6,7 +6,7 @@ Hyprbole is the desktop layer on top of Arch Linux. This page is for understandi
 
 - Hyprland with Lua configuration.
 - Waybar status bar.
-- The Waybar health bell beside the date.
+- The Waybar health heart beside the date.
 - Walker launcher and clipboard picker.
 - SwayNC notifications.
 - Ghostty terminal.

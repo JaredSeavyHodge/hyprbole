@@ -6,13 +6,13 @@ The check reads cached device, filesystem, and update-freshness metadata. It doe
 
 ## Waybar Indicators
 
-Waybar shows a health bell to the left of the date. When the cached report is clean, it inherits the active theme colors and its tooltip says `No Alerts`.
+Waybar shows a health heart to the left of the date. When the cached report is clean, it inherits the active theme colors and its tooltip says `No Alerts`.
 
-If non-update warnings or critical issues are found, the bell turns orange for warnings and red for high alerts. Left-click it to open the health report. Right-click it to run a fresh health check and reset the bell state from the updated report.
+If non-update warnings or critical issues are found, the heart turns orange for warnings and red for high alerts. Left-click it to open the health report. Right-click it to run a fresh health check and reset the heart state from the updated report.
 
-The bell reads the cached report in `/var/lib/hyprbole/health.json`; it does not run disk tools directly from Waybar.
+The heart reads the cached report in `/var/lib/hyprbole/health.json`; it does not run disk tools directly from Waybar.
 
-When the cached report says the last full system update is older than the warning threshold, Waybar shows an update icon to the left of the health bell. Click it to open a floating update window with a confirmation prompt before `hb update` starts.
+When the cached report says the last full system update is older than the warning threshold, Waybar shows an update icon to the left of the health heart. Click it to open a floating update window with a confirmation prompt before `hb update` starts.
 
 ## Commands
 

@@ -19,7 +19,7 @@ Use verbose output when you need the full checklist:
 hb doctor --verbose
 ```
 
-Use the health report when the Waybar bell shows an alert:
+Use the health report when the Waybar heart shows an alert:
 
 ```bash
 hb health
@@ -175,7 +175,7 @@ If you only care about update freshness, run:
 hb health updates
 ```
 
-The bell is orange for warnings and red for critical alerts. A clean report shows `No Alerts` in the tooltip.
+The heart is orange for warnings and red for critical alerts. A clean report shows `No Alerts` in the tooltip.
 
 ## Package Operation Refused For Disk Space
 

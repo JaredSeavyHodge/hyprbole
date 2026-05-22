@@ -68,10 +68,10 @@ hb refresh-all
 hb doctor
 ```
 
-If the Waybar health bell is orange or red, run:
+If the Waybar health heart is orange or red, run:
 
 ```bash
 hb health
 ```
 
-Right-clicking the bell runs a fresh check.
+Right-clicking the heart runs a fresh check.

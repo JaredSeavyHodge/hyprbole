@@ -33,9 +33,9 @@ From a terminal, `hb disk-usage` runs `dua i` in the current terminal. Launcher 
 
 ## System Health
 
-`System Health` opens the cached hourly health report. Waybar shows a health bell beside the date; it inherits the theme when there are no alerts, turns orange for warnings, and turns red for high alerts.
+`System Health` opens the cached hourly health report. Waybar shows a health heart beside the date; it inherits the theme when there are no alerts, turns orange for warnings, and turns red for high alerts.
 
-Left-click the Waybar bell to open the report. Right-click it to refresh the health check and update the bell state.
+Left-click the Waybar heart to open the report. Right-click it to refresh the health check and update the heart state.
 
 Run it directly with:
 

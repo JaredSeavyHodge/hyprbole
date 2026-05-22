@@ -88,7 +88,7 @@ Use `hb doctor` for a human-readable health report and supported repair flow.
 
 Use `hb verify` for a stricter install-oriented pass/fail check. `verify` exits with failure when required install state is missing or incorrect.
 
-Use `hb health` for cached disk, filesystem, systemd, and update-freshness alerts that feed the Waybar bell.
+Use `hb health` for cached disk, filesystem, systemd, and update-freshness alerts that feed the Waybar health heart.
 
 Good post-install sequence:
 
