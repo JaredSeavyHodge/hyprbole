@@ -1,23 +1,48 @@
 #!/bin/bash
 
-# hyprbole:summary=Run guided archinstall with Hyprbole base defaults
+# hyprbole:summary=Run archinstall with Hyprbole base defaults
 
 set -euo pipefail
 
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+
+BASE_CONFIG_PATH="${HYPRBOLE_ARCHINSTALL_BASE_CONFIG:-$SCRIPT_DIR/hyprbole-base.json}"
+BASE_CONFIG_URL="${HYPRBOLE_ARCHINSTALL_BASE_CONFIG_URL:-https://raw.githubusercontent.com/jaredseavyhodge/hyprbole/master/install/archinstall/hyprbole-base.json}"
 CONFIG_PATH=""
 DRY_RUN=0
+GENERATE_ONLY=0
+INTERACTIVE=0
+TARGET_DISK=""
+INSTALL_HOSTNAME=""
+INSTALL_TIMEZONE=""
+INSTALL_LANGUAGE=""
+INSTALL_LOCALE=""
+INSTALL_KEYBOARD_LAYOUT=""
+INSTALL_USERNAME=""
+CREDS_PATH=""
 EXTRA_ARGS=()
 
 usage() {
   cat <<'EOF'
-Usage: hyprbole-archinstall [--config-path <path>] [--dry-run] [-- <archinstall args...>]
+Usage: hyprbole-archinstall [options] [-- <archinstall args...>]
 
-Runs guided archinstall with Hyprbole's base-system defaults preselected.
-Disk layout, encryption, users, passwords, mirrors, locale, timezone, and
-other machine-specific choices remain editable in the archinstall TUI.
+Runs archinstall from Hyprbole's base-system config. By default this avoids the
+full archinstall TUI and asks only for target disk, hostname, timezone,
+language, locale, keyboard layout, sudo username, and sudo user password.
 
 Options:
-  --config-path <path>  Write the generated Hyprbole archinstall config there.
+  --config-path <path>  Write/use the generated Hyprbole archinstall config there.
+  --base-config <path>  Read the base config from a local JSON file.
+  --generate-only       Generate the config and exit without running archinstall.
+  --target-disk <path>  Set the disk device to wipe, such as /dev/nvme0n1.
+  --hostname <name>     Set the installed system hostname.
+  --timezone <zone>     Set the installed system timezone.
+  --language <name>     Set the archinstall language, such as English.
+  --locale <locale>     Set the system locale, such as en_US.UTF-8.
+  --keyboard-layout <layout>
+                        Set the console keyboard layout, such as us.
+  --username <name>     Set the sudo user to create.
+  --interactive         Launch archinstall normally with the config loaded.
   --dry-run             Pass --dry-run to archinstall.
   --                    Pass remaining arguments through to archinstall.
 EOF
@@ -28,6 +53,428 @@ die() {
   exit 1
 }
 
+prompt_value() {
+  local label="$1"
+  local default_value="${2:-}"
+  local value
+
+  if [[ -n $default_value ]]; then
+    printf '%s [%s]: ' "$label" "$default_value" >&2
+  else
+    printf '%s: ' "$label" >&2
+  fi
+  read -r value
+  printf '%s\n' "${value:-$default_value}"
+}
+
+prompt_validated_value() {
+  local label="$1"
+  local default_value="$2"
+  local validator="$3"
+  local value
+
+  while true; do
+    value=$(prompt_value "$label" "$default_value")
+    [[ -n $value ]] || {
+      printf '%s cannot be empty\n' "$label" >&2
+      continue
+    }
+    if "$validator" "$value"; then
+      printf '%s\n' "$value"
+      return 0
+    fi
+    printf 'invalid %s: %s\n' "$label" "$value" >&2
+  done
+}
+
+choose_from_pairs() {
+  local label="$1"
+  local default_value="${2:-}"
+  local max_results=30
+  local values=()
+  local labels=()
+  local value
+  local item_label
+  local filter=""
+  local choice
+  local match_indexes=()
+  local index
+  local shown
+  local lower_filter
+  local lower_entry
+
+  while IFS=$'\t' read -r value item_label; do
+    [[ -n $value ]] || continue
+    values+=("$value")
+    labels+=("${item_label:-$value}")
+  done
+
+  if ((${#values[@]} == 0)); then
+    if [[ -n $default_value ]]; then
+      printf '%s [%s]: ' "$label" "$default_value" >&2
+    else
+      printf '%s: ' "$label" >&2
+    fi
+    read -r value </dev/tty
+    printf '%s\n' "${value:-$default_value}"
+    return 0
+  fi
+
+  while true; do
+    match_indexes=()
+    lower_filter="${filter,,}"
+
+    for index in "${!values[@]}"; do
+      lower_entry="${values[$index],,} ${labels[$index],,}"
+      if [[ -z $lower_filter || $lower_entry == *"$lower_filter"* ]]; then
+        match_indexes+=("$index")
+      fi
+    done
+
+    printf '\n%s\n' "$label" >&2
+    [[ -n $default_value ]] && printf 'Default: %s\n' "$default_value" >&2
+    [[ -n $filter ]] && printf 'Filter: %s\n' "$filter" >&2
+
+    if ((${#match_indexes[@]} == 0)); then
+      printf 'No matches. Type another search.\n' >&2
+    else
+      shown=0
+      for index in "${match_indexes[@]}"; do
+        shown=$((shown + 1))
+        printf '  %2d) %s\n' "$shown" "${labels[$index]}" >&2
+        (( shown >= max_results )) && break
+      done
+      if ((${#match_indexes[@]} > max_results)); then
+        printf '  ... showing %d of %d matches. Type /search to narrow.\n' "$max_results" "${#match_indexes[@]}" >&2
+      fi
+    fi
+
+    printf 'Choose number, /search, or Enter for default: ' >&2
+    read -r choice </dev/tty
+
+    if [[ -z $choice && -n $default_value ]]; then
+      printf '%s\n' "$default_value"
+      return 0
+    fi
+
+    if [[ $choice == /* ]]; then
+      filter="${choice#/}"
+      continue
+    fi
+
+    if [[ $choice =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= max_results && choice <= ${#match_indexes[@]} )); then
+      index="${match_indexes[$((choice - 1))]}"
+      printf '%s\n' "${values[$index]}"
+      return 0
+    fi
+
+    filter="$choice"
+  done
+}
+
+prompt_password_hash() {
+  local label="$1"
+  local password
+  local password_confirm
+  local salt
+
+  while true; do
+    printf '%s: ' "$label" >&2
+    read -rs password
+    printf '\n' >&2
+    printf 'Confirm %s: ' "$label" >&2
+    read -rs password_confirm
+    printf '\n' >&2
+
+    [[ -n $password ]] || {
+      printf 'password cannot be empty\n' >&2
+      continue
+    }
+    [[ $password == "$password_confirm" ]] || {
+      printf 'passwords did not match\n' >&2
+      continue
+    }
+    break
+  done
+
+  salt=$(openssl rand -hex 8)
+  openssl passwd -6 -salt "$salt" <<<"$password"
+}
+
+json_value() {
+  local path="$1"
+  local expression="$2"
+
+  python - "$path" "$expression" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as file:
+    data = json.load(file)
+
+value = data
+for key in sys.argv[2].split('.'):
+    if not key:
+        continue
+    value = value.get(key, "") if isinstance(value, dict) else ""
+
+if value is None:
+    value = ""
+print(value)
+PY
+}
+
+validate_timezone() {
+  local value="$1"
+
+  if command -v timedatectl >/dev/null 2>&1; then
+    timedatectl --no-pager list-timezones 2>/dev/null | grep -Fxq -- "$value"
+    return $?
+  fi
+
+  [[ -f /usr/share/zoneinfo/$value ]]
+}
+
+validate_keyboard_layout() {
+  local value="$1"
+
+  if command -v localectl >/dev/null 2>&1; then
+    localectl --no-pager list-keymaps 2>/dev/null | grep -Fixq -- "$value"
+    return $?
+  fi
+
+  return 0
+}
+
+validate_locale() {
+  local value="$1"
+  local locale_name="${value%%[[:space:]]*}"
+
+  if [[ -r /usr/share/i18n/SUPPORTED ]]; then
+    python - "$locale_name" <<'PY'
+import sys
+
+needle = sys.argv[1]
+with open('/usr/share/i18n/SUPPORTED', encoding='utf-8') as file:
+    for line in file:
+        if line.split()[0] == needle:
+            raise SystemExit(0)
+raise SystemExit(1)
+PY
+    return $?
+  fi
+
+  return 0
+}
+
+validate_config_values() {
+  [[ -z $TARGET_DISK || $TARGET_DISK != *','* && $TARGET_DISK != *' '* ]] || \
+    die 'silent install supports one target disk only. Use --interactive for multi-disk Btrfs, encryption, or custom storage layouts.'
+
+  [[ -z $INSTALL_TIMEZONE ]] || validate_timezone "$INSTALL_TIMEZONE" || die "invalid timezone: $INSTALL_TIMEZONE"
+  [[ -z $INSTALL_LANGUAGE ]] || validate_archinstall_language "$INSTALL_LANGUAGE" || die "invalid archinstall language: $INSTALL_LANGUAGE"
+  [[ -z $INSTALL_LOCALE ]] || validate_locale "$INSTALL_LOCALE" || die "invalid system locale: $INSTALL_LOCALE"
+  [[ -z $INSTALL_KEYBOARD_LAYOUT ]] || validate_keyboard_layout "$INSTALL_KEYBOARD_LAYOUT" || die "invalid keyboard layout: $INSTALL_KEYBOARD_LAYOUT"
+}
+
+validate_archinstall_language() {
+  local value="$1"
+  local languages_path=""
+
+  for path in \
+    /usr/lib/python*/site-packages/archinstall/locales/languages.json \
+    /usr/lib/python*/dist-packages/archinstall/locales/languages.json; do
+    if [[ -r $path ]]; then
+      languages_path="$path"
+      break
+    fi
+  done
+
+  [[ -n $languages_path ]] || return 0
+
+  python - "$languages_path" "$value" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as file:
+    languages = json.load(file)
+
+needle = sys.argv[2].casefold()
+for language in languages:
+    if language.get("lang", "").casefold() == needle:
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
+language_file_path() {
+  local path
+
+  for path in \
+    /usr/lib/python*/site-packages/archinstall/locales/languages.json \
+    /usr/lib/python*/dist-packages/archinstall/locales/languages.json; do
+    if [[ -r $path ]]; then
+      printf '%s\n' "$path"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+list_archinstall_languages() {
+  local languages_path
+
+  languages_path=$(language_file_path 2>/dev/null || true)
+  [[ -n $languages_path ]] || return 0
+
+  python - "$languages_path" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as file:
+    languages = json.load(file)
+
+for language in languages:
+    name = language.get("lang", "")
+    translated = language.get("translated_lang", "")
+    if not name:
+        continue
+    label = name if not translated else f"{name} ({translated})"
+    print(f"{name}\t{label}")
+PY
+}
+
+list_timezones() {
+  command -v timedatectl >/dev/null 2>&1 || return 0
+  while IFS= read -r timezone; do
+    [[ -n $timezone ]] && printf '%s\t%s\n' "$timezone" "$timezone"
+  done < <(timedatectl --no-pager list-timezones 2>/dev/null)
+}
+
+list_locales() {
+  [[ -r /usr/share/i18n/SUPPORTED ]] || return 0
+  python - <<'PY'
+with open('/usr/share/i18n/SUPPORTED', encoding='utf-8') as file:
+    for line in file:
+        fields = line.split()
+        if not fields or fields[0] == 'C.UTF-8':
+            continue
+        print(f"{fields[0]}\t{line.rstrip()}")
+PY
+}
+
+list_keyboard_layouts() {
+  command -v localectl >/dev/null 2>&1 || return 0
+  while IFS= read -r layout; do
+    [[ -n $layout ]] && printf '%s\t%s\n' "$layout" "$layout"
+  done < <(localectl --no-pager list-keymaps 2>/dev/null)
+}
+
+list_disks() {
+  command -v lsblk >/dev/null 2>&1 || return 0
+  while read -r name size rest; do
+    local type="${rest##* }"
+    local model="${rest% $type}"
+    [[ $type == "disk" ]] || continue
+    printf '%s\t%s  %s  %s\n' "$name" "$name" "$size" "$model"
+  done < <(lsblk -dpno NAME,SIZE,MODEL,TYPE 2>/dev/null)
+}
+
+first_config_disk() {
+  local path="$1"
+
+  python - "$path" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as file:
+    data = json.load(file)
+
+mods = data.get("disk_config", {}).get("device_modifications", [])
+print(mods[0].get("device", "") if mods else "")
+PY
+}
+
+write_config() {
+  local source_path="$1"
+  local destination_path="$2"
+  local target_disk="$3"
+  local install_hostname="$4"
+  local install_timezone="$5"
+  local install_language="$6"
+  local install_locale="$7"
+  local install_keyboard_layout="$8"
+
+  python - "$source_path" "$destination_path" "$target_disk" "$install_hostname" "$install_timezone" "$install_language" "$install_locale" "$install_keyboard_layout" <<'PY'
+import json
+import sys
+
+source_path, destination_path, target_disk, install_hostname, install_timezone, install_language, install_locale, install_keyboard_layout = sys.argv[1:]
+
+with open(source_path, encoding="utf-8") as file:
+    config = json.load(file)
+
+if target_disk:
+    for modification in config.get("disk_config", {}).get("device_modifications", []):
+        modification["device"] = target_disk
+
+if install_hostname:
+    config["hostname"] = install_hostname
+
+if install_timezone:
+    config["timezone"] = install_timezone
+
+if install_language:
+    config["archinstall-language"] = install_language
+
+if install_locale or install_keyboard_layout:
+    locale_config = config.setdefault("locale_config", {})
+    if install_keyboard_layout:
+        locale_config["kb_layout"] = install_keyboard_layout
+    if install_locale:
+        locale_parts = install_locale.split()
+        sys_lang = locale_parts[0]
+        sys_enc = locale_parts[1] if len(locale_parts) > 1 else locale_config.get("sys_enc", "UTF-8")
+        if "." in sys_lang and len(locale_parts) == 1:
+            sys_enc = sys_lang.rsplit(".", 1)[1]
+        locale_config["sys_lang"] = sys_lang
+        locale_config["sys_enc"] = sys_enc
+
+with open(destination_path, "w", encoding="utf-8") as file:
+    json.dump(config, file, indent=2)
+    file.write("\n")
+PY
+}
+
+write_creds() {
+  local destination_path="$1"
+  local username="$2"
+  local password_hash="$3"
+
+  python - "$destination_path" "$username" "$password_hash" <<'PY'
+import json
+import sys
+
+destination_path, username, password_hash = sys.argv[1:]
+creds = {
+    "users": [
+        {
+            "username": username,
+            "enc_password": password_hash,
+            "sudo": True,
+            "groups": [],
+        }
+    ]
+}
+
+with open(destination_path, "w", encoding="utf-8") as file:
+    json.dump(creds, file, indent=2)
+    file.write("\n")
+PY
+  chmod 0600 "$destination_path"
+}
+
 while (( $# > 0 )); do
   case "$1" in
     --config-path|--config)
@@ -35,8 +482,56 @@ while (( $# > 0 )); do
       CONFIG_PATH="$2"
       shift 2
       ;;
+    --base-config)
+      [[ -n ${2:-} ]] || die "$1 requires a path"
+      BASE_CONFIG_PATH="$2"
+      shift 2
+      ;;
     --dry-run)
       DRY_RUN=1
+      shift
+      ;;
+    --generate-only|--write-config)
+      GENERATE_ONLY=1
+      shift
+      ;;
+    --target-disk)
+      [[ -n ${2:-} ]] || die "$1 requires a path"
+      TARGET_DISK="$2"
+      shift 2
+      ;;
+    --hostname)
+      [[ -n ${2:-} ]] || die "$1 requires a hostname"
+      INSTALL_HOSTNAME="$2"
+      shift 2
+      ;;
+    --timezone)
+      [[ -n ${2:-} ]] || die "$1 requires a timezone"
+      INSTALL_TIMEZONE="$2"
+      shift 2
+      ;;
+    --language)
+      [[ -n ${2:-} ]] || die "$1 requires a language"
+      INSTALL_LANGUAGE="$2"
+      shift 2
+      ;;
+    --locale)
+      [[ -n ${2:-} ]] || die "$1 requires a locale"
+      INSTALL_LOCALE="$2"
+      shift 2
+      ;;
+    --keyboard-layout)
+      [[ -n ${2:-} ]] || die "$1 requires a keyboard layout"
+      INSTALL_KEYBOARD_LAYOUT="$2"
+      shift 2
+      ;;
+    --username)
+      [[ -n ${2:-} ]] || die "$1 requires a username"
+      INSTALL_USERNAME="$2"
+      shift 2
+      ;;
+    --interactive)
+      INTERACTIVE=1
       shift
       ;;
     -h|--help)
@@ -54,83 +549,106 @@ while (( $# > 0 )); do
   esac
 done
 
-[[ $EUID -eq 0 ]] || die 'run this from the Arch ISO as root'
-command -v archinstall >/dev/null 2>&1 || die 'archinstall is not available; install it with: pacman -Sy archinstall'
 command -v python >/dev/null 2>&1 || die 'python is not available'
 
-if [[ -n $CONFIG_PATH ]]; then
-  mkdir -p "$(dirname "$CONFIG_PATH")"
-else
+if [[ -z $CONFIG_PATH ]]; then
   CONFIG_PATH="$(mktemp /tmp/hyprbole-archinstall.XXXXXX.json)"
+else
+  mkdir -p "$(dirname "$CONFIG_PATH")"
 fi
 
-python - "$CONFIG_PATH" <<'PY'
-import json
-import sys
+base_config_tmp=""
+if [[ -f $BASE_CONFIG_PATH ]]; then
+  base_config_tmp="$BASE_CONFIG_PATH"
+else
+  command -v curl >/dev/null 2>&1 || die "base config not found at $BASE_CONFIG_PATH and curl is unavailable"
+  base_config_tmp="$(mktemp /tmp/hyprbole-archinstall-base.XXXXXX.json)"
+  curl -fsSL "$BASE_CONFIG_URL" -o "$base_config_tmp"
+fi
 
-config = {
-    "archinstall-language": "English",
-    "app_config": {
-        "audio_config": {"audio": "pipewire"},
-    },
-    "bootloader_config": {
-        "bootloader": "limine",
-        "uki": False,
-        "removable": False,
-    },
-    "debug": False,
-    "hostname": "hyprbole",
-    "kernels": ["linux"],
-    "locale_config": {
-        "kb_layout": "us",
-        "sys_enc": "UTF-8",
-        "sys_lang": "en_US",
-    },
-    "mirror_config": {},
-    "network_config": {"type": "nm"},
-    "no_pkg_lookups": False,
-    "ntp": True,
-    "offline": False,
-    "packages": ["git"],
-    "pacman_config": {
-        "parallel_downloads": 5,
-        "color": True,
-    },
-    "profile_config": None,
-    "script": "guided",
-    "silent": False,
-    "swap": {
-        "enabled": True,
-        "algorithm": "zstd",
-    },
-    "timezone": "UTC",
-}
+if (( GENERATE_ONLY == 0 )); then
+  [[ $EUID -eq 0 ]] || die 'run this from the Arch ISO as root, or use --generate-only to write the config without launching archinstall'
+  command -v archinstall >/dev/null 2>&1 || die 'archinstall is not available; install it with: pacman -Sy archinstall'
+fi
 
-with open(sys.argv[1], "w", encoding="utf-8") as file:
-    json.dump(config, file, indent=2)
-    file.write("\n")
-PY
+if [[ -z $INSTALL_HOSTNAME ]]; then
+  INSTALL_HOSTNAME=$(json_value "$base_config_tmp" hostname)
+fi
+if [[ -z $INSTALL_TIMEZONE ]]; then
+  INSTALL_TIMEZONE=$(json_value "$base_config_tmp" timezone)
+fi
+if [[ -z $INSTALL_LANGUAGE ]]; then
+  INSTALL_LANGUAGE=$(json_value "$base_config_tmp" archinstall-language)
+fi
+if [[ -z $INSTALL_LOCALE ]]; then
+  INSTALL_LOCALE=$(json_value "$base_config_tmp" locale_config.sys_lang)
+fi
+if [[ -z $INSTALL_KEYBOARD_LAYOUT ]]; then
+  INSTALL_KEYBOARD_LAYOUT=$(json_value "$base_config_tmp" locale_config.kb_layout)
+fi
+
+validate_config_values
+
+if (( GENERATE_ONLY == 0 && INTERACTIVE == 0 )); then
+  command -v openssl >/dev/null 2>&1 || die 'openssl is required to hash the install user password'
+
+  if [[ -z $TARGET_DISK ]]; then
+    TARGET_DISK=$(list_disks | choose_from_pairs "Target disk to wipe" "$(first_config_disk "$base_config_tmp")")
+  fi
+  case "$TARGET_DISK" in
+    *','*|*' '*)
+      die 'silent install supports one target disk only. Use --interactive for multi-disk Btrfs, encryption, or custom storage layouts.'
+      ;;
+  esac
+
+  INSTALL_HOSTNAME=$(prompt_value "Hostname" "$INSTALL_HOSTNAME")
+  INSTALL_TIMEZONE=$(list_timezones | choose_from_pairs "Timezone" "$INSTALL_TIMEZONE")
+  validate_timezone "$INSTALL_TIMEZONE" || die "invalid timezone: $INSTALL_TIMEZONE"
+  INSTALL_LANGUAGE=$(list_archinstall_languages | choose_from_pairs "Archinstall language" "$INSTALL_LANGUAGE")
+  validate_archinstall_language "$INSTALL_LANGUAGE" || die "invalid archinstall language: $INSTALL_LANGUAGE"
+  INSTALL_LOCALE=$(list_locales | choose_from_pairs "System locale" "$INSTALL_LOCALE")
+  validate_locale "$INSTALL_LOCALE" || die "invalid system locale: $INSTALL_LOCALE"
+  INSTALL_KEYBOARD_LAYOUT=$(list_keyboard_layouts | choose_from_pairs "Keyboard layout" "$INSTALL_KEYBOARD_LAYOUT")
+  validate_keyboard_layout "$INSTALL_KEYBOARD_LAYOUT" || die "invalid keyboard layout: $INSTALL_KEYBOARD_LAYOUT"
+  INSTALL_USERNAME=$(prompt_value "Sudo username" "$INSTALL_USERNAME")
+  [[ -n $INSTALL_USERNAME ]] || die 'sudo username is required'
+
+  printf 'This will wipe %s using the Hyprbole Archinstall disk layout.\n' "$TARGET_DISK" >&2
+  confirm_disk=$(prompt_value "Type the target disk again to continue" "")
+  [[ $confirm_disk == "$TARGET_DISK" ]] || die 'target disk confirmation did not match'
+fi
+
+write_config "$base_config_tmp" "$CONFIG_PATH" "$TARGET_DISK" "$INSTALL_HOSTNAME" "$INSTALL_TIMEZONE" "$INSTALL_LANGUAGE" "$INSTALL_LOCALE" "$INSTALL_KEYBOARD_LAYOUT"
 
 printf 'Hyprbole archinstall wrapper\n\n'
 printf 'Generated config: %s\n\n' "$CONFIG_PATH"
 printf 'Preselected defaults:\n'
-printf '  - guided archinstall TUI\n'
 printf '  - no desktop profile\n'
 printf '  - Limine bootloader\n'
 printf '  - linux kernel\n'
 printf '  - PipeWire audio\n'
 printf '  - NetworkManager\n'
+printf '  - Btrfs with Hyprbole subvolumes\n'
 printf '  - zram swap\n'
-printf '  - NTP enabled\n'
 printf '  - git as the only bootstrap package\n\n'
-printf 'Still choose carefully in archinstall:\n'
-printf '  - disk layout and filesystem, preferably Btrfs for Hyprbole snapshots\n'
-printf '  - disk encryption\n'
-printf '  - user account with sudo/admin access\n'
-printf '  - locale, keyboard, mirrors, timezone, and hostname if the defaults are wrong\n\n'
+
+if (( GENERATE_ONLY == 1 )); then
+  printf 'Generation only; archinstall was not launched.\n'
+  exit 0
+fi
+
+archinstall_args=(--script guided --config "$CONFIG_PATH")
+
+if (( INTERACTIVE == 0 )); then
+  CREDS_PATH="$(mktemp /tmp/hyprbole-archinstall-creds.XXXXXX.json)"
+  trap '[[ -n ${CREDS_PATH:-} ]] && rm -f "$CREDS_PATH"' EXIT
+  password_hash=$(prompt_password_hash "Password for $INSTALL_USERNAME")
+  write_creds "$CREDS_PATH" "$INSTALL_USERNAME" "$password_hash"
+  archinstall_args+=(--silent --creds "$CREDS_PATH")
+fi
 
 if (( DRY_RUN == 1 )); then
-  archinstall --dry-run --config "$CONFIG_PATH" "${EXTRA_ARGS[@]}"
-else
-  archinstall --config "$CONFIG_PATH" "${EXTRA_ARGS[@]}"
+  archinstall_args+=(--dry-run)
 fi
+
+archinstall "${archinstall_args[@]}" "${EXTRA_ARGS[@]}"

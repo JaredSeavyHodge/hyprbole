@@ -14,13 +14,21 @@ chmod +x /tmp/hyprbole-archinstall
 /tmp/hyprbole-archinstall
 ```
 
-The wrapper launches guided `archinstall` with Hyprbole base defaults preselected. It does not automate disk, encryption, user, password, locale, mirror, or timezone decisions; review those choices in the TUI before installing.
+The wrapper runs `archinstall` with Hyprbole base defaults preselected. It avoids the full Archinstall TUI by default and uses a lightweight picker flow for the target disk, timezone, Archinstall language, system locale, and keyboard layout. It also asks for hostname, sudo username, and sudo user password before running `archinstall --silent`.
+
+If you want the normal Archinstall TUI with Hyprbole's config loaded, run:
+
+```bash
+/tmp/hyprbole-archinstall --interactive
+```
 
 If you want to inspect the generated config first, run:
 
 ```bash
-/tmp/hyprbole-archinstall --config-path /tmp/hyprbole-base.json --dry-run
+/tmp/hyprbole-archinstall --config-path /tmp/hyprbole-base.json --generate-only
 ```
+
+`--generate-only` only writes the JSON, so it can be used from an already installed system. Running `archinstall` still belongs on the Arch ISO.
 
 Preselected defaults:
 
@@ -29,15 +37,20 @@ Preselected defaults:
 - Kernel: `linux`.
 - Audio: PipeWire.
 - Network configuration: NetworkManager.
+- Disk layout: Btrfs with `/`, `/home`, `/var/log`, and pacman package-cache subvolumes.
 - Swap: zram with `zstd`.
 - Packages: `git` only.
 
-Still choose carefully in `archinstall`:
+The picker prompts show numbered options. Type `/text` to filter the list, then choose a number. Hostname and username are typed directly because they are machine-specific names.
 
-- Disk layout and filesystem, preferably Btrfs for Hyprbole snapshots.
-- Disk encryption.
-- Authentication, including a normal user with administrator or sudo access.
-- Locale, keyboard, mirrors, timezone, and hostname if the defaults are wrong.
+Choose carefully when the wrapper prompts:
+
+- Target disk. It will be wiped.
+- Hostname.
+- Timezone, Archinstall language, system locale, and keyboard layout from filterable lists.
+- Sudo username and password.
+
+Disk encryption is not enabled by the default wrapper config yet. Silent install supports one target disk. Use `--interactive` if you need encryption, multi-disk Btrfs, or any custom storage layout.
 
 After `archinstall` finishes, reboot into the installed system. You should land at a non-desktop terminal TTY, not a graphical login screen.
 
