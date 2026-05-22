@@ -34,6 +34,7 @@
 - Add higher-level `hyprbole` command surface. In progress.
 - Keep one-off repair commands behind `hyprbole doctor --fix` rather than public routes. In progress.
 - Open the local user guide automatically on first login after fresh install. Done.
+- Remove the temporary `hyprbole-mount-share` script. Done.
 
 ## Future Features
 
@@ -47,7 +48,6 @@
 - Consider an opt-in browser scaling helper that writes Chromium fractional-scaling flags to `~/.config/hyprbole/brave-origin-nightly-flags.conf`.
 - Add more high-value `hb` routes for user interface workflows that make sense, such as restarting Waybar and managing `swaync` or `swayosd`.
 - Continue user-guide cleanup before the next fresh install test.
-- Remove the temporary `hyprbole-mount-share` script.
 - Add a simple TUI for mounting NAS NFS or SMB shares with proper permissions.
 - Discuss whether a deeply integrated optional agentic OS layer, similar to Hermes, is viable with efficient access to Hyprland, Hyprbole, and Linux while preserving security and avoiding excessive tool calls or token use.
 - Add troubleshooting guidance for "I messed up a config," including examples for refreshing a single user-owned `.config` file.
