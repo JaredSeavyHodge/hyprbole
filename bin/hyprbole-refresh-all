@@ -73,6 +73,7 @@ if (( include_user_configs == 1 )); then
     systemd/user/hyprbole-wallpaper-cycle.service \
     systemd/user/hyprbole-wallpaper-cycle.timer \
     systemd/user/elephant.service \
+    systemd/user/hyprbole-first-login-guide.service \
     systemd/user/polkit-gnome-agent.service \
     systemd/user/swaync.service \
     systemd/user/swayosd-server.service \
