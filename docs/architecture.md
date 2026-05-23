@@ -108,7 +108,7 @@ The wrapper always passes:
 - `--password-store=gnome-libsecret`
 - `--ozone-platform-hint=auto`
 
-`bin/hyprbole-refresh-browser-launchers` generates `~/.local/share/applications/hyprbole-brave-origin-nightly.desktop` and makes it the default browser for XDG settings and common web MIME handlers.
+`bin/hyprbole-refresh-browser-launchers` writes browser flags to `~/.config/brave-origin-nightly-flags.conf`, sets the system desktop entry as the default browser for XDG settings and common web MIME handlers, and suppresses unwanted system desktop entries (from transitive dependencies).
 
 Keep `~/.config/brave-origin-nightly-flags.conf` safe for the upstream package wrapper, which does not handle multiple flags robustly. Hyprbole-specific extra Brave flags belong in `~/.config/hyprbole/brave-origin-nightly-flags.conf` and are read by the Hyprbole wrapper.
 

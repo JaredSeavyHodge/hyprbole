@@ -100,7 +100,7 @@ PAM cleanup is idempotent: removing already-removed GNOME Keyring `auth`/`passwo
 
 ## Browser Defaults
 
-Hyprbole owns Brave Origin Nightly startup through `bin/hyprbole-launch-brave-origin-nightly` and a generated desktop file at `~/.local/share/applications/hyprbole-brave-origin-nightly.desktop`.
+Hyprbole owns Brave Origin Nightly startup through `bin/hyprbole-launch-brave-origin-nightly` and writes browser flags to `~/.config/brave-origin-nightly-flags.conf` which the system launcher reads.
 
 The wrapper always passes:
 

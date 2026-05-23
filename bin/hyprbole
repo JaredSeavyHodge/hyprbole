@@ -1405,36 +1405,27 @@ doctor() {
 
   if [[ -f $HOME/.config/brave-origin-nightly-flags.conf ]]; then
     if grep -Fxq -- '--password-store=gnome-libsecret' "$HOME/.config/brave-origin-nightly-flags.conf"; then
-      doctor_report ok "$HOME/.config/brave-origin-nightly-flags.conf uses gnome-libsecret fallback"
+      doctor_report ok "Brave flags: gnome-libsecret set"
     else
-      doctor_report warn "$HOME/.config/brave-origin-nightly-flags.conf does not set --password-store=gnome-libsecret"
+      doctor_report warn "Brave flags: --password-store=gnome-libsecret missing"
+    fi
+    if grep -Fxq -- '--ozone-platform-hint=auto' "$HOME/.config/brave-origin-nightly-flags.conf"; then
+      doctor_report ok "Brave flags: ozone-platform-hint set"
+    else
+      doctor_report warn "Brave flags: --ozone-platform-hint=auto missing"
     fi
   fi
 
   if [[ -x $HYPRBOLE_PATH/bin/hyprbole-launch-brave-origin-nightly ]]; then
     doctor_report ok "$HYPRBOLE_PATH/bin/hyprbole-launch-brave-origin-nightly"
-    if grep -Fxq -- '  --password-store=gnome-libsecret' "$HYPRBOLE_PATH/bin/hyprbole-launch-brave-origin-nightly"; then
-      doctor_report ok "Hyprbole Brave launcher uses gnome-libsecret"
-    else
-      doctor_report warn "Hyprbole Brave launcher does not set --password-store=gnome-libsecret"
-    fi
-    if grep -Fxq -- '  --ozone-platform-hint=auto' "$HYPRBOLE_PATH/bin/hyprbole-launch-brave-origin-nightly"; then
-      doctor_report ok "Hyprbole Brave launcher uses Wayland auto ozone"
-    else
-      doctor_report warn "Hyprbole Brave launcher does not set --ozone-platform-hint=auto"
-    fi
   else
     doctor_report miss "$HYPRBOLE_PATH/bin/hyprbole-launch-brave-origin-nightly"
   fi
 
-  if [[ -f $HOME/.local/share/applications/hyprbole-brave-origin-nightly.desktop ]]; then
-    if grep -Fxq "Exec=$HYPRBOLE_PATH/bin/hyprbole-launch-brave-origin-nightly %U" "$HOME/.local/share/applications/hyprbole-brave-origin-nightly.desktop"; then
-      doctor_report ok "$HOME/.local/share/applications/hyprbole-brave-origin-nightly.desktop uses Hyprbole launcher"
-    else
-      doctor_report warn "$HOME/.local/share/applications/hyprbole-brave-origin-nightly.desktop does not use Hyprbole launcher"
-    fi
+  if [[ -f /usr/share/applications/brave-origin-nightly.desktop ]]; then
+    doctor_report ok "System Brave desktop entry present"
   else
-    doctor_report miss "$HOME/.local/share/applications/hyprbole-brave-origin-nightly.desktop"
+    doctor_report warn "System Brave desktop entry not found (package may be missing)"
   fi
 
   if [[ -f $HOME/.local/share/applications/hyprbole-disk-usage.desktop ]]; then

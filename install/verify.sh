@@ -188,27 +188,17 @@ verify_installation() {
   fi
 
   if ! grep -Fxq -- '--password-store=gnome-libsecret' "$HOME/.config/brave-origin-nightly-flags.conf"; then
-    printf 'Brave fallback wrapper should use gnome-libsecret password store: %s\n' "$HOME/.config/brave-origin-nightly-flags.conf" >&2
+    printf 'Brave flags should use gnome-libsecret password store: %s\n' "$HOME/.config/brave-origin-nightly-flags.conf" >&2
+    failures=$((failures + 1))
+  fi
+
+  if ! grep -Fxq -- '--ozone-platform-hint=auto' "$HOME/.config/brave-origin-nightly-flags.conf"; then
+    printf 'Brave flags should set --ozone-platform-hint=auto: %s\n' "$HOME/.config/brave-origin-nightly-flags.conf" >&2
     failures=$((failures + 1))
   fi
 
   if [[ ! -x $HYPRBOLE_PATH/bin/hyprbole-launch-brave-origin-nightly ]]; then
     printf 'missing executable Brave launcher: %s\n' "$HYPRBOLE_PATH/bin/hyprbole-launch-brave-origin-nightly" >&2
-    failures=$((failures + 1))
-  else
-    if ! grep -Fxq -- '  --password-store=gnome-libsecret' "$HYPRBOLE_PATH/bin/hyprbole-launch-brave-origin-nightly"; then
-      printf 'Hyprbole Brave launcher should use gnome-libsecret password store\n' >&2
-      failures=$((failures + 1))
-    fi
-
-    if ! grep -Fxq -- '  --ozone-platform-hint=auto' "$HYPRBOLE_PATH/bin/hyprbole-launch-brave-origin-nightly"; then
-      printf 'Hyprbole Brave launcher should use automatic Wayland/X11 ozone selection\n' >&2
-      failures=$((failures + 1))
-    fi
-  fi
-
-  if [[ -f $HOME/.local/share/applications/hyprbole-brave-origin-nightly.desktop ]] && ! grep -Fxq "Exec=$HYPRBOLE_PATH/bin/hyprbole-launch-brave-origin-nightly %U" "$HOME/.local/share/applications/hyprbole-brave-origin-nightly.desktop"; then
-    printf 'Brave desktop launcher should use Hyprbole wrapper: %s\n' "$HOME/.local/share/applications/hyprbole-brave-origin-nightly.desktop" >&2
     failures=$((failures + 1))
   fi
 

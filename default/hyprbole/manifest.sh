@@ -444,7 +444,6 @@ HYPRBOLE_DIAGNOSTIC_CONFIG_PATHS=(
   "$HOME/.config/code-flags.conf"
   "$HOME/.config/brave-origin-nightly-flags.conf"
   "$HOME/.config/elephant/menus/hyprbole-tools.toml"
-  "$HOME/.local/share/applications/hyprbole-brave-origin-nightly.desktop"
   "$HOME/.local/share/applications/hyprbole-disk-usage.desktop"
   "$HOME/.config/nvim/init.lua"
   "$HOME/.config/nvim/lua/config/lazy.lua"
@@ -486,7 +485,6 @@ HYPRBOLE_VERIFY_REQUIRED_PATHS=(
   "$HOME/.config/gtk-3.0/settings.ini"
   "$HOME/.config/gtk-4.0/settings.ini"
   "$HOME/.config/brave-origin-nightly-flags.conf"
-  "$HOME/.local/share/applications/hyprbole-brave-origin-nightly.desktop"
   "$HOME/.local/share/applications/hyprbole-disk-usage.desktop"
   "$HOME/.config/elephant/menus/hyprbole-tools.toml"
   "$HOME/.config/elephant/menus/hyprbole-fonts.lua"
@@ -494,8 +492,19 @@ HYPRBOLE_VERIFY_REQUIRED_PATHS=(
   "$HOME/.config/elephant/menus/hyprbole-power-profiles.toml"
   "$HYPRBOLE_PATH/default"
   "$HYPRBOLE_PATH/themes"
+  "$HYPRBOLE_PATH/default/hyprbole/hidden-desktop-entries"
 )
 
 HYPRBOLE_BROWSER_POLICY_SYMLINK_PATHS=(
   /etc/brave/policies/managed/color.json
+)
+
+HYPRBOLE_HIDDEN_DESKTOP_ENTRIES=(
+  avahi-discover.desktop
+  bssh.desktop
+  bvnc.desktop
+  qv4l2.desktop
+  qvidcap.desktop
+  xgps.desktop
+  xgpsspeed.desktop
 )

@@ -79,7 +79,7 @@ Regenerate the Hyprbole browser launcher:
 hyprbole-refresh-browser-launchers
 ```
 
-Check that the default browser is `hyprbole-brave-origin-nightly.desktop`.
+Check that the default browser is `brave-origin-nightly.desktop`:
 
 Then close all Brave windows and relaunch through Hyprbole.
 

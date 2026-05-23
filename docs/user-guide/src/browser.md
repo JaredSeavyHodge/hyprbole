@@ -2,23 +2,11 @@
 
 Hyprbole uses Brave Origin Nightly as the default browser.
 
-The package provides `/usr/bin/brave-origin-nightly`, but Hyprbole owns normal browser startup through:
-
-```text
-~/.local/share/hyprbole/bin/hyprbole-launch-brave-origin-nightly
-```
-
-The generated desktop entry is:
-
-```text
-~/.local/share/applications/hyprbole-brave-origin-nightly.desktop
-```
-
-Normal Hyprbole browser shortcuts, menus, and default-browser launches should go through this desktop entry or wrapper instead of the package launcher directly.
+Flags are written to `~/.config/brave-origin-nightly-flags.conf`, which the system launcher (`/usr/bin/brave-origin-nightly`) reads on every launch. This avoids a wrapper-specific desktop entry — the system `brave-origin-nightly.desktop` is used directly, so uninstalling Brave cleanly removes the entry.
 
 ## Required Flags
 
-The Hyprbole launcher always passes:
+The Hyprbole refresh script always writes:
 
 ```text
 --password-store=gnome-libsecret
@@ -29,19 +17,7 @@ The Hyprbole launcher always passes:
 
 ## Extra Flags
 
-Keep the package wrapper fallback file single-flag safe:
-
-```text
-~/.config/brave-origin-nightly-flags.conf
-```
-
-Put Hyprbole-specific extra Brave flags here:
-
-```text
-~/.config/hyprbole/brave-origin-nightly-flags.conf
-```
-
-Use one flag per line. Fully close Brave before testing changes because Chromium keeps one browser process alive for all windows.
+Add your own flags to `~/.config/brave-origin-nightly-flags.conf`. Use one per line. The refresh script preserves existing custom flags when it rewrites the file.
 
 ## Theme Policy
 
@@ -73,7 +49,7 @@ skip_browser_theme_changes = true
 
 Chromium fractional-scaling flags are not enabled globally because they are monitor, compositor, and Chromium-build dependent. They can improve odd scaling on some wide or high-DPI setups, but may also cause blurry text, odd hit testing, or UI sizing issues.
 
-To experiment, add flags to `~/.config/hyprbole/brave-origin-nightly-flags.conf`:
+To experiment, add flags to `~/.config/brave-origin-nightly-flags.conf`:
 
 ```text
 --force-device-scale-factor=1.25
@@ -89,7 +65,6 @@ Run:
 
 ```bash
 hyprbole-refresh-browser-launchers
-hb verify
 ```
 
 or use:
@@ -98,4 +73,4 @@ or use:
 hb doctor --fix
 ```
 
-Then close every Brave window and launch it again from the Hyprbole launcher, desktop entry, or browser keybind.
+Then close every Brave window and launch again.
