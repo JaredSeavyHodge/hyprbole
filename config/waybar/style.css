@@ -84,8 +84,7 @@ window#waybar {
   color: @accent;
 }
 
-#custom-idle-indicator,
-#custom-notification-indicator {
+#custom-idle-indicator {
   min-width: 12px;
   margin-left: 6px;
   margin-right: 0;
@@ -94,9 +93,16 @@ window#waybar {
 
 #custom-health,
 #custom-update,
-#pulseaudio {
+#pulseaudio,
+#custom-notification-indicator {
   font-family: "JetBrainsMono Nerd Font", "Symbols Nerd Font", "Font Awesome 7 Free", "Font Awesome 6 Free", "JetBrains Mono";
   font-size: 14px;
+}
+
+#custom-notification-indicator {
+  min-width: 12px;
+  margin-left: 6px;
+  margin-right: 0;
 }
 
 #custom-update {
@@ -120,6 +126,10 @@ window#waybar #custom-health.warning {
 
 window#waybar #custom-health.critical {
   color: #ff4d5a;
+}
+
+window#waybar #custom-notification-indicator.pending {
+  color: @accent;
 }
 
 #custom-recording-indicator {

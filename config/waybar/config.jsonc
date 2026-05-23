@@ -80,8 +80,10 @@
   "custom/notification-indicator": {
     "exec": "$HYPRBOLE_PATH/default/waybar/indicator-notifications.sh",
     "return-type": "json",
-    "interval": 10,
-    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-toggle-notifications"
+    "interval": 5,
+    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-launch-notifications",
+    "on-click-middle": "$HOME/.local/share/hyprbole/bin/hyprbole-toggle-notifications",
+    "on-click-right": "$HOME/.local/share/hyprbole/bin/hyprbole-clear-notifications"
   },
   "custom/btop": {
     "format": "",

@@ -51,6 +51,18 @@ The Utilities menu also includes `System Monitor` for `btop`, `System Info` for 
 
 `Refresh Desktop` reapplies theme and runtime state. `Refresh Shipped Configs` runs the same refresh with user config files included, which can overwrite local customizations after backing them up.
 
+## Notifications
+
+SwayNC owns desktop notifications. Waybar shows a notification bell on the right when SwayNC has notifications waiting.
+
+| Action | Behavior |
+| --- | --- |
+| Left-click bell | Open or close the SwayNC panel |
+| Middle-click bell | Toggle notification silence |
+| Right-click bell | Dismiss all SwayNC notifications |
+
+When notifications are silenced, Waybar shows the muted notification icon. If there are pending notifications while silenced, the count still appears.
+
 To inspect a specific path, pass it to Hyprbole:
 
 ```bash

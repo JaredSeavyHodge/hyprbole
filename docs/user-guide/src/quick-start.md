@@ -39,7 +39,7 @@ The left side shows the Hyprbole logo and workspaces.
 
 The center shows date/time and Hyprbole status indicators, including update and health alerts.
 
-The right side shows tray icons and quick access for idle mode, notifications, Bluetooth, audio, battery, and system monitor tools.
+The right side shows tray icons and quick access for idle mode, notifications, Bluetooth, audio, battery, and system monitor tools. When SwayNC has notifications, the bell shows a count; left-click opens the notification panel and right-click dismisses all notifications.
 
 ## Lock, Logout, Reboot
 

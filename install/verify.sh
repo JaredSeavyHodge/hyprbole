@@ -146,10 +146,13 @@ verify_installation() {
     "$HYPRBOLE_PATH/bin/hyprbole-health-updates" \
     "$HYPRBOLE_PATH/bin/hyprbole-update-indicator" \
     "$HYPRBOLE_PATH/bin/hyprbole-first-login-guide" \
+    "$HYPRBOLE_PATH/bin/hyprbole-launch-notifications" \
+    "$HYPRBOLE_PATH/bin/hyprbole-clear-notifications" \
     "$HOME/.config/hypr/hyprland.lua" \
     "$HOME/.config/systemd/user/hyprbole-first-login-guide.service" \
     "$HYPRBOLE_CONFIG_PATH/theme-sources.conf" \
     "$HOME/.config/waybar/config.jsonc" \
+    "$HYPRBOLE_PATH/default/waybar/indicator-notifications.sh" \
     "$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.service" \
     "$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.timer" \
     "/etc/systemd/system/hyprbole-health-check.service" \
