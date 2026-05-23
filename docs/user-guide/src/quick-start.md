@@ -13,6 +13,8 @@ This page covers the basic controls you need after the first-login checklist.
 
 The launcher is the fastest way to find applications. The Hyprbole menu is where common system actions, tools, themes, installs, and help entries live.
 
+In Nautilus, right-click a file or folder to open it in VS Code or Neovim.
+
 ## Use Workspaces
 
 - Click a workspace number on the top-left bar to switch to it.
