@@ -174,6 +174,7 @@ HYPRBOLE_CURATED_EXTRA_APPS=(
   "neovim|Neovim|neovim||nvim|$HOME/.config/nvim/init.lua,$HOME/.config/nvim/lua/plugins/hyprbole-theme.lua,$HYPRBOLE_CONFIG_PATH/current/theme/neovim.lua,$HOME/.config/nautilus-python/extensions/hyprbole_vscode.py"
   "onepassword|1Password||1password-beta,1password-cli,elephant-1password|1password|"
   "obsidian|Obsidian|obsidian||obsidian|"
+  "steam|Steam|steam,gamescope,gamemode,mangohud||steam|"
   "apostrophe|Apostrophe|apostrophe||apostrophe|"
   "mousepad|Mousepad|mousepad||mousepad|"
   "papers|Papers|papers||papers|"
@@ -183,6 +184,7 @@ HYPRBOLE_INSTALL_EXTRA_APPS=(
   vscode
   onepassword
   obsidian
+  steam
 )
 
 HYPRBOLE_LAUNCHER_PACKAGES=(
@@ -239,6 +241,7 @@ HYPRBOLE_SYSTEM_TOOL_PACKAGES=(
   imagemagick
   libqalculate
   pacman-contrib
+  rate-mirrors
   limine
   gnome-themes-extra
   noto-fonts
@@ -364,6 +367,7 @@ HYPRBOLE_REFRESH_USER_CONFIG_PATHS=(
   elephant/menus/hyprbole-cycle-wallpaper.toml
   elephant/menus/hyprbole-extras.toml
   elephant/menus/hyprbole-fonts.lua
+  elephant/menus/hyprbole-gaming.toml
   elephant/menus/hyprbole-help.toml
   elephant/menus/hyprbole-install.toml
   elephant/menus/hyprbole-keybinds.lua

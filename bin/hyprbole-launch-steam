@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# hyprbole:summary=Launch Steam or install the Steam gaming extra
+
+set -euo pipefail
+
+if ! command -v steam >/dev/null 2>&1; then
+  exec hyprbole launch extra-install steam
+fi
+
+exec steam "$@"

@@ -22,6 +22,12 @@ submenu = "hyprbole-capture"
 state = ["submenu"]
 
 [[entries]]
+text = "󰊲  Gaming"
+subtext = "Steam, gaming mode, and performance"
+submenu = "hyprbole-gaming"
+state = ["submenu"]
+
+[[entries]]
 text = "󰏖  Install"
 subtext = "Pacman and AUR package workflows"
 submenu = "hyprbole-install"

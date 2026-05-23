@@ -42,6 +42,9 @@ parse_args() {
       -y|--yes)
         HYPRBOLE_ASSUME_YES=1
         ;;
+      --skip-rate-mirrors)
+        HYPRBOLE_SKIP_RATE_MIRRORS=1
+        ;;
       *)
         die "unknown argument: $1"
         ;;
@@ -97,6 +100,20 @@ main() {
   log_step "Removing conflicting packages"
   remove_conflicting_packages
   warn_profile_leftovers
+
+  log_step "Enabling multilib repository"
+  ensure_multilib
+
+  log_step "Optimizing mirror list"
+  if [[ ${HYPRBOLE_SKIP_RATE_MIRRORS:-0} == 1 ]]; then
+    log_info "skipped (--skip-rate-mirrors)"
+  elif (( HYPRBOLE_ASSUME_YES == 1 )); then
+    rate_mirrors
+  else
+    if confirm "Rate mirrors for fastest downloads?"; then
+      rate_mirrors
+    fi
+  fi
 
   log_step "Installing official packages"
   install_official_packages

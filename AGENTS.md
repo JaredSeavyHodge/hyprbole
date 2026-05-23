@@ -74,6 +74,8 @@ This repository defines the `hyprbole` desktop layer for Arch Linux. The project
 - Secret Service setup creates a passwordless `Default_keyring`, backs up an encrypted `login.keyring`, removes SDDM `auth`/`password` GNOME Keyring PAM hooks, keeps session autostart hooks, and restarts the user keyring daemon when possible
 - Brave Origin Nightly is launched through `bin/hyprbole-launch-brave-origin-nightly`
 - `bin/hyprbole-refresh-browser-launchers` writes browser flags to `~/.config/brave-origin-nightly-flags.conf` and sets the system desktop entry as the default browser
+- Gaming is surfaced through a `hyprbole-gaming` Elephant submenu with Steam launch, Gamescope gaming mode launch, and Steam install options
+- `bin/hyprbole-launch-steam` and `bin/hyprbole-launch-steam-gaming-mode` are the leaf scripts for gaming menu actions
 - Hyprbole's Brave wrapper always passes `--password-store=gnome-libsecret` and `--ozone-platform-hint=auto`
 - Keep `~/.config/brave-origin-nightly-flags.conf` single-flag safe for the package wrapper; user extra Brave flags belong in `~/.config/hyprbole/brave-origin-nightly-flags.conf`
 - Do not enable Chromium fractional-scaling flags globally; keep them opt-in through the Hyprbole Brave extra flags file

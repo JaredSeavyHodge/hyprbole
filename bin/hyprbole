@@ -898,6 +898,20 @@ doctor_check_curated_extra_app() {
   done
 }
 
+ensure_multilib() {
+  if pacman -Si steam >/dev/null 2>&1; then
+    return 0
+  fi
+
+  printf 'Enabling multilib repository...\n'
+  sudo_keepalive
+
+  sudo sed -i '/^#\[multilib\]$/{s/^#//;n;s/^#//;}' /etc/pacman.conf
+
+  printf 'Syncing package databases...\n'
+  sudo pacman -Sy --noconfirm
+}
+
 extra_record() {
   local extra_id="$1"
   local record
@@ -957,6 +971,12 @@ extra_install() {
 
   printf 'Installing %s extra...\n' "$label"
 
+  case "$id" in
+    steam)
+      ensure_multilib
+      ;;
+  esac
+
   if [[ -n $official_packages_csv ]]; then
     hyprbole-health-check --disk-space-guard
     sudo_keepalive
@@ -978,6 +998,12 @@ extra_install() {
       ;;
     onepassword)
       systemctl --user restart elephant.service walker.service >/dev/null 2>&1 || true
+      ;;
+    steam)
+      if command -v yay >/dev/null 2>&1; then
+        yay -S --needed --noconfirm xpadneo game-devices-udev >/dev/null 2>&1 || \
+          printf 'Warning: controller udev/driver packages not available (controllers may need manual setup)\n'
+      fi
       ;;
   esac
 
@@ -1352,6 +1378,23 @@ doctor() {
   else
     doctor_report ok "graphical session inactive; runtime checks skipped"
   fi
+
+  if pacman -Si steam >/dev/null 2>&1; then
+    doctor_report ok "multilib repository enabled"
+  else
+    if [[ -f /etc/pacman.conf ]] && grep -q '^#\[multilib\]' /etc/pacman.conf; then
+      if (( DOCTOR_FIX == 1 )); then
+        sudo sed -i '/^#\[multilib\]$/{s/^#//;n;s/^#//;}' /etc/pacman.conf
+        sudo pacman -Sy --noconfirm >/dev/null 2>&1 || true
+        doctor_report fix "multilib repository enabled"
+      else
+        doctor_report warn "multilib repository disabled (run hyprbole doctor --fix to enable)"
+      fi
+    else
+      doctor_report warn "multilib repository not available"
+    fi
+  fi
+
   doctor_section_finish
 
   doctor_section_start "Services: system"
@@ -2143,6 +2186,9 @@ main() {
       ;;
     update)
       update_all
+      ;;
+    mirrors)
+      rate_mirrors
       ;;
     apps)
       launch_apps

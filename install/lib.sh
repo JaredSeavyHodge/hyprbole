@@ -291,3 +291,40 @@ copy_if_missing() {
 
   return 1
 }
+
+confirm() {
+  local prompt="$1"
+  local response
+
+  if [[ ${HYPRBOLE_ASSUME_YES:-0} == 1 ]]; then
+    return 0
+  fi
+
+  printf '%s [Y/n] ' "$prompt"
+  read -r response
+  [[ -z $response || $response =~ ^[Yy] ]]
+}
+
+ensure_multilib() {
+  if pacman -Si steam >/dev/null 2>&1; then
+    log_info "multilib already enabled"
+    return 0
+  fi
+
+  log_info "enabling multilib repository in /etc/pacman.conf"
+  sudo sed -i '/^#\[multilib\]$/{s/^#//;n;s/^#//;}' /etc/pacman.conf
+
+  log_info "syncing package databases"
+  sudo pacman -Sy --noconfirm
+}
+
+rate_mirrors() {
+  if ! command -v rate-mirrors >/dev/null 2>&1; then
+    log_info "installing rate-mirrors"
+    sudo pacman -S --needed --noconfirm rate-mirrors
+  fi
+
+  log_info "rating mirrors (this may take a minute)"
+  sudo rate-mirrors --allow-root --protocol https arch | sudo tee /etc/pacman.d/mirrorlist >/dev/null
+  log_info "mirrorlist updated"
+}

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# hyprbole:summary=Launch Steam in Gamescope gaming mode
+
+set -euo pipefail
+
+if ! command -v steam >/dev/null 2>&1; then
+  exec hyprbole launch extra-install steam
+fi
+
+if ! command -v gamescope >/dev/null 2>&1; then
+  exec hyprbole launch extra-install steam
+fi
+
+exec gamescope -e -f --adaptive-sync -- steam -steamdeck -steamos3 "$@"
