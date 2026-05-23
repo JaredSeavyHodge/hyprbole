@@ -33,6 +33,8 @@ The top-left bar shows workspaces. The center and right side show time, status, 
 | Terminal | Ghostty |
 | Browser | Brave Origin Nightly |
 | File manager | Nautilus |
+| Text editor | Mousepad |
+| PDF viewer | Papers |
 | Launcher | Walker |
 | Notifications | SwayNC |
 | Password manager | 1Password |

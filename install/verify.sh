@@ -132,7 +132,7 @@ verify_installation() {
     graphical_session_active=1
   fi
 
-  for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper sddm limine-update code nvim rg fd eza dua unzip lazygit tree-sitter man nvme smartctl; do
+  for binary in hyprland uwsm waybar ghostty nautilus mousepad papers swaync swayosd-client yay snapper sddm limine-update code nvim rg fd eza dua unzip lazygit tree-sitter man nvme smartctl; do
     if ! cmd_present "$binary"; then
       printf 'missing command: %s\n' "$binary" >&2
       failures=$((failures + 1))

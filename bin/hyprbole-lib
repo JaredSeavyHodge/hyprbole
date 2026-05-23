@@ -53,6 +53,8 @@ hyprbole_default_app() {
       terminal) app="ghostty" ;;
       browser) app="brave-origin-nightly" ;;
       files) app="nautilus" ;;
+      editor|text) app="mousepad" ;;
+      pdf|documents) app="papers" ;;
       *) return 1 ;;
     esac
   fi
@@ -179,6 +181,8 @@ hyprbole_app_label() {
     ghostty) printf 'Ghostty\n' ;;
     kitty) printf 'Kitty\n' ;;
     nautilus) printf 'Nautilus\n' ;;
+    mousepad) printf 'Mousepad\n' ;;
+    papers) printf 'Papers\n' ;;
     *) printf '%s\n' "$app" ;;
   esac
 }
@@ -193,6 +197,8 @@ hyprbole_app_command() {
     ghostty) printf 'ghostty\n' ;;
     kitty) printf 'kitty\n' ;;
     nautilus) printf 'nautilus\n' ;;
+    mousepad) printf 'mousepad\n' ;;
+    papers) printf 'papers\n' ;;
     *) printf '%s\n' "$app" ;;
   esac
 }

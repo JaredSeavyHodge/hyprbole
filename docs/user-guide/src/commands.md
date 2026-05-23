@@ -128,9 +128,20 @@ Health commands:
 hb default-app terminal
 hb default-app terminal command
 hb default-app browser label
+hb default-app editor
+hb default-app pdf
 ```
 
-Runtime default app choices are read from `~/.config/hyprbole/settings.toml`. The default values are Ghostty, Brave Origin Nightly, and Nautilus.
+Runtime default app choices are read from `~/.config/hyprbole/settings.toml`. The default values are Ghostty, Brave Origin Nightly, Nautilus, Mousepad, and Papers.
+
+Use `hb default-app <role>` to see the app name Hyprbole uses for one runtime role. Add `command` when you need the executable that wrappers call, or `label` when you want the human-readable name:
+
+```bash
+hb default-app browser command
+hb default-app pdf label
+```
+
+These roles are Hyprbole runtime choices, not the whole XDG MIME database. For example, `hb default-app pdf` reports `papers`, while `xdg-mime query default application/pdf` reports the desktop entry that file managers and portals use, such as `org.gnome.Papers.desktop`.
 
 ## Snapshots
 

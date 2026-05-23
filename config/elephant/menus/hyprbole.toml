@@ -29,7 +29,7 @@ state = ["submenu"]
 
 [[entries]]
 text = "󰆴  Remove"
-subtext = "Installed package removal workflows"
+subtext = "Package removal workflows"
 submenu = "hyprbole-remove"
 state = ["submenu"]
 

@@ -83,6 +83,31 @@ Check that the default browser is `hyprbole-brave-origin-nightly.desktop`.
 
 Then close all Brave windows and relaunch through Hyprbole.
 
+## Wrong App Opens A File
+
+Check the MIME default for that file type:
+
+```bash
+xdg-mime query default text/plain
+xdg-mime query default application/pdf
+xdg-mime query default inode/directory
+```
+
+Hyprbole's intended defaults are Mousepad for text files, Papers for PDFs, and Nautilus for folders. Reapply one directly if needed:
+
+```bash
+xdg-mime default org.xfce.mousepad.desktop text/plain
+xdg-mime default org.gnome.Papers.desktop application/pdf
+xdg-mime default org.gnome.Nautilus.desktop inode/directory
+```
+
+Use `hb default-app <role>` when you want to inspect the Hyprbole runtime role instead of the XDG MIME association:
+
+```bash
+hb default-app editor
+hb default-app pdf
+```
+
 ## Theme Looks Wrong
 
 Reapply the current theme:

@@ -1084,7 +1084,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Packages: apps"
-  for package in wf-recorder nautilus nautilus-python imv mpv ghostty btop obsidian visual-studio-code-bin neovim 1password-beta 1password-cli brave-origin-nightly-bin; do
+  for package in wf-recorder nautilus nautilus-python mousepad papers imv mpv ghostty btop obsidian visual-studio-code-bin neovim 1password-beta 1password-cli brave-origin-nightly-bin; do
     if pacman -Q "$package" >/dev/null 2>&1; then
       doctor_report ok "$package"
     else
@@ -1114,7 +1114,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Commands"
-  for binary in hyprland uwsm waybar ghostty nautilus swaync swayosd-client yay snapper wf-recorder grim slurp satty mise code nvim rg fd eza dua unzip lazygit tree-sitter man nvme smartctl walker elephant; do
+  for binary in hyprland uwsm waybar ghostty nautilus mousepad papers swaync swayosd-client yay snapper wf-recorder grim slurp satty mise code nvim rg fd eza dua unzip lazygit tree-sitter man nvme smartctl walker elephant; do
     if command -v "$binary" >/dev/null 2>&1; then
       doctor_report ok "$binary"
     else

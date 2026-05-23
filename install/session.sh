@@ -18,6 +18,10 @@ EOF
 
   xdg-mime default org.gnome.Nautilus.desktop inode/directory || true
   xdg-mime default com.mitchellh.ghostty.desktop x-scheme-handler/terminal || true
+  xdg-mime default org.xfce.mousepad.desktop text/plain || true
+  xdg-mime default org.xfce.mousepad.desktop text/markdown || true
+  xdg-mime default org.gnome.Papers.desktop application/pdf || true
+  xdg-mime default org.gnome.Papers.desktop application/x-pdf || true
   "$HYPRBOLE_PATH/bin/hyprbole-refresh-browser-launchers" >/dev/null 2>&1 || true
   "$HYPRBOLE_PATH/bin/hyprbole-refresh-tool-launchers" >/dev/null 2>&1 || true
   xdg-mime default imv.desktop image/png || true

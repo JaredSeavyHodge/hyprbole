@@ -22,6 +22,8 @@ HYPRBOLE_OFFICIAL_PACKAGES=(
   wf-recorder
   nautilus
   nautilus-python
+  mousepad
+  papers
   imv
   mpv
   ghostty

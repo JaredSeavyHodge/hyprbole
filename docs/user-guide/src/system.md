@@ -30,6 +30,33 @@ Hyprbole is the desktop layer on top of Arch Linux. This page is for understandi
 
 Hyprbole should be understandable from files on disk. When in doubt, inspect the relevant file under these paths.
 
+## Default Apps And MIME
+
+Hyprbole has two related default-app layers:
+
+| Layer | Purpose |
+| --- | --- |
+| `hb default-app <role>` | Shows the runtime app Hyprbole wrappers use for roles such as `browser`, `terminal`, `files`, `editor`, and `pdf` |
+| `xdg-mime` | Controls which desktop file opens a MIME type from file managers, portals, browsers, and other desktop apps |
+
+Examples:
+
+```bash
+hb default-app editor
+hb default-app pdf command
+xdg-mime query default text/plain
+xdg-mime query default application/pdf
+```
+
+Install applies Hyprbole's current MIME defaults with `xdg-mime`: Mousepad for text, Papers for PDFs, Nautilus for folders, imv for images, mpv for video, and the Hyprbole Brave launcher for web links.
+
+Set a MIME default directly when you know the desktop file and MIME type:
+
+```bash
+xdg-mime default org.xfce.mousepad.desktop text/plain
+xdg-mime default org.gnome.Papers.desktop application/pdf
+```
+
 ## Editing Rule Of Thumb
 
 Edit files under `~/.config` for your own machine. Treat `~/.local/share/hyprbole/default` and `~/.local/share/hyprbole/bin` as Hyprbole-owned framework files unless you are developing Hyprbole itself.

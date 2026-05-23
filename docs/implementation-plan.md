@@ -40,6 +40,9 @@
 - Add high-value `hb restart` routes for common UI workflows. Done.
 - Change the Waybar health indicator from a bell to a heart. Done.
 - Add a lightweight Waybar notification bell for SwayNC with right-click dismissal. Done.
+- Evaluate lightweight, nicely themable text/PDF default app candidates. Done.
+- Use `mousepad` and `papers` as default text/PDF apps. Done.
+- Evaluate clean, free, lightweight Markdown viewer candidates. Done.
 
 ## Future Features
 
@@ -53,7 +56,8 @@
 - Consider an opt-in browser scaling helper that writes Chromium fractional-scaling flags to `~/.config/hyprbole/brave-origin-nightly-flags.conf`.
 - Add a simple TUI for mounting NAS NFS or SMB shares with proper permissions.
 - Discuss whether a deeply integrated optional agentic OS layer, similar to Hermes, is viable with efficient access to Hyprland, Hyprbole, and Linux while preserving security and avoiding excessive tool calls or token use.
-- Evaluate lightweight, nicely themable default apps for common MIME types, especially a simple notepad-style editor and a beautiful PDF viewer/signer that can fit the current theme system.
+- Add optional `xournalpp` or `okular` install workflows for PDF signing/annotation.
+- Consider a `glow`-backed Markdown viewer role or launcher for read-only Markdown viewing; keep `text/markdown` editable in Mousepad unless users explicitly choose a viewer workflow.
 - Add a Walker `Install` submenu for office suites, including LibreOffice and any better alternatives, with an option to consider a Brave-powered Microsoft Office web app.
 - Add a main Walker `Gaming` submenu with an install menu for Steam and, if officially available for Linux, Discord.
 - Discuss a Steam Deck-like gaming mode that launches Steam through `gamescope` or compositor switching for media-center PCs, while accounting for the added complexity.
