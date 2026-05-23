@@ -21,3 +21,21 @@ text = "󰎞  Obsidian"
 subtext = "Install Markdown knowledge-base app"
 actions = { activate = "hyprbole-launch-extra-install obsidian" }
 state = ["sublevel"]
+
+[[entries]]
+text = "󰓓  Steam"
+subtext = "Install Steam with Gamescope, GameMode, and controller support"
+actions = { activate = "hyprbole-launch-extra-install steam" }
+state = ["sublevel"]
+
+[[entries]]
+text = "󰙯  Discord"
+subtext = "Install Discord chat client"
+actions = { activate = "hyprbole-launch-extra-install discord" }
+state = ["sublevel"]
+
+[[entries]]
+text = "󰈙  LibreOffice"
+subtext = "Install LibreOffice office suite"
+actions = { activate = "hyprbole-launch-extra-install libreoffice" }
+state = ["sublevel"]

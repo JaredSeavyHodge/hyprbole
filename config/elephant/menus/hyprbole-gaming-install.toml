@@ -1,0 +1,17 @@
+name = "hyprbole-gaming-install"
+name_pretty = "Install"
+hide_from_providerlist = true
+parent = "hyprbole-gaming"
+fixed_order = true
+
+[[entries]]
+text = "󰓓  Steam"
+subtext = "Install Steam with Gamescope, GameMode, and controller support"
+actions = { activate = "hyprbole-launch-extra-install steam" }
+state = ["sublevel"]
+
+[[entries]]
+text = "󰙯  Discord"
+subtext = "Install Discord chat client"
+actions = { activate = "hyprbole-launch-extra-install discord" }
+state = ["sublevel"]

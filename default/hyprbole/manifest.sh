@@ -175,6 +175,8 @@ HYPRBOLE_CURATED_EXTRA_APPS=(
   "onepassword|1Password||1password-beta,1password-cli,elephant-1password|1password|"
   "obsidian|Obsidian|obsidian||obsidian|"
   "steam|Steam|steam,gamescope,gamemode,mangohud||steam|"
+  "discord|Discord|discord||discord|"
+  "libreoffice|LibreOffice|libreoffice-fresh||libreoffice|"
   "apostrophe|Apostrophe|apostrophe||apostrophe|"
   "mousepad|Mousepad|mousepad||mousepad|"
   "papers|Papers|papers||papers|"
@@ -185,6 +187,8 @@ HYPRBOLE_INSTALL_EXTRA_APPS=(
   onepassword
   obsidian
   steam
+  discord
+  libreoffice
 )
 
 HYPRBOLE_LAUNCHER_PACKAGES=(
@@ -226,6 +230,8 @@ HYPRBOLE_SYSTEM_TOOL_PACKAGES=(
   gnome-keyring
   playerctl
   brightnessctl
+  cifs-utils
+  nfs-utils
   xdg-user-dirs
   xdg-utils
   gvfs
@@ -368,6 +374,7 @@ HYPRBOLE_REFRESH_USER_CONFIG_PATHS=(
   elephant/menus/hyprbole-extras.toml
   elephant/menus/hyprbole-fonts.lua
   elephant/menus/hyprbole-gaming.toml
+  elephant/menus/hyprbole-gaming-install.toml
   elephant/menus/hyprbole-help.toml
   elephant/menus/hyprbole-install.toml
   elephant/menus/hyprbole-keybinds.lua

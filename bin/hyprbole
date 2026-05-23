@@ -60,6 +60,8 @@ Tools:
   utilities
   disk-usage [path...]
   health [refresh|updates]
+  mirrors
+  mount
 
 Launch:
   apps
@@ -80,6 +82,7 @@ Launch:
   launch launcher
   launch disk-usage [path...]
   launch health
+  launch mount-share
   launch my-wallpaper-menu
   launch themes
   launch wallpaper-menu
@@ -2190,6 +2193,9 @@ main() {
     mirrors)
       rate_mirrors
       ;;
+    mount)
+      hyprbole-launch-mount-share
+      ;;
     apps)
       launch_apps
       ;;
@@ -2292,6 +2298,10 @@ main() {
           ;;
         health)
           launch_health
+          ;;
+        mount-share)
+          shift 2
+          hyprbole-launch-mount-share
           ;;
         themes)
           launch_themes
