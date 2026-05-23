@@ -106,14 +106,16 @@ The installer is interactive. It asks for your Git full name and email, then use
 
 ## What Install Does
 
-- Installs official Arch packages.
+- Installs official Arch packages, including core desktop tools and default local apps.
 - Installs `yay`.
-- Installs the curated AUR package set.
+- Installs the base curated AUR package set.
 - Configures Git identity from prompts.
 - Deploys missing user config from `config/`.
 - Generates current theme/runtime state.
 - Configures SDDM, services, browser launchers, and Keyring.
 - Runs verification at the end.
+
+Optional curated app integrations such as VS Code, 1Password, and Obsidian are installed later from `Install`, `Extras` or with `hb extra install <name>`.
 
 ## Rerunning Install
 

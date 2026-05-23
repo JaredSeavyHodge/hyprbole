@@ -40,7 +40,9 @@ Doctor currently checks these sections:
 | Checkout | `~/.local/share/hyprbole` is a Git checkout |
 | Packages: core desktop | Hyprland, UWSM, Waybar, SDDM, PipeWire, portals, lock/idle tools, and related desktop packages |
 | Competing packages | Known conflicting packages such as `dunst` and PulseAudio packages are absent |
-| Packages: apps | Default apps such as Ghostty, Nautilus, Neovim, VS Code, Brave Origin Nightly, 1Password, and media tools |
+| Packages: apps | Required app-support packages such as recording and system monitor tools |
+| Default apps | The selected runtime apps for roles such as terminal, browser, file manager, editor, and PDF viewer resolve to available commands |
+| Curated extras | Hyprbole-integrated apps such as VS Code, Neovim, 1Password, Obsidian, Apostrophe, Mousepad, and Papers when they are installed |
 | Packages: launcher | Walker and Elephant provider packages |
 | Packages: system tools | Shell tools, fonts, icons, Snapper/Limine tools, `eza`, `dua-cli`, `man-db`, and other support packages |
 | Commands | Required executables and Hyprbole health helpers are available |
@@ -56,6 +58,8 @@ Doctor currently checks these sections:
 ## What `--fix` Can Repair
 
 `hb doctor --fix` is intentionally limited to Hyprbole-owned state and normal runtime services.
+
+Doctor does not require optional curated extras to be installed. When an extra is installed, Doctor checks the related command and integration files. Runtime default app roles are checked by the selected command, not by forcing the original Hyprbole preference.
 
 It can repair or attempt to repair:
 

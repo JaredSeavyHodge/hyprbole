@@ -1,6 +1,6 @@
 # App Launcher
 
-Walker is Hyprbole's launcher UI. It opens apps, web searches, calculations, files, clipboard history, 1Password entries, symbols, commands, and Hyprbole menus.
+Walker is Hyprbole's launcher UI. It opens apps, web searches, calculations, files, clipboard history, symbols, commands, and Hyprbole menus. 1Password entries are available when the 1Password extra is installed.
 
 ## Open App Launcher
 
@@ -51,12 +51,12 @@ Hyprbole configures provider prefixes in `~/.config/walker/config.toml`.
 | `.` | Symbols | `. lambda` |
 | `@` | Web search | `@ arch wiki snapper` |
 | `:` | Clipboard history | `: password` |
-| `p:` | 1Password | `p: github` |
+| `p:` | 1Password extra | `p: github` |
 
 The launcher placeholder shows the same summary:
 
 ```text
-Search   = calc  > run  / files  . symbols  @ web  : clipboard  p: passwords
+Search   = calc  > run  / files  . symbols  @ web  : clipboard  p: passwords when installed
 ```
 
 ## Hyprbole Menu
@@ -70,7 +70,7 @@ The top-level menu includes:
 | Applications | Browser, files, passwords, app launcher |
 | Appearance | Themes, wallpapers, fonts |
 | Capture | Screenshots and recordings |
-| Install | Pacman and AUR package install workflows |
+| Install | Curated extras, Pacman, and AUR package install workflows |
 | Remove | Package inspection and removal workflows |
 | System | Settings, utilities, power, update, session actions |
 | Help | User guide and keybinds |
@@ -102,7 +102,7 @@ Use `/` to browse files through Walker's file provider.
 
 Use `:` or `SUPER + V` for clipboard history.
 
-Use `p:` or the 1Password entry from the Apps menu for password lookup. Password support depends on the 1Password and Elephant 1Password packages installed by Hyprbole.
+Use `p:` or the 1Password entry from the Apps menu for password lookup after installing the 1Password extra from `Install`, `Extras`.
 
 ## Utilities Menu
 

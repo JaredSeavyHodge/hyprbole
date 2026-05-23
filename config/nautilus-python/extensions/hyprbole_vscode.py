@@ -21,21 +21,23 @@ class HyprboleVSCodeExtension(GObject.GObject, Nautilus.MenuProvider):
 
         items = []
 
-        code_item = Nautilus.MenuItem(
-            name="HyprboleVSCodeExtension::open_in_code",
-            label="Open in VS Code",
-            tip="Open the selected file or folder in Visual Studio Code",
-        )
-        code_item.connect("activate", self._open_in_code, path)
-        items.append(code_item)
+        if shutil.which("code"):
+            code_item = Nautilus.MenuItem(
+                name="HyprboleVSCodeExtension::open_in_code",
+                label="Open in VS Code",
+                tip="Open the selected file or folder in Visual Studio Code",
+            )
+            code_item.connect("activate", self._open_in_code, path)
+            items.append(code_item)
 
-        nvim_item = Nautilus.MenuItem(
-            name="HyprboleVSCodeExtension::open_in_neovim",
-            label="Open in Neovim",
-            tip="Open the selected file or folder in Neovim",
-        )
-        nvim_item.connect("activate", self._open_in_neovim, path)
-        items.append(nvim_item)
+        if shutil.which("nvim"):
+            nvim_item = Nautilus.MenuItem(
+                name="HyprboleVSCodeExtension::open_in_neovim",
+                label="Open in Neovim",
+                tip="Open the selected file or folder in Neovim",
+            )
+            nvim_item.connect("activate", self._open_in_neovim, path)
+            items.append(nvim_item)
 
         if self._is_wallpaper_candidate(path):
             wallpaper_item = Nautilus.MenuItem(

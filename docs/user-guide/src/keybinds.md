@@ -37,8 +37,8 @@ There are a few practical exceptions. `H/J/K/L` and `S` are already used for win
 | `SUPER + RETURN` | Terminal |
 | `SUPER + SHIFT + B` | Browser |
 | `SUPER + SHIFT + F` | File manager |
-| `SUPER + SHIFT + N` | Obsidian |
-| `SUPER + SHIFT + /` | 1Password |
+| `SUPER + SHIFT + N` | Obsidian, when installed |
+| `SUPER + SHIFT + /` | 1Password, or install the 1Password extra |
 | `SUPER + Q` | Close focused window |
 | `SUPER + T` | Toggle floating window |
 | `SUPER + F` | Toggle fullscreen |

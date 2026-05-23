@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# hyprbole:summary=Launch curated extra installation in an interactive terminal
+# hyprbole:args=<name>
+
+set -euo pipefail
+
+exec hyprbole launch extra-install "$@"

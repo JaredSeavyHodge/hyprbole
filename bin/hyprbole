@@ -10,10 +10,6 @@ source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
 UPDATE_ORPHANS_REMOVED=0
 UPDATE_CACHE_RECLAIMED_BYTES=0
 HYPRBOLE_SUDO_KEEPALIVE_PID=""
-HYPRBOLE_CORE_USER_UNITS=(pipewire.service pipewire-pulse.service wireplumber.service gnome-keyring-daemon.socket)
-HYPRBOLE_GRAPHICAL_USER_UNITS=(swayosd-server.service polkit-gnome-agent.service elephant.service walker.service swaync.service)
-HYPRBOLE_USER_UNITS=("${HYPRBOLE_CORE_USER_UNITS[@]}" "${HYPRBOLE_GRAPHICAL_USER_UNITS[@]}")
-
 if [[ ${1:-} == "update" ]] && [[ -z ${HYPRBOLE_UPDATE_LOGGED:-} ]] && command -v script >/dev/null 2>&1; then
   script_command=$(printf '%q ' "$0" "$@")
   exec env HYPRBOLE_UPDATE_LOGGED=1 script -qefc "$script_command" "/tmp/hyprbole-update.log"
@@ -56,6 +52,8 @@ Packages:
   pkg install
   pkg aur-install
   pkg remove
+  extra list
+  extra install <name>
 
 Tools:
   tools
@@ -90,6 +88,7 @@ Launch:
   launch pkg-install
   launch pkg-aur-install
   launch pkg-remove
+  launch extra-install <name>
 
 Capture:
   capture region
@@ -819,6 +818,172 @@ doctor_check_user_unit() {
   fi
 }
 
+doctor_check_default_app_role() {
+  local role="$1"
+  local app=""
+  local command_name=""
+  local label=""
+
+  if ! app="$(hyprbole_default_app "$role")"; then
+    doctor_report warn "default $role app is not configured"
+    return 0
+  fi
+
+  command_name="$(hyprbole_app_command "$app")"
+  label="$(hyprbole_app_label "$app")"
+
+  if hyprbole_command_available "$command_name"; then
+    doctor_report ok "default $role app available: $label ($command_name)"
+  else
+    doctor_report warn "default $role app command missing: $label ($command_name)"
+  fi
+}
+
+doctor_check_curated_extra_app() {
+  local record="$1"
+  local id
+  local label
+  local official_packages_csv
+  local aur_packages_csv
+  local commands_csv
+  local paths_csv
+  local packages=()
+  local commands=()
+  local paths=()
+  local package
+  local command_name
+  local path
+  local present=0
+
+  IFS='|' read -r id label official_packages_csv aur_packages_csv commands_csv paths_csv <<<"$record"
+
+  IFS=',' read -ra packages <<<"$official_packages_csv,$aur_packages_csv"
+  for package in "${packages[@]}"; do
+    [[ -n $package ]] || continue
+    if pacman -Q "$package" >/dev/null 2>&1; then
+      present=1
+      doctor_report ok "$label package installed: $package"
+    fi
+  done
+
+  IFS=',' read -ra commands <<<"$commands_csv"
+  for command_name in "${commands[@]}"; do
+    [[ -n $command_name ]] || continue
+    if hyprbole_command_available "$command_name"; then
+      present=1
+      doctor_report ok "$label command available: $command_name"
+    fi
+  done
+
+  if (( present == 0 )); then
+    doctor_report ok "$label optional extra not installed"
+    return 0
+  fi
+
+  for command_name in "${commands[@]}"; do
+    [[ -n $command_name ]] || continue
+    if ! hyprbole_command_available "$command_name"; then
+      doctor_report warn "$label command missing: $command_name"
+    fi
+  done
+
+  IFS=',' read -ra paths <<<"$paths_csv"
+  for path in "${paths[@]}"; do
+    [[ -n $path ]] || continue
+    if [[ -e $path ]]; then
+      doctor_report ok "$label integration path: $path"
+    else
+      doctor_report warn "$label integration path missing: $path"
+    fi
+  done
+}
+
+extra_record() {
+  local extra_id="$1"
+  local record
+  local id
+
+  for record in "${HYPRBOLE_CURATED_EXTRA_APPS[@]}"; do
+    id="${record%%|*}"
+    if [[ $id == "$extra_id" ]]; then
+      printf '%s\n' "$record"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+extra_list() {
+  local extra_id
+  local record
+  local id
+  local label
+
+  for extra_id in "${HYPRBOLE_INSTALL_EXTRA_APPS[@]}"; do
+    record="$(extra_record "$extra_id")" || continue
+    IFS='|' read -r id label _ <<<"$record"
+    printf '%s\t%s\n' "$id" "$label"
+  done
+}
+
+extra_install() {
+  local extra_id="$1"
+  local record
+  local id
+  local label
+  local official_packages_csv
+  local aur_packages_csv
+  local commands_csv
+  local paths_csv
+  local official_packages=()
+  local aur_packages=()
+
+  [[ -n $extra_id ]] || {
+    extra_list
+    return 1
+  }
+
+  record="$(extra_record "$extra_id")" || {
+    printf 'unknown extra: %s\n' "$extra_id" >&2
+    printf 'Available extras:\n' >&2
+    extra_list >&2
+    return 1
+  }
+
+  IFS='|' read -r id label official_packages_csv aur_packages_csv commands_csv paths_csv <<<"$record"
+  IFS=',' read -ra official_packages <<<"$official_packages_csv"
+  IFS=',' read -ra aur_packages <<<"$aur_packages_csv"
+
+  printf 'Installing %s extra...\n' "$label"
+
+  if [[ -n $official_packages_csv ]]; then
+    hyprbole-health-check --disk-space-guard
+    sudo_keepalive
+    sudo pacman -S --needed --noconfirm "${official_packages[@]}"
+  fi
+
+  if [[ -n $aur_packages_csv ]]; then
+    command -v yay >/dev/null 2>&1 || {
+      printf 'missing required command: yay\n' >&2
+      return 1
+    }
+    hyprbole-health-check --disk-space-guard
+    yay -S --needed --noconfirm "${aur_packages[@]}"
+  fi
+
+  case "$id" in
+    vscode)
+      hyprbole-refresh-vscode >/dev/null 2>&1 || true
+      ;;
+    onepassword)
+      systemctl --user restart elephant.service walker.service >/dev/null 2>&1 || true
+      ;;
+  esac
+
+  printf '%s extra installed.\n' "$label"
+}
+
 secret_service_read_alias() {
   local alias="$1"
   local output
@@ -1027,11 +1192,13 @@ doctor_check_secret_service() {
 
 doctor() {
   local binary
+  local app
   local failed_units
   local graphical_session_active=0
   local package
   local path
   local policy_path
+  local role
   local unit
 
   local DOCTOR_FIX=0
@@ -1064,7 +1231,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Packages: core desktop"
-  for package in hyprland uwsm waybar sddm swaync swayosd pipewire pipewire-audio pipewire-alsa pipewire-pulse wireplumber xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk polkit-gnome qt5-wayland qt6-wayland hypridle hyprlock awww polkit; do
+  for package in "${HYPRBOLE_CORE_DESKTOP_PACKAGES[@]}"; do
     if pacman -Q "$package" >/dev/null 2>&1; then
       doctor_report ok "$package"
     else
@@ -1074,7 +1241,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Competing packages"
-  for package in dunst pulseaudio pulseaudio-alsa pulseaudio-bluetooth; do
+  for package in "${HYPRBOLE_CONFLICTING_PACKAGES[@]}"; do
     if pacman -Q "$package" >/dev/null 2>&1; then
       doctor_report warn "$package installed"
     else
@@ -1084,7 +1251,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Packages: apps"
-  for package in wf-recorder nautilus nautilus-python mousepad papers imv mpv ghostty btop obsidian visual-studio-code-bin neovim 1password-beta 1password-cli brave-origin-nightly-bin; do
+  for package in "${HYPRBOLE_APP_PACKAGES[@]}"; do
     if pacman -Q "$package" >/dev/null 2>&1; then
       doctor_report ok "$package"
     else
@@ -1093,8 +1260,20 @@ doctor() {
   done
   doctor_section_finish
 
+  doctor_section_start "Default apps"
+  for role in "${HYPRBOLE_RUNTIME_APP_ROLES[@]}"; do
+    doctor_check_default_app_role "$role"
+  done
+  doctor_section_finish
+
+  doctor_section_start "Curated extras"
+  for app in "${HYPRBOLE_CURATED_EXTRA_APPS[@]}"; do
+    doctor_check_curated_extra_app "$app"
+  done
+  doctor_section_finish
+
   doctor_section_start "Packages: launcher"
-  for package in walker-bin elephant elephant-1password elephant-calc elephant-clipboard elephant-desktopapplications elephant-files elephant-menus elephant-runner elephant-symbols elephant-websearch; do
+  for package in "${HYPRBOLE_LAUNCHER_PACKAGES[@]}"; do
     if pacman -Q "$package" >/dev/null 2>&1; then
       doctor_report ok "$package"
     else
@@ -1104,7 +1283,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Packages: system tools"
-  for package in yay-bin bash-completion mise starship zoxide fzf bat eza dua-cli fd ripgrep unzip lazygit tree-sitter-cli wl-clipboard grim slurp satty pavucontrol nm-connection-editor network-manager-applet blueman gnome-keyring playerctl brightnessctl xdg-user-dirs xdg-utils gvfs gvfs-mtp libsecret git curl jq nvme-cli smartmontools man-db man-pages imagemagick libqalculate pacman-contrib limine gnome-themes-extra noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra rust ttf-cascadia-code ttf-dejavu ttf-fira-code ttf-hack ttf-jetbrains-mono ttf-jetbrains-mono-nerd ttf-liberation ttf-nerd-fonts-symbols ttf-opensans ttf-roboto ttf-ubuntu-font-family inter-font otf-font-awesome papirus-icon-theme adwaita-icon-theme hicolor-icon-theme base-devel snapper limine-snapper-sync limine-mkinitcpio-hook hyprsysteminfo; do
+  for package in "${HYPRBOLE_SYSTEM_TOOL_PACKAGES[@]}"; do
     if pacman -Q "$package" >/dev/null 2>&1; then
       doctor_report ok "$package"
     else
@@ -1114,14 +1293,14 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Commands"
-  for binary in hyprland uwsm waybar ghostty nautilus mousepad papers swaync swayosd-client yay snapper wf-recorder grim slurp satty mise code nvim rg fd eza dua unzip lazygit tree-sitter man nvme smartctl walker elephant; do
+  for binary in "${HYPRBOLE_REQUIRED_COMMANDS[@]}"; do
     if command -v "$binary" >/dev/null 2>&1; then
       doctor_report ok "$binary"
     else
       doctor_report miss "$binary"
     fi
   done
-  for binary in hyprbole-health-check hyprbole-health-indicator hyprbole-health-report hyprbole-health-updates hyprbole-update-indicator; do
+  for binary in "${HYPRBOLE_DOCTOR_HELPER_SCRIPTS[@]}"; do
     if [[ -x $HYPRBOLE_PATH/bin/$binary ]]; then
       doctor_report ok "$binary"
     else
@@ -1212,18 +1391,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Configs"
-  for path in \
-    "$HOME/.config/hypr/hyprland.lua" \
-    "$HYPRBOLE_CONFIG_PATH/theme-sources.conf" \
-    "$HOME/.config/waybar/config.jsonc" \
-    "$HOME/.config/swaync/config.json" \
-    "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf" \
-    "$HOME/.config/code-flags.conf" \
-    "$HOME/.config/brave-origin-nightly-flags.conf" \
-    "$HOME/.config/elephant/menus/hyprbole-tools.toml" \
-    "$HOME/.local/share/applications/hyprbole-disk-usage.desktop" \
-    "$HOME/.config/systemd/user/polkit-gnome-agent.service" \
-    "$HOME/.config/systemd/user/swaync.service"; do
+  for path in "${HYPRBOLE_DOCTOR_CONFIG_PATHS[@]}"; do
     if [[ -e $path ]]; then
       doctor_report ok "$path"
     else
@@ -1233,15 +1401,6 @@ doctor() {
 
   if [[ -f $HOME/.config/hypr/hyprland.conf ]]; then
     doctor_report warn "conflicting Hyprland config: $HOME/.config/hypr/hyprland.conf"
-  fi
-
-  if [[ -f $HOME/.config/code-flags.conf ]]; then
-    if grep -Fxq -- '--password-store=gnome-libsecret' "$HOME/.config/code-flags.conf"; then
-      doctor_report ok "$HOME/.config/code-flags.conf uses gnome-libsecret"
-    else
-      doctor_report warn "$HOME/.config/code-flags.conf does not set --password-store=gnome-libsecret"
-    fi
-
   fi
 
   if [[ -f $HOME/.config/brave-origin-nightly-flags.conf ]]; then
@@ -1294,14 +1453,7 @@ doctor() {
   doctor_section_finish
 
   doctor_section_start "Theme State"
-  for path in \
-    "$HYPRBOLE_CONFIG_PATH/current/theme-name" \
-    "$HYPRBOLE_CONFIG_PATH/current/background" \
-    "$HYPRBOLE_CONFIG_PATH/current/theme/waybar.css" \
-    "$HYPRBOLE_CONFIG_PATH/current/theme/ghostty.conf" \
-    "$HOME/.config/gtk-3.0/settings.ini" \
-    "$HOME/.config/gtk-4.0/settings.ini" \
-    "$HYPRBOLE_CONFIG_PATH/current/theme/vscode.json"; do
+  for path in "${HYPRBOLE_DOCTOR_THEME_STATE_PATHS[@]}"; do
     if [[ -e $path ]]; then
       doctor_report ok "$path"
     else
@@ -1318,8 +1470,7 @@ doctor() {
     doctor_report miss "$policy_path"
   fi
 
-  for path in \
-    /etc/brave/policies/managed/color.json; do
+  for path in "${HYPRBOLE_BROWSER_POLICY_SYMLINK_PATHS[@]}"; do
     if [[ -L $path ]]; then
       doctor_report ok "$path symlink"
     elif [[ -e $path ]]; then
@@ -1514,6 +1665,17 @@ launch_pkg_install() {
 
 launch_pkg_aur_install() {
   hyprbole_launch_floating_terminal com.hyprbole.pkg-aur-install "Install AUR Packages" hyprbole-pkg-aur-install
+}
+
+launch_extra_install() {
+  local extra_id="$1"
+
+  [[ -n $extra_id ]] || {
+    extra_list
+    return 1
+  }
+
+  hyprbole_launch_floating_terminal com.hyprbole.extra-install "Install Extra" bash -lc 'hyprbole extra install "$1"; status=$?; if (( status != 0 )); then printf "\nExtra install failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _' hyprbole-extra-install "$extra_id"
 }
 
 launch_pkg_remove() {
@@ -2050,6 +2212,20 @@ main() {
           ;;
       esac
       ;;
+    extra|extras)
+      case "${2:-}" in
+        list|"")
+          extra_list
+          ;;
+        install)
+          [[ -n ${3:-} ]] || usage
+          extra_install "$3"
+          ;;
+        *)
+          usage
+          ;;
+      esac
+      ;;
     launch)
       case "${2:-}" in
         apps)
@@ -2103,6 +2279,10 @@ main() {
           ;;
         pkg-remove)
           launch_pkg_remove
+          ;;
+        extra-install)
+          [[ -n ${3:-} ]] || usage
+          launch_extra_install "$3"
           ;;
         *)
           usage

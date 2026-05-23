@@ -93,7 +93,7 @@ xdg-mime query default application/pdf
 xdg-mime query default inode/directory
 ```
 
-Hyprbole's intended defaults are Mousepad for text files, Papers for PDFs, and Nautilus for folders. Reapply one directly if needed:
+Hyprbole's intended MIME defaults are Mousepad for text files, Papers for PDFs, and Nautilus for folders. Apostrophe and Neovim are also installed as editor tools, and VS Code is available from Extras. Mousepad remains the default text-file association. Reapply one directly if needed:
 
 ```bash
 xdg-mime default org.xfce.mousepad.desktop text/plain

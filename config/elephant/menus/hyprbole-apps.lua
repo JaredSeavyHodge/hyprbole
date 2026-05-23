@@ -15,6 +15,17 @@ local function app_label(role)
   return output:gsub("%s+$", "")
 end
 
+local function command_exists(command)
+  local handle = io.popen("command -v " .. command .. " 2>/dev/null")
+  if handle == nil then
+    return false
+  end
+
+  local output = handle:read("*a") or ""
+  handle:close()
+  return output ~= ""
+end
+
 function GetEntries()
   return {
     {
@@ -41,11 +52,18 @@ function GetEntries()
       },
       State = { "sublevel" },
     },
-    {
+    command_exists("1password") and {
       Text = "󰌆  Passwords",
       Subtext = "Open 1Password",
       Actions = {
         activate = "hyprbole-launch-passwords",
+      },
+      State = { "sublevel" },
+    } or {
+      Text = "󰌆  Passwords",
+      Subtext = "Install 1Password from Extras",
+      Actions = {
+        activate = "hyprbole-launch-extra-install onepassword",
       },
       State = { "sublevel" },
     },

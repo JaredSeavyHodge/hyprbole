@@ -3,7 +3,7 @@ local hyprbole_path = os.getenv("HYPRBOLE_PATH") or (os.getenv("HOME") .. "/.loc
 local terminal = hyprbole_path .. "/bin/hyprbole-launch-terminal"
 local browser = hyprbole_path .. "/bin/hyprbole-launch-browser"
 local file_manager = hyprbole_path .. "/bin/hyprbole-launch-files"
-local obsidian = "obsidian"
+local obsidian = hyprbole_path .. "/bin/hyprbole-launch-obsidian"
 local launcher = hyprbole_path .. "/bin/hyprbole-launch-walker"
 
 local audio_up = hyprbole_path .. "/bin/hyprbole-audio-up"

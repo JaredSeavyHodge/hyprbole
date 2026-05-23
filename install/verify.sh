@@ -123,65 +123,22 @@ verify_installation() {
   local process_label
   local secret_service_failures=0
   local unit
-  local active_user_units=(pipewire.service pipewire-pulse.service wireplumber.service)
-  local graphical_user_units=(swayosd-server.service polkit-gnome-agent.service elephant.service walker.service swaync.service)
-  local first_login_units=(hyprbole-first-login-guide.service)
-  local enabled_user_units=(gnome-keyring-daemon.socket "${graphical_user_units[@]}" "${first_login_units[@]}")
+  local active_user_units=("${HYPRBOLE_ACTIVE_USER_UNITS[@]}")
+  local graphical_user_units=("${HYPRBOLE_GRAPHICAL_USER_UNITS[@]}")
+  local enabled_user_units=("${HYPRBOLE_ENABLED_USER_UNITS[@]}")
 
   if systemctl --user is-active --quiet graphical-session.target; then
     graphical_session_active=1
   fi
 
-  for binary in hyprland uwsm waybar ghostty nautilus mousepad papers swaync swayosd-client yay snapper sddm limine-update code nvim rg fd eza dua unzip lazygit tree-sitter man nvme smartctl; do
+  for binary in "${HYPRBOLE_VERIFY_REQUIRED_COMMANDS[@]}"; do
     if ! cmd_present "$binary"; then
       printf 'missing command: %s\n' "$binary" >&2
       failures=$((failures + 1))
     fi
   done
 
-  for path in \
-    "$HYPRBOLE_PATH/bin/hyprbole-health-check" \
-    "$HYPRBOLE_PATH/bin/hyprbole-health-indicator" \
-    "$HYPRBOLE_PATH/bin/hyprbole-health-report" \
-    "$HYPRBOLE_PATH/bin/hyprbole-health-updates" \
-    "$HYPRBOLE_PATH/bin/hyprbole-update-indicator" \
-    "$HYPRBOLE_PATH/bin/hyprbole-first-login-guide" \
-    "$HYPRBOLE_PATH/bin/hyprbole-launch-notifications" \
-    "$HYPRBOLE_PATH/bin/hyprbole-clear-notifications" \
-    "$HOME/.config/hypr/hyprland.lua" \
-    "$HOME/.config/systemd/user/hyprbole-first-login-guide.service" \
-    "$HYPRBOLE_CONFIG_PATH/theme-sources.conf" \
-    "$HOME/.config/waybar/config.jsonc" \
-    "$HYPRBOLE_PATH/default/waybar/indicator-notifications.sh" \
-    "$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.service" \
-    "$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.timer" \
-    "/etc/systemd/system/hyprbole-health-check.service" \
-    "/etc/systemd/system/hyprbole-health-check.timer" \
-    "/etc/sddm.conf.d/hyprbole.conf" \
-    "/usr/share/sddm/themes/hyprbole/Main.qml" \
-    "/usr/share/sddm/themes/hyprbole/metadata.desktop" \
-    "/usr/share/sddm/themes/hyprbole/theme.conf" \
-    "/usr/share/sddm/themes/hyprbole/background.jpg" \
-    "/usr/share/sddm/themes/hyprbole/background-blur.jpg" \
-    "$HYPRBOLE_PATH/assets/logo/circle-hyprbole-logo.svg" \
-    "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf" \
-    "$HOME/.config/gtk-3.0/settings.ini" \
-    "$HOME/.config/gtk-4.0/settings.ini" \
-    "$HOME/.config/code-flags.conf" \
-    "$HOME/.config/brave-origin-nightly-flags.conf" \
-    "$HOME/.local/share/applications/hyprbole-brave-origin-nightly.desktop" \
-    "$HOME/.local/share/applications/hyprbole-disk-usage.desktop" \
-    "$HOME/.config/elephant/menus/hyprbole-tools.toml" \
-    "$HOME/.config/elephant/menus/hyprbole-fonts.lua" \
-    "$HOME/.config/elephant/menus/hyprbole-remove.toml" \
-    "$HOME/.config/elephant/menus/hyprbole-power-profiles.toml" \
-    "$HOME/.config/nvim/init.lua" \
-    "$HOME/.config/nvim/lua/config/lazy.lua" \
-    "$HOME/.config/nvim/lua/plugins/hyprbole-theme.lua" \
-    "$HYPRBOLE_CONFIG_PATH/current/theme/neovim.lua" \
-    "$HYPRBOLE_CONFIG_PATH/current/theme/vscode.json" \
-    "$HYPRBOLE_PATH/default" \
-    "$HYPRBOLE_PATH/themes"; do
+  for path in "${HYPRBOLE_VERIFY_REQUIRED_PATHS[@]}"; do
     if [[ ! -e $path ]]; then
       printf 'missing path: %s\n' "$path" >&2
       failures=$((failures + 1))
@@ -218,15 +175,14 @@ verify_installation() {
     fi
   fi
 
-  for path in \
-    /etc/brave/policies/managed/color.json; do
+  for path in "${HYPRBOLE_BROWSER_POLICY_SYMLINK_PATHS[@]}"; do
     if [[ -e $path && ! -L $path ]]; then
       printf 'browser policy should be a symlink: %s\n' "$path" >&2
       failures=$((failures + 1))
     fi
   done
 
-  if ! grep -Fxq -- '--password-store=gnome-libsecret' "$HOME/.config/code-flags.conf"; then
+  if command -v code >/dev/null 2>&1 && ! grep -Fxq -- '--password-store=gnome-libsecret' "$HOME/.config/code-flags.conf"; then
     printf 'VS Code should use gnome-libsecret password store: %s\n' "$HOME/.config/code-flags.conf" >&2
     failures=$((failures + 1))
   fi

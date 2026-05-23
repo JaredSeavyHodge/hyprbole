@@ -67,7 +67,7 @@ window#waybar {
 #custom-hyprbole {
   min-width: 28px;
   margin-left: 0;
-  background-image: url("../../.local/share/hyprbole/assets/logo/circle-hyprbole-logo.svg");
+  background-image: url("hyprbole-logo.svg");
   background-position: center;
   background-repeat: no-repeat;
   background-size: 24px 24px;

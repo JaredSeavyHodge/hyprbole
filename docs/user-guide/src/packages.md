@@ -1,8 +1,8 @@
 # Packages
 
-Hyprbole installs official Arch packages and a small curated AUR package set.
+Hyprbole installs the core desktop package set, default role apps, and a small curated AUR package set. Optional app integrations live in Extras so the base desktop does not require every preferred app.
 
-Official packages are declared in `install/packages.sh`. AUR packages are declared in `install/aur.sh`.
+Package sets are declared in `default/hyprbole/manifest.sh`.
 
 ## Commands
 
@@ -13,11 +13,42 @@ hb pkg installed
 hb pkg install
 hb pkg aur-install
 hb pkg remove
+hb extra list
+hb extra install vscode
 ```
 
-The Hyprbole menu also includes package workflows at the top level. Open `Install` for `Pacman` and `AUR`; open `Remove` for installed package inspection and removal.
+The Hyprbole menu also includes package workflows at the top level. Open `Install` for curated extras, `Pacman`, and `AUR`; open `Remove` for installed package inspection and removal.
 
 These commands open interactive picker workflows. Use normal `pacman` or `yay` directly when you already know the exact package operation you want.
+
+## Curated Extras
+
+Curated extras are optional apps with Hyprbole integration such as launchers, theme refresh hooks, Nautilus context actions, or Walker providers.
+
+Install them from the Hyprbole menu:
+
+```text
+Install -> Extras
+```
+
+Or from a terminal:
+
+```bash
+hb extra list
+hb extra install vscode
+hb extra install onepassword
+hb extra install obsidian
+```
+
+Current extras:
+
+| Extra | What it adds |
+| --- | --- |
+| VS Code | Editor install, theme data, Secret Service flags, Nautilus context action when `code` exists |
+| 1Password | Password manager, launcher action, Walker/Elephant password provider |
+| Obsidian | Markdown knowledge-base app and Hyprbole keybind launcher |
+
+Mousepad, Papers, Apostrophe, and Neovim are installed with the base desktop because they are basic local file/editing tools. Doctor checks the selected runtime default roles by command availability and reports curated extras only when they are installed.
 
 ## Updates
 

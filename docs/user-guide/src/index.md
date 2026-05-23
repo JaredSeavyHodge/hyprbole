@@ -33,11 +33,11 @@ The top-left bar shows workspaces. The center and right side show time, status, 
 | Terminal | Ghostty |
 | Browser | Brave Origin Nightly |
 | File manager | Nautilus |
-| Text editor | Mousepad |
+| Text editors | Mousepad, Apostrophe, Neovim; VS Code extra |
 | PDF viewer | Papers |
 | Launcher | Walker |
 | Notifications | SwayNC |
-| Password manager | 1Password |
+| Password manager | 1Password extra |
 
 ## Where To Go Next
 

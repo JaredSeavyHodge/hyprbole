@@ -9,6 +9,8 @@ export HYPRBOLE_CONFIG_BACKUP_KEEP="${HYPRBOLE_CONFIG_BACKUP_KEEP:-3}"
 HYPRBOLE_SETTINGS_PATH="$HYPRBOLE_CONFIG_PATH/settings.toml"
 HYPRBOLE_FALLBACK_THEME="default-theme"
 
+source "$HYPRBOLE_PATH/default/hyprbole/manifest.sh"
+
 case ":$PATH:" in
   *":$HYPRBOLE_PATH/bin:"*) ;;
   *) export PATH="$HYPRBOLE_PATH/bin:$PATH" ;;
@@ -176,13 +178,17 @@ hyprbole_app_label() {
 
   case "$app" in
     brave-origin-nightly) printf 'Brave Origin Nightly\n' ;;
+    apostrophe) printf 'Apostrophe\n' ;;
     chromium) printf 'Chromium\n' ;;
     dolphin) printf 'Dolphin\n' ;;
     ghostty) printf 'Ghostty\n' ;;
     kitty) printf 'Kitty\n' ;;
     nautilus) printf 'Nautilus\n' ;;
     mousepad) printf 'Mousepad\n' ;;
+    neovim|nvim) printf 'Neovim\n' ;;
+    obsidian) printf 'Obsidian\n' ;;
     papers) printf 'Papers\n' ;;
+    visual-studio-code-bin|vscode|code) printf 'VS Code\n' ;;
     *) printf '%s\n' "$app" ;;
   esac
 }
@@ -192,14 +198,29 @@ hyprbole_app_command() {
 
   case "$app" in
     brave-origin-nightly) printf '%s\n' "$HYPRBOLE_PATH/bin/hyprbole-launch-brave-origin-nightly" ;;
+    apostrophe) printf 'apostrophe\n' ;;
     chromium) printf 'chromium\n' ;;
     dolphin) printf 'dolphin\n' ;;
     ghostty) printf 'ghostty\n' ;;
     kitty) printf 'kitty\n' ;;
     nautilus) printf 'nautilus\n' ;;
     mousepad) printf 'mousepad\n' ;;
+    neovim|nvim) printf 'nvim\n' ;;
+    obsidian) printf 'obsidian\n' ;;
     papers) printf 'papers\n' ;;
+    visual-studio-code-bin|vscode|code) printf 'code\n' ;;
     *) printf '%s\n' "$app" ;;
+  esac
+}
+
+hyprbole_command_available() {
+  local command_name="$1"
+
+  [[ -n $command_name ]] || return 1
+
+  case "$command_name" in
+    */*) [[ -x $command_name ]] ;;
+    *) command -v "$command_name" >/dev/null 2>&1 ;;
   esac
 }
 

@@ -1,7 +1,7 @@
 enable_services() {
   local failed=0
-  local graphical_user_units=(swayosd-server.service polkit-gnome-agent.service elephant.service walker.service swaync.service)
-  local first_login_units=(hyprbole-first-login-guide.service)
+  local graphical_user_units=("${HYPRBOLE_GRAPHICAL_USER_UNITS[@]}")
+  local first_login_units=("${HYPRBOLE_FIRST_LOGIN_USER_UNITS[@]}")
   local start_graphical_units=0
   local unit
   local service_source="$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.service"
@@ -11,7 +11,7 @@ enable_services() {
 
   systemctl --user daemon-reload
 
-  for unit in pipewire.service pipewire-pulse.service wireplumber.service gnome-keyring-daemon.socket; do
+  for unit in "${HYPRBOLE_CORE_USER_UNITS[@]}"; do
     if ! systemctl --user enable --now "$unit"; then
       printf 'failed to enable user service: %s\n' "$unit" >&2
       failed=$((failed + 1))

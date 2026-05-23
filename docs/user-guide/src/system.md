@@ -48,7 +48,7 @@ xdg-mime query default text/plain
 xdg-mime query default application/pdf
 ```
 
-Install applies Hyprbole's current MIME defaults with `xdg-mime`: Mousepad for text, Papers for PDFs, Nautilus for folders, imv for images, mpv for video, and the Hyprbole Brave launcher for web links.
+Install applies Hyprbole's current MIME defaults with `xdg-mime`: Mousepad for text files, Papers for PDFs, Nautilus for folders, imv for images, mpv for video, and the Hyprbole Brave launcher for web links. Hyprbole also ships Apostrophe and Neovim as editor tools. VS Code is available from the curated Extras menu.
 
 Set a MIME default directly when you know the desktop file and MIME type:
 

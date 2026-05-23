@@ -80,6 +80,8 @@ Do not reintroduce partial deployment of only `bin/`, `config/`, `default/`, `th
 
 When encoding package names, command names, service names, policy paths, config paths, or external behavior, verify them from the repo manifests, installed files, command output, or upstream documentation first. Do not guess.
 
+Package, user-service, refresh-path, diagnostic-path, doctor-path, and verify-path lists live in `default/hyprbole/manifest.sh`. Installer stages, diagnostics, doctor checks, verify checks, and refresh commands should read those arrays instead of duplicating package, unit, or path names in separate scripts.
+
 ## Command Model
 
 Hyprbole uses a hybrid command model.
@@ -137,7 +139,7 @@ Secret Service setup:
 - `awww` owns wallpapers
 - `walker` owns launching and clipboard history
 - `satty` owns screenshot annotation after capture
-- `1password-beta` is the default password manager
+- `1password-beta` is the curated password manager extra
 
 ## Session Services
 

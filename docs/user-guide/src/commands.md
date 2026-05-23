@@ -38,6 +38,19 @@ hb theme source sync
 
 `hb themes` opens the theme picker in the launcher UI.
 
+## Packages
+
+```bash
+hb extra list
+hb extra install vscode
+hb pkg installed
+hb pkg install
+hb pkg aur-install
+hb pkg remove
+```
+
+`hb extra install <name>` installs curated Hyprbole integrations such as VS Code, 1Password, and Obsidian. The Hyprbole menu exposes these under `Install`, `Extras`. These are optional preference apps, not required desktop components.
+
 ## Wallpaper
 
 ```bash

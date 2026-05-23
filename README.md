@@ -163,7 +163,7 @@ hyprbole verify
 - Launcher: `walker`
 - Clipboard history: Walker + Elephant clipboard provider
 - Screenshot annotation: `satty`
-- Password manager: `1password-beta`
+- Password manager extra: `1password-beta`
 
 ## Status
 
@@ -173,7 +173,7 @@ Current desktop defaults include:
 - `SUPER + V`: Walker clipboard history
 - `Print`: region screenshot into `satty`
 - `Shift + Print`: fullscreen screenshot into `satty`
-- `SUPER + SHIFT + /`: `1Password`
+- `SUPER + SHIFT + /`: `1Password` extra
 - `SUPER + S`: toggle scratchpad workspace
 
 Session-critical background components are increasingly service-managed through user systemd units, including:

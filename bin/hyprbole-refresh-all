@@ -25,60 +25,7 @@ done
 hyprbole_sync_theme_assets "$(hyprbole_current_theme)"
 
 if (( include_user_configs == 1 )); then
-  for relative_path in \
-    hypr/hyprland.lua \
-    hypr/bindings.lua \
-    hypr/monitors.lua \
-    hypr/input.lua \
-    hypr/looknfeel.lua \
-    hypr/autostart.lua \
-    hypr/hypridle.conf \
-    hypr/hyprlock.conf \
-    waybar/config.jsonc \
-    waybar/style.css \
-    ghostty/config \
-    elephant/menus/hyprbole-apps.lua \
-    elephant/menus/hyprbole-capture.toml \
-    elephant/menus/hyprbole-controls.toml \
-    elephant/menus/hyprbole-cycle-wallpaper.toml \
-    elephant/menus/hyprbole-fonts.lua \
-    elephant/menus/hyprbole-help.toml \
-    elephant/menus/hyprbole-install.toml \
-    elephant/menus/hyprbole-keybinds.lua \
-    elephant/menus/hyprbole-power.toml \
-    elephant/menus/hyprbole-power-profiles.toml \
-    elephant/menus/hyprbole-remove.toml \
-    elephant/menus/hyprbole-session.toml \
-    elephant/menus/hyprbole-system.toml \
-    elephant/menus/hyprbole-theme.toml \
-    elephant/menus/hyprbole-tools.toml \
-    elephant/menus/hyprbole.toml \
-    elephant/menus/hyprbole-wallpaper-settings.toml \
-    elephant/menus/hyprbolemywallpapers.lua \
-    elephant/menus/hyprbolethemes.lua \
-    elephant/menus/hyprbolewallpapers.lua \
-    walker/config.toml \
-    walker/themes/hyprbole/layout.xml \
-    walker/themes/hyprbole/style.css \
-    satty/config.toml \
-    xdg-desktop-portal/hyprland-portals.conf \
-    nvim/init.lua \
-    nvim/lua/config/autocmds.lua \
-    nvim/lua/config/keymaps.lua \
-    nvim/lua/config/lazy.lua \
-    nvim/lua/config/options.lua \
-    nvim/lua/plugins/hyprbole-theme.lua \
-    swayosd/config.toml \
-    swayosd/style.css \
-    systemd/user/hyprbole-wallpaper-cycle.service \
-    systemd/user/hyprbole-wallpaper-cycle.timer \
-    systemd/user/elephant.service \
-    systemd/user/hyprbole-first-login-guide.service \
-    systemd/user/polkit-gnome-agent.service \
-    systemd/user/swaync.service \
-    systemd/user/swayosd-server.service \
-    systemd/user/walker.service \
-    swaync/config.json; do
+  for relative_path in "${HYPRBOLE_REFRESH_USER_CONFIG_PATHS[@]}"; do
     hyprbole_refresh_config_path "$relative_path" 1
   done
 fi

@@ -25,6 +25,7 @@ export HYPRBOLE_ASSUME_YES=0
 export HYPRBOLE_SUDO_KEEPALIVE_PID=""
 
 source "$SCRIPT_DIR/install/lib.sh"
+source "$SCRIPT_DIR/default/hyprbole/manifest.sh"
 
 source "$SCRIPT_DIR/install/packages.sh"
 source "$SCRIPT_DIR/install/yay.sh"

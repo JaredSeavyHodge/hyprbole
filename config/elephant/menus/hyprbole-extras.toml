@@ -1,0 +1,23 @@
+name = "hyprbole-extras"
+name_pretty = "Hyprbole Extras"
+hide_from_providerlist = true
+parent = "hyprbole-install"
+fixed_order = true
+
+[[entries]]
+text = "󰨞  VS Code"
+subtext = "Install editor with Hyprbole theme and Secret Service setup"
+actions = { activate = "hyprbole-launch-extra-install vscode" }
+state = ["sublevel"]
+
+[[entries]]
+text = "󰢁  1Password"
+subtext = "Install password manager and Elephant provider"
+actions = { activate = "hyprbole-launch-extra-install onepassword" }
+state = ["sublevel"]
+
+[[entries]]
+text = "󰎞  Obsidian"
+subtext = "Install Markdown knowledge-base app"
+actions = { activate = "hyprbole-launch-extra-install obsidian" }
+state = ["sublevel"]

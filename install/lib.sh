@@ -77,7 +77,7 @@ write_install_diagnostics() {
   local status="$1"
   local diagnostics_file="${HYPRBOLE_INSTALL_DIAGNOSTICS_FILE:-}"
   local previous_errexit=0
-  local user_units=(pipewire.service pipewire-pulse.service wireplumber.service swayosd-server.service polkit-gnome-agent.service gnome-keyring-daemon.socket elephant.service walker.service swaync.service)
+  local user_units=("${HYPRBOLE_CORE_USER_UNITS[@]}" "${HYPRBOLE_GRAPHICAL_USER_UNITS[@]}")
 
   [[ -n $diagnostics_file ]] || return 0
 
@@ -144,33 +144,7 @@ write_install_diagnostics() {
     fi
 
     diagnostic_section "Config Paths"
-    diagnostic_path_check \
-      "$HOME/.config/hypr/hyprland.lua" \
-      "$HOME/.config/hypr/hyprland.conf" \
-      "$HOME/.config/hyprbole/theme-sources.conf" \
-      "$HOME/.config/waybar/config.jsonc" \
-      "$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.service" \
-      "$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.timer" \
-      "$HOME/.config/swaync/config.json" \
-      "$HOME/.config/elephant/menus/hyprbole-fonts.lua" \
-      "$HOME/.config/elephant/menus/hyprbole-power-profiles.toml" \
-      "$HOME/.config/elephant/menus/hyprbole-remove.toml" \
-      "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf" \
-      "$HOME/.config/gtk-3.0/settings.ini" \
-      "$HOME/.config/gtk-4.0/settings.ini" \
-      "$HOME/.config/code-flags.conf" \
-      "$HOME/.config/brave-origin-nightly-flags.conf" \
-      "$HOME/.config/elephant/menus/hyprbole-tools.toml" \
-      "$HOME/.local/share/applications/hyprbole-brave-origin-nightly.desktop" \
-      "$HOME/.local/share/applications/hyprbole-disk-usage.desktop" \
-      "$HOME/.config/nvim/init.lua" \
-      "$HOME/.config/nvim/lua/config/lazy.lua" \
-      "$HOME/.config/nvim/lua/plugins/hyprbole-theme.lua" \
-      "$HOME/.config/hyprbole/current/theme-name" \
-      "$HOME/.config/hyprbole/current/theme/neovim.lua" \
-      "$HOME/.config/hyprbole/current/theme/vscode.json" \
-      "$HOME/.config/hyprbole/current/browser-policy.json" \
-      /etc/brave/policies/managed/color.json
+    diagnostic_path_check "${HYPRBOLE_DIAGNOSTIC_CONFIG_PATHS[@]}"
 
     diagnostic_section "User Services"
     diagnostic_unit_check --user "${user_units[@]}"

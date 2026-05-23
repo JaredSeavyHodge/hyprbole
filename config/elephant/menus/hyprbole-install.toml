@@ -15,3 +15,9 @@ text = "󰣇  AUR"
 subtext = "Pick AUR packages with fzf"
 actions = { activate = "hyprbole-launch-pkg-aur-install" }
 state = ["sublevel"]
+
+[[entries]]
+text = "󰐱  Extras"
+subtext = "Install curated Hyprbole app integrations"
+submenu = "hyprbole-extras"
+state = ["submenu"]

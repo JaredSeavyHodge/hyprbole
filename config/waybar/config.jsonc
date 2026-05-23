@@ -13,24 +13,24 @@
     "on-click": "hyprsysteminfo"
   },
   "custom/update": {
-    "exec": "$HOME/.local/share/hyprbole/bin/hyprbole-update-indicator",
-    "exec-if": "$HOME/.local/share/hyprbole/bin/hyprbole-update-indicator --has-updates",
+    "exec": "$HYPRBOLE_PATH/bin/hyprbole-update-indicator",
+    "exec-if": "$HYPRBOLE_PATH/bin/hyprbole-update-indicator --has-updates",
     "return-type": "json",
     "interval": 60,
-    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-launch-update"
+    "on-click": "$HYPRBOLE_PATH/bin/hyprbole-launch-update"
   },
   "custom/health": {
-    "exec": "$HOME/.local/share/hyprbole/bin/hyprbole-health-indicator",
+    "exec": "$HYPRBOLE_PATH/bin/hyprbole-health-indicator",
     "return-type": "json",
     "interval": 60,
-    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-launch-health",
-    "on-click-right": "$HOME/.local/share/hyprbole/bin/hyprbole health refresh >/dev/null 2>&1"
+    "on-click": "$HYPRBOLE_PATH/bin/hyprbole-launch-health",
+    "on-click-right": "$HYPRBOLE_PATH/bin/hyprbole health refresh >/dev/null 2>&1"
   },
   "custom/recording-indicator": {
-    "exec": "$HOME/.local/share/hyprbole/bin/hyprbole-record-status",
+    "exec": "$HYPRBOLE_PATH/bin/hyprbole-record-status",
     "return-type": "json",
     "interval": 2,
-    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-record-toggle region"
+    "on-click": "$HYPRBOLE_PATH/bin/hyprbole-record-toggle region"
   },
   "ext/workspaces": {
     "format": "{icon}",
@@ -75,20 +75,20 @@
     "exec": "$HYPRBOLE_PATH/default/waybar/indicator-idle.sh",
     "return-type": "json",
     "interval": 10,
-    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-toggle-idle"
+    "on-click": "$HYPRBOLE_PATH/bin/hyprbole-toggle-idle"
   },
   "custom/notification-indicator": {
     "exec": "$HYPRBOLE_PATH/default/waybar/indicator-notifications.sh",
     "return-type": "json",
     "interval": 5,
-    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-launch-notifications",
-    "on-click-middle": "$HOME/.local/share/hyprbole/bin/hyprbole-toggle-notifications",
-    "on-click-right": "$HOME/.local/share/hyprbole/bin/hyprbole-clear-notifications"
+    "on-click": "$HYPRBOLE_PATH/bin/hyprbole-launch-notifications",
+    "on-click-middle": "$HYPRBOLE_PATH/bin/hyprbole-toggle-notifications",
+    "on-click-right": "$HYPRBOLE_PATH/bin/hyprbole-clear-notifications"
   },
   "custom/btop": {
     "format": "",
     "tooltip-format": "btop",
-    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-launch-btop"
+    "on-click": "$HYPRBOLE_PATH/bin/hyprbole-launch-btop"
   },
   "battery": {
     "format": "{icon} {capacity}%",
@@ -108,12 +108,12 @@
     "format-disabled": "󰂲",
     "format-connected": "󰂱",
     "format-no-controller": "",
-    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-launch-bluetooth"
+    "on-click": "$HYPRBOLE_PATH/bin/hyprbole-launch-bluetooth"
   },
   "pulseaudio": {
     "format": "{icon} {volume}%",
-    "on-click": "$HOME/.local/share/hyprbole/bin/hyprbole-launch-audio",
-    "on-click-right": "$HOME/.local/share/hyprbole/bin/hyprbole-audio-mute",
+    "on-click": "$HYPRBOLE_PATH/bin/hyprbole-launch-audio",
+    "on-click-right": "$HYPRBOLE_PATH/bin/hyprbole-audio-mute",
     "format-muted": "",
     "format-icons": {
       "headphone": "",

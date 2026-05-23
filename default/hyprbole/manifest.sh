@@ -1,0 +1,501 @@
+# shellcheck shell=bash
+
+HYPRBOLE_OFFICIAL_PACKAGES=(
+  hyprland
+  uwsm
+  waybar
+  sddm
+  swaync
+  swayosd
+  pipewire
+  pipewire-audio
+  pipewire-alsa
+  pipewire-pulse
+  wireplumber
+  xdg-desktop-portal
+  xdg-desktop-portal-hyprland
+  xdg-desktop-portal-gtk
+  polkit-gnome
+  qt5-wayland
+  qt6-wayland
+  hypridle
+  hyprlock
+  awww
+  wf-recorder
+  nautilus
+  nautilus-python
+  mousepad
+  papers
+  apostrophe
+  imv
+  mpv
+  ghostty
+  btop
+  dua-cli
+  bash-completion
+  mise
+  starship
+  zoxide
+  fzf
+  gum
+  bat
+  eza
+  fd
+  ripgrep
+  unzip
+  lazygit
+  tree-sitter-cli
+  opencode
+  neovim
+  polkit
+  wl-clipboard
+  grim
+  slurp
+  satty
+  pavucontrol
+  nm-connection-editor
+  network-manager-applet
+  blueman
+  gnome-keyring
+  playerctl
+  brightnessctl
+  xdg-user-dirs
+  xdg-utils
+  gvfs
+  gvfs-mtp
+  libsecret
+  git
+  curl
+  jq
+  nvme-cli
+  smartmontools
+  man-db
+  man-pages
+  imagemagick
+  libqalculate
+  pacman-contrib
+  limine
+  gnome-themes-extra
+  noto-fonts
+  noto-fonts-cjk
+  noto-fonts-emoji
+  noto-fonts-extra
+  rust
+  ttf-cascadia-code
+  ttf-dejavu
+  ttf-fira-code
+  ttf-hack
+  ttf-jetbrains-mono
+  ttf-jetbrains-mono-nerd
+  ttf-liberation
+  ttf-nerd-fonts-symbols
+  ttf-opensans
+  ttf-roboto
+  ttf-ubuntu-font-family
+  inter-font
+  otf-font-awesome
+  papirus-icon-theme
+  adwaita-icon-theme
+  hicolor-icon-theme
+  base-devel
+  snapper
+)
+
+HYPRBOLE_AUR_PACKAGES=(
+  brave-origin-nightly-bin
+  walker-bin
+  elephant
+  elephant-calc
+  elephant-clipboard
+  elephant-desktopapplications
+  elephant-files
+  elephant-menus
+  elephant-runner
+  elephant-symbols
+  elephant-websearch
+  hyprsysteminfo
+  limine-snapper-sync
+  limine-mkinitcpio-hook
+)
+
+HYPRBOLE_CONFLICTING_PACKAGES=(
+  dunst
+  pulseaudio
+  pulseaudio-alsa
+  pulseaudio-bluetooth
+)
+
+HYPRBOLE_PROFILE_LEFTOVER_PACKAGES=(
+  dolphin
+  kitty
+  polkit-kde-agent
+  wofi
+)
+
+HYPRBOLE_CORE_DESKTOP_PACKAGES=(
+  hyprland
+  uwsm
+  waybar
+  sddm
+  swaync
+  swayosd
+  pipewire
+  pipewire-audio
+  pipewire-alsa
+  pipewire-pulse
+  wireplumber
+  xdg-desktop-portal
+  xdg-desktop-portal-hyprland
+  xdg-desktop-portal-gtk
+  polkit-gnome
+  qt5-wayland
+  qt6-wayland
+  hypridle
+  hyprlock
+  awww
+  polkit
+)
+
+HYPRBOLE_APP_PACKAGES=(
+  wf-recorder
+  btop
+)
+
+HYPRBOLE_RUNTIME_APP_ROLES=(
+  terminal
+  browser
+  files
+  editor
+  pdf
+)
+
+HYPRBOLE_CURATED_EXTRA_APPS=(
+  "vscode|VS Code||visual-studio-code-bin|code|$HOME/.config/code-flags.conf,$HYPRBOLE_CONFIG_PATH/current/theme/vscode.json,$HOME/.config/nautilus-python/extensions/hyprbole_vscode.py"
+  "neovim|Neovim|neovim||nvim|$HOME/.config/nvim/init.lua,$HOME/.config/nvim/lua/plugins/hyprbole-theme.lua,$HYPRBOLE_CONFIG_PATH/current/theme/neovim.lua,$HOME/.config/nautilus-python/extensions/hyprbole_vscode.py"
+  "onepassword|1Password||1password-beta,1password-cli,elephant-1password|1password|"
+  "obsidian|Obsidian|obsidian||obsidian|"
+  "apostrophe|Apostrophe|apostrophe||apostrophe|"
+  "mousepad|Mousepad|mousepad||mousepad|"
+  "papers|Papers|papers||papers|"
+)
+
+HYPRBOLE_INSTALL_EXTRA_APPS=(
+  vscode
+  onepassword
+  obsidian
+)
+
+HYPRBOLE_LAUNCHER_PACKAGES=(
+  walker-bin
+  elephant
+  elephant-calc
+  elephant-clipboard
+  elephant-desktopapplications
+  elephant-files
+  elephant-menus
+  elephant-runner
+  elephant-symbols
+  elephant-websearch
+)
+
+HYPRBOLE_SYSTEM_TOOL_PACKAGES=(
+  yay-bin
+  bash-completion
+  mise
+  starship
+  zoxide
+  fzf
+  bat
+  eza
+  dua-cli
+  fd
+  ripgrep
+  unzip
+  lazygit
+  tree-sitter-cli
+  wl-clipboard
+  grim
+  slurp
+  satty
+  pavucontrol
+  nm-connection-editor
+  network-manager-applet
+  blueman
+  gnome-keyring
+  playerctl
+  brightnessctl
+  xdg-user-dirs
+  xdg-utils
+  gvfs
+  gvfs-mtp
+  libsecret
+  git
+  curl
+  jq
+  nvme-cli
+  smartmontools
+  man-db
+  man-pages
+  imagemagick
+  libqalculate
+  pacman-contrib
+  limine
+  gnome-themes-extra
+  noto-fonts
+  noto-fonts-cjk
+  noto-fonts-emoji
+  noto-fonts-extra
+  rust
+  ttf-cascadia-code
+  ttf-dejavu
+  ttf-fira-code
+  ttf-hack
+  ttf-jetbrains-mono
+  ttf-jetbrains-mono-nerd
+  ttf-liberation
+  ttf-nerd-fonts-symbols
+  ttf-opensans
+  ttf-roboto
+  ttf-ubuntu-font-family
+  inter-font
+  otf-font-awesome
+  papirus-icon-theme
+  adwaita-icon-theme
+  hicolor-icon-theme
+  base-devel
+  snapper
+  limine-snapper-sync
+  limine-mkinitcpio-hook
+  hyprsysteminfo
+)
+
+HYPRBOLE_REQUIRED_COMMANDS=(
+  hyprland
+  uwsm
+  waybar
+  swaync
+  swayosd-client
+  yay
+  snapper
+  wf-recorder
+  grim
+  slurp
+  satty
+  mise
+  rg
+  fd
+  eza
+  dua
+  unzip
+  lazygit
+  tree-sitter
+  man
+  nvme
+  smartctl
+  walker
+  elephant
+)
+
+HYPRBOLE_VERIFY_REQUIRED_COMMANDS=(
+  "${HYPRBOLE_REQUIRED_COMMANDS[@]}"
+  sddm
+  limine-update
+)
+
+HYPRBOLE_ACTIVE_USER_UNITS=(
+  pipewire.service
+  pipewire-pulse.service
+  wireplumber.service
+)
+
+HYPRBOLE_CORE_USER_UNITS=(
+  "${HYPRBOLE_ACTIVE_USER_UNITS[@]}"
+  gnome-keyring-daemon.socket
+)
+
+HYPRBOLE_GRAPHICAL_USER_UNITS=(
+  swayosd-server.service
+  polkit-gnome-agent.service
+  elephant.service
+  walker.service
+  swaync.service
+)
+
+HYPRBOLE_FIRST_LOGIN_USER_UNITS=(
+  hyprbole-first-login-guide.service
+)
+
+HYPRBOLE_ENABLED_USER_UNITS=(
+  gnome-keyring-daemon.socket
+  "${HYPRBOLE_GRAPHICAL_USER_UNITS[@]}"
+  "${HYPRBOLE_FIRST_LOGIN_USER_UNITS[@]}"
+)
+
+HYPRBOLE_USER_UNITS=(
+  "${HYPRBOLE_CORE_USER_UNITS[@]}"
+  "${HYPRBOLE_GRAPHICAL_USER_UNITS[@]}"
+  "${HYPRBOLE_FIRST_LOGIN_USER_UNITS[@]}"
+)
+
+HYPRBOLE_DOCTOR_HELPER_SCRIPTS=(
+  hyprbole-health-check
+  hyprbole-health-indicator
+  hyprbole-health-report
+  hyprbole-health-updates
+  hyprbole-update-indicator
+)
+
+HYPRBOLE_REFRESH_USER_CONFIG_PATHS=(
+  hypr/hyprland.lua
+  hypr/bindings.lua
+  hypr/monitors.lua
+  hypr/input.lua
+  hypr/looknfeel.lua
+  hypr/autostart.lua
+  hypr/hypridle.conf
+  hypr/hyprlock.conf
+  waybar/config.jsonc
+  waybar/style.css
+  waybar/hyprbole-logo.svg
+  ghostty/config
+  elephant/menus/hyprbole-apps.lua
+  elephant/menus/hyprbole-capture.toml
+  elephant/menus/hyprbole-controls.toml
+  elephant/menus/hyprbole-cycle-wallpaper.toml
+  elephant/menus/hyprbole-extras.toml
+  elephant/menus/hyprbole-fonts.lua
+  elephant/menus/hyprbole-help.toml
+  elephant/menus/hyprbole-install.toml
+  elephant/menus/hyprbole-keybinds.lua
+  elephant/menus/hyprbole-power.toml
+  elephant/menus/hyprbole-power-profiles.toml
+  elephant/menus/hyprbole-remove.toml
+  elephant/menus/hyprbole-session.toml
+  elephant/menus/hyprbole-system.toml
+  elephant/menus/hyprbole-theme.toml
+  elephant/menus/hyprbole-tools.toml
+  elephant/menus/hyprbole.toml
+  elephant/menus/hyprbole-wallpaper-settings.toml
+  elephant/menus/hyprbolemywallpapers.lua
+  elephant/menus/hyprbolethemes.lua
+  elephant/menus/hyprbolewallpapers.lua
+  walker/config.toml
+  walker/themes/hyprbole/layout.xml
+  walker/themes/hyprbole/style.css
+  satty/config.toml
+  xdg-desktop-portal/hyprland-portals.conf
+  nvim/init.lua
+  nvim/lua/config/autocmds.lua
+  nvim/lua/config/keymaps.lua
+  nvim/lua/config/lazy.lua
+  nvim/lua/config/options.lua
+  nvim/lua/plugins/hyprbole-theme.lua
+  swayosd/config.toml
+  swayosd/style.css
+  systemd/user/hyprbole-wallpaper-cycle.service
+  systemd/user/hyprbole-wallpaper-cycle.timer
+  systemd/user/elephant.service
+  systemd/user/hyprbole-first-login-guide.service
+  systemd/user/polkit-gnome-agent.service
+  systemd/user/swaync.service
+  systemd/user/swayosd-server.service
+  systemd/user/walker.service
+  swaync/config.json
+)
+
+HYPRBOLE_DOCTOR_CONFIG_PATHS=(
+  "$HOME/.config/hypr/hyprland.lua"
+  "$HYPRBOLE_CONFIG_PATH/theme-sources.conf"
+  "$HOME/.config/waybar/config.jsonc"
+  "$HOME/.config/waybar/hyprbole-logo.svg"
+  "$HOME/.config/swaync/config.json"
+  "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf"
+  "$HOME/.config/brave-origin-nightly-flags.conf"
+  "$HOME/.config/elephant/menus/hyprbole-tools.toml"
+  "$HOME/.local/share/applications/hyprbole-disk-usage.desktop"
+  "$HOME/.config/systemd/user/polkit-gnome-agent.service"
+  "$HOME/.config/systemd/user/swaync.service"
+)
+
+HYPRBOLE_DOCTOR_THEME_STATE_PATHS=(
+  "$HYPRBOLE_CONFIG_PATH/current/theme-name"
+  "$HYPRBOLE_CONFIG_PATH/current/background"
+  "$HYPRBOLE_CONFIG_PATH/current/theme/waybar.css"
+  "$HYPRBOLE_CONFIG_PATH/current/theme/ghostty.conf"
+  "$HOME/.config/gtk-3.0/settings.ini"
+  "$HOME/.config/gtk-4.0/settings.ini"
+)
+
+HYPRBOLE_DIAGNOSTIC_CONFIG_PATHS=(
+  "$HOME/.config/hypr/hyprland.lua"
+  "$HOME/.config/hypr/hyprland.conf"
+  "$HYPRBOLE_CONFIG_PATH/theme-sources.conf"
+  "$HOME/.config/waybar/config.jsonc"
+  "$HOME/.config/waybar/hyprbole-logo.svg"
+  "$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.service"
+  "$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.timer"
+  "$HOME/.config/swaync/config.json"
+  "$HOME/.config/elephant/menus/hyprbole-fonts.lua"
+  "$HOME/.config/elephant/menus/hyprbole-power-profiles.toml"
+  "$HOME/.config/elephant/menus/hyprbole-remove.toml"
+  "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf"
+  "$HOME/.config/gtk-3.0/settings.ini"
+  "$HOME/.config/gtk-4.0/settings.ini"
+  "$HOME/.config/code-flags.conf"
+  "$HOME/.config/brave-origin-nightly-flags.conf"
+  "$HOME/.config/elephant/menus/hyprbole-tools.toml"
+  "$HOME/.local/share/applications/hyprbole-brave-origin-nightly.desktop"
+  "$HOME/.local/share/applications/hyprbole-disk-usage.desktop"
+  "$HOME/.config/nvim/init.lua"
+  "$HOME/.config/nvim/lua/config/lazy.lua"
+  "$HOME/.config/nvim/lua/plugins/hyprbole-theme.lua"
+  "$HYPRBOLE_CONFIG_PATH/current/theme-name"
+  "$HYPRBOLE_CONFIG_PATH/current/theme/neovim.lua"
+  "$HYPRBOLE_CONFIG_PATH/current/theme/vscode.json"
+  "$HYPRBOLE_CONFIG_PATH/current/browser-policy.json"
+  /etc/brave/policies/managed/color.json
+)
+
+HYPRBOLE_VERIFY_REQUIRED_PATHS=(
+  "$HYPRBOLE_PATH/bin/hyprbole-health-check"
+  "$HYPRBOLE_PATH/bin/hyprbole-health-indicator"
+  "$HYPRBOLE_PATH/bin/hyprbole-health-report"
+  "$HYPRBOLE_PATH/bin/hyprbole-health-updates"
+  "$HYPRBOLE_PATH/bin/hyprbole-update-indicator"
+  "$HYPRBOLE_PATH/bin/hyprbole-first-login-guide"
+  "$HYPRBOLE_PATH/bin/hyprbole-launch-notifications"
+  "$HYPRBOLE_PATH/bin/hyprbole-clear-notifications"
+  "$HOME/.config/hypr/hyprland.lua"
+  "$HOME/.config/systemd/user/hyprbole-first-login-guide.service"
+  "$HYPRBOLE_CONFIG_PATH/theme-sources.conf"
+  "$HOME/.config/waybar/config.jsonc"
+  "$HOME/.config/waybar/hyprbole-logo.svg"
+  "$HYPRBOLE_PATH/default/waybar/indicator-notifications.sh"
+  "$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.service"
+  "$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.timer"
+  /etc/systemd/system/hyprbole-health-check.service
+  /etc/systemd/system/hyprbole-health-check.timer
+  /etc/sddm.conf.d/hyprbole.conf
+  /usr/share/sddm/themes/hyprbole/Main.qml
+  /usr/share/sddm/themes/hyprbole/metadata.desktop
+  /usr/share/sddm/themes/hyprbole/theme.conf
+  /usr/share/sddm/themes/hyprbole/background.jpg
+  /usr/share/sddm/themes/hyprbole/background-blur.jpg
+  "$HYPRBOLE_PATH/assets/logo/circle-hyprbole-logo.svg"
+  "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf"
+  "$HOME/.config/gtk-3.0/settings.ini"
+  "$HOME/.config/gtk-4.0/settings.ini"
+  "$HOME/.config/brave-origin-nightly-flags.conf"
+  "$HOME/.local/share/applications/hyprbole-brave-origin-nightly.desktop"
+  "$HOME/.local/share/applications/hyprbole-disk-usage.desktop"
+  "$HOME/.config/elephant/menus/hyprbole-tools.toml"
+  "$HOME/.config/elephant/menus/hyprbole-fonts.lua"
+  "$HOME/.config/elephant/menus/hyprbole-remove.toml"
+  "$HOME/.config/elephant/menus/hyprbole-power-profiles.toml"
+  "$HYPRBOLE_PATH/default"
+  "$HYPRBOLE_PATH/themes"
+)
+
+HYPRBOLE_BROWSER_POLICY_SYMLINK_PATHS=(
+  /etc/brave/policies/managed/color.json
+)
