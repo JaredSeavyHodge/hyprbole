@@ -63,6 +63,8 @@ Common shortcuts:
 
 Screenshots open in Satty for annotation when appropriate.
 
+In Satty, press `Enter` to copy, save, and close. Press `Escape` to copy and close without saving a file.
+
 ## Get Help
 
 Open `Help`, `Keybinds` from the Hyprbole menu for the full shortcut list, or run `hb keybinds`.

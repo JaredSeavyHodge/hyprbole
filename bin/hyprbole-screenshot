@@ -8,8 +8,16 @@ set -euo pipefail
 mode=${1:-region}
 target_dir="$HOME/Pictures/Screenshots"
 target_file="$target_dir/$(date +%Y-%m-%d_%H-%M-%S).png"
+capture_file=""
+
+cleanup() {
+  [[ -z $capture_file ]] || rm -f -- "$capture_file"
+}
+
+trap cleanup EXIT
 
 mkdir -p "$target_dir"
+capture_file="$(mktemp --tmpdir hyprbole-screenshot.XXXXXX.png)"
 
 command -v satty >/dev/null 2>&1 || {
   printf 'missing required command: satty\n' >&2
@@ -18,10 +26,10 @@ command -v satty >/dev/null 2>&1 || {
 
 case "$mode" in
   region)
-    grim -g "$(slurp)" "$target_file"
+    grim -g "$(slurp)" "$capture_file"
     ;;
   screen)
-    grim "$target_file"
+    grim "$capture_file"
     ;;
   *)
     printf 'Usage: hyprbole-screenshot <region|screen>\n' >&2
@@ -30,16 +38,16 @@ case "$mode" in
 esac
 
 satty \
-  --filename "$target_file" \
+  --filename "$capture_file" \
   --output-filename "$target_file" \
   --actions-on-enter save-to-clipboard \
-  --save-after-copy \
+  --actions-on-enter save-to-file \
+  --actions-on-enter exit \
+  --actions-on-escape save-to-clipboard \
+  --actions-on-escape exit \
   --copy-command 'wl-copy'
 
-if command -v wl-copy >/dev/null 2>&1; then
-  wl-copy <"$target_file"
+if [[ -f $target_file ]]; then
+  hyprbole-notify "Screenshot saved" "$target_file" >/dev/null 2>&1 || true
+  printf '%s\n' "$target_file"
 fi
-
-hyprbole-notify "Screenshot saved" "$target_file" >/dev/null 2>&1 || true
-
-printf '%s\n' "$target_file"
