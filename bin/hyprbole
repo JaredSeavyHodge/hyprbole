@@ -2194,7 +2194,7 @@ main() {
       rate_mirrors
       ;;
     mount)
-      hyprbole-launch-mount-share
+      hyprbole-mount-share
       ;;
     apps)
       launch_apps
@@ -2301,7 +2301,7 @@ main() {
           ;;
         mount-share)
           shift 2
-          hyprbole-launch-mount-share
+          hyprbole_launch_floating_terminal com.hyprbole.mount-share "Mount Share" bash -lc 'hyprbole-mount-share; printf "\nPress Enter to close..."; read -r _'
           ;;
         themes)
           launch_themes
