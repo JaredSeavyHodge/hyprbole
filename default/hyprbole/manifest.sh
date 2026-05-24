@@ -104,6 +104,7 @@ HYPRBOLE_OFFICIAL_PACKAGES=(
 HYPRBOLE_AUR_PACKAGES=(
   brave-origin-nightly-bin
   walker-bin
+  yaru-icon-theme
   elephant
   elephant-calc
   elephant-clipboard
