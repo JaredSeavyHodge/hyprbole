@@ -1400,6 +1400,18 @@ doctor() {
 
   doctor_section_finish
 
+  doctor_section_start "Firewall"
+  if command -v ufw >/dev/null 2>&1; then
+    if sudo ufw status | grep -q 'Status: active'; then
+      doctor_report ok "UFW active"
+    else
+      doctor_report warn "UFW installed but inactive"
+    fi
+  else
+    doctor_report miss "UFW firewall"
+  fi
+  doctor_section_finish
+
   doctor_section_start "Services: system"
   for unit in sddm.service polkit.service; do
     if systemctl is-active "$unit" >/dev/null 2>&1; then

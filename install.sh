@@ -33,6 +33,7 @@ source "$SCRIPT_DIR/install/aur.sh"
 source "$SCRIPT_DIR/install/git.sh"
 source "$SCRIPT_DIR/install/defaults.sh"
 source "$SCRIPT_DIR/install/services.sh"
+source "$SCRIPT_DIR/install/firewall.sh"
 source "$SCRIPT_DIR/install/session.sh"
 source "$SCRIPT_DIR/install/verify.sh"
 
@@ -135,6 +136,9 @@ main() {
 
   log_step "Enabling services"
   enable_services
+
+  log_step "Configuring firewall"
+  configure_firewall
 
   log_step "Running verification"
   verify_installation

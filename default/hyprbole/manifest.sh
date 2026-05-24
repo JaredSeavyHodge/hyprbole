@@ -24,6 +24,7 @@ HYPRBOLE_OFFICIAL_PACKAGES=(
   wf-recorder
   nautilus
   nautilus-python
+  file-roller
   mousepad
   papers
   apostrophe
@@ -233,6 +234,7 @@ HYPRBOLE_SYSTEM_TOOL_PACKAGES=(
   brightnessctl
   cifs-utils
   nfs-utils
+  ufw
   xdg-user-dirs
   xdg-utils
   gvfs
@@ -324,6 +326,7 @@ HYPRBOLE_CORE_USER_UNITS=(
 )
 
 HYPRBOLE_GRAPHICAL_USER_UNITS=(
+  hyprbole-trash-clean.timer
   swayosd-server.service
   polkit-gnome-agent.service
   elephant.service

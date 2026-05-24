@@ -9,6 +9,8 @@ enable_services() {
 
   xdg-user-dirs-update
 
+  deploy_user_units
+
   systemctl --user daemon-reload
 
   for unit in "${HYPRBOLE_CORE_USER_UNITS[@]}"; do
@@ -76,4 +78,22 @@ enable_services() {
   fi
 
   (( failed == 0 )) || die "service setup failed with $failed issue(s)"
+}
+
+deploy_user_units() {
+  local unit_dir="$HOME/.config/systemd/user"
+  local source_dir="$HYPRBOLE_PATH/default/systemd/user"
+
+  [[ -d $source_dir ]] || return 0
+
+  mkdir -p "$unit_dir"
+
+  while IFS= read -r -d '' unit; do
+    local name
+    name=$(basename "$unit")
+    if [[ ! -f $unit_dir/$name ]]; then
+      cp "$unit" "$unit_dir/$name"
+      log_info "deployed user unit: $name"
+    fi
+  done < <(find "$source_dir" -type f -name '*.service' -o -name '*.timer' -print0)
 }
