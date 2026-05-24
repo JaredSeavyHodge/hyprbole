@@ -8,7 +8,7 @@ The check reads cached device, filesystem, and update-freshness metadata. It doe
 
 Waybar shows a health heart to the left of the date. When the cached report is clean, it inherits the active theme colors and its tooltip says `No Alerts`.
 
-If non-update warnings or critical issues are found, the heart turns orange for warnings and red for high alerts. Left-click it to open the health report. Right-click it to run a fresh health check and reset the heart state from the updated report.
+If non-update warnings or critical issues are found, the heart turns orange for warnings and red for critical alerts. Left-click it to open the health report. Right-click it to run a fresh health check and reset the heart state from the updated report.
 
 The heart reads the cached report in `/var/lib/hyprbole/health.json`; it does not run disk tools directly from Waybar.
 

@@ -13,6 +13,7 @@ Focus on:
 
 - README, user guide, architecture docs, and implementation plan consistency
 - implemented commands missing from docs
+- new or changed `hyprbole` routes, leaf scripts, launcher flows, and menu actions missing from docs
 - menu entries missing from Walker/Utilities/Gaming/Install docs
 - extras listed in manifest but missing from package docs
 - install behavior, persistence, sudo, fstab, credentials, browser flags, Secret Service, and security implications

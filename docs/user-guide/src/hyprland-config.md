@@ -148,7 +148,7 @@ Shipped window rules live in:
 ~/.local/share/hyprbole/default/hypr/core/rules.lua
 ```
 
-Current shipped rules suppress maximize events, work around some XWayland drag windows, float Hyprbole terminal helpers, float Satty, and send 1Password to the scratchpad while preventing it from screen sharing.
+Current shipped rules suppress maximize events, work around some XWayland drag windows, float Hyprbole terminal helpers, float Satty, and send 1Password to the scratchpad while preventing it from screen sharing. Hyprbole floating terminal helpers require a terminal backend that can preserve the configured `com.hyprbole.*` class/title metadata; unsupported terminals fail loudly instead of opening a non-floating window.
 
 Add local rules in `~/.config/hypr/overrides.lua`:
 

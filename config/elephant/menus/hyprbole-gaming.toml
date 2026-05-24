@@ -18,6 +18,6 @@ state = ["sublevel"]
 
 [[entries]]
 text = "󰏗  Install"
-subtext = "Install Steam, Discord, and gaming tools"
-submenu = "hyprbole-gaming-install"
+subtext = "Install curated app integrations"
+submenu = "hyprbole-extras"
 state = ["submenu"]

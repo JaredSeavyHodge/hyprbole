@@ -180,7 +180,7 @@ If user config files are intentionally being reset from Hyprbole defaults, use:
 hb refresh-all --include-user-configs
 ```
 
-## Waybar Health Bell Shows An Alert
+## Waybar Health Heart Shows An Alert
 
 Open the cached report:
 

@@ -70,6 +70,7 @@ The top-level menu includes:
 | Applications | Browser, files, passwords, app launcher |
 | Appearance | Themes, wallpapers, fonts |
 | Capture | Screenshots and recordings |
+| Gaming | Steam launch, Steam gaming mode, and curated install link |
 | Install | Curated extras, Pacman, and AUR package install workflows |
 | Remove | Package inspection and removal workflows |
 | System | Settings, utilities, power, update, session actions |
@@ -85,15 +86,26 @@ Useful terminal equivalents:
 
 ```bash
 hb apps
+hb launch launcher
 hb tools
+hb launch tools
 hb utilities
+hb launch utilities
 hb keybinds
+hb launch keybinds
 hb disk-usage
 hb launch themes
 hb launch wallpaper-menu
 hb launch my-wallpaper-menu
+hb launch steam
+hb launch steam-gaming-mode
+hb launch obsidian
+hb launch passwords
+hb launch pkg-installed
 hb launch pkg-install
+hb launch pkg-aur-install
 hb launch pkg-remove
+hb launch extra-install steam
 ```
 
 ## Files, Clipboard, And Passwords
@@ -106,7 +118,7 @@ Use `p:` or the 1Password entry from the Apps menu for password lookup after ins
 
 ## Utilities Menu
 
-Open `System`, `Utilities` from the Hyprbole menu to launch utility and maintenance workflows. `Disk Usage` opens `dua i` in a floating terminal. `Refresh Desktop` reapplies Hyprbole runtime state. `Refresh Shipped Configs` also refreshes shipped user config files and can overwrite local customizations after creating backups.
+Open `System`, `Utilities` from the Hyprbole menu to launch utility and maintenance workflows. `Disk Usage` opens `dua i` in a floating terminal. `Mount Share` opens the NAS share workflow in a floating terminal. `Refresh Desktop` reapplies Hyprbole runtime state. `Refresh Shipped Configs` also refreshes shipped user config files and can overwrite local customizations after creating backups.
 
 ## Configuration
 

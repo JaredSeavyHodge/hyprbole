@@ -52,18 +52,11 @@ function GetEntries()
       },
       State = { "sublevel" },
     },
-    command_exists("1password") and {
+    {
       Text = "󰌆  Passwords",
-      Subtext = "Open 1Password",
+      Subtext = command_exists("1password") and "Open 1Password" or "Install 1Password from Extras",
       Actions = {
         activate = "hyprbole-launch-passwords",
-      },
-      State = { "sublevel" },
-    } or {
-      Text = "󰌆  Passwords",
-      Subtext = "Install 1Password from Extras",
-      Actions = {
-        activate = "hyprbole-launch-extra-install onepassword",
       },
       State = { "sublevel" },
     },

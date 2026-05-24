@@ -381,14 +381,12 @@ HYPRBOLE_REFRESH_USER_CONFIG_PATHS=(
   elephant/menus/hyprbole-extras.toml
   elephant/menus/hyprbole-fonts.lua
   elephant/menus/hyprbole-gaming.toml
-  elephant/menus/hyprbole-gaming-install.toml
   elephant/menus/hyprbole-help.toml
   elephant/menus/hyprbole-install.toml
   elephant/menus/hyprbole-keybinds.lua
   elephant/menus/hyprbole-power.toml
   elephant/menus/hyprbole-power-profiles.toml
   elephant/menus/hyprbole-remove.toml
-  elephant/menus/hyprbole-session.toml
   elephant/menus/hyprbole-system.toml
   elephant/menus/hyprbole-theme.toml
   elephant/menus/hyprbole-tools.toml
@@ -419,6 +417,11 @@ HYPRBOLE_REFRESH_USER_CONFIG_PATHS=(
   systemd/user/swayosd-server.service
   systemd/user/walker.service
   swaync/config.json
+)
+
+HYPRBOLE_RETIRED_USER_CONFIG_PATHS=(
+  elephant/menus/hyprbole-gaming-install.toml
+  elephant/menus/hyprbole-session.toml
 )
 
 HYPRBOLE_DOCTOR_CONFIG_PATHS=(

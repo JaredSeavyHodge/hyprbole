@@ -21,6 +21,10 @@ deploy_defaults() {
     fi
   done < <(find "$HYPRBOLE_PATH/config" -type f ! -path '*/__pycache__/*' ! -name '*.py[co]' -print0)
 
+  for relative_path in "${HYPRBOLE_RETIRED_USER_CONFIG_PATHS[@]}"; do
+    rm -f -- "$HOME/.config/$relative_path"
+  done
+
   cleanup_hyprland_generated_stub
 
   while IFS= read -r -d '' source_path; do

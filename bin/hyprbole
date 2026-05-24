@@ -84,6 +84,10 @@ Launch:
   launch health
   launch mount-share
   launch my-wallpaper-menu
+  launch obsidian [args...]
+  launch passwords [args...]
+  launch steam [args...]
+  launch steam-gaming-mode [args...]
   launch themes
   launch wallpaper-menu
   launch update
@@ -1583,10 +1587,7 @@ verify_system() {
   verify_installation
 }
 
-launch_menu() {
-  local menu_name="${1:-hyprbole}"
-  local placeholder="${2:-Hyprbole menu}"
-
+require_menu_commands() {
   command -v walker >/dev/null 2>&1 || {
     printf 'missing required command: walker\n' >&2
     exit 1
@@ -1596,6 +1597,13 @@ launch_menu() {
     printf 'missing required command: elephant\n' >&2
     exit 1
   }
+}
+
+launch_menu() {
+  local menu_name="${1:-hyprbole}"
+  local placeholder="${2:-Hyprbole menu}"
+
+  require_menu_commands
 
   exec walker --width 460 --minheight 1 --maxheight 520 --provider "menus:${menu_name}" --placeholder "$placeholder"
 }
@@ -1605,15 +1613,7 @@ launch_apps() {
 }
 
 launch_clipboard() {
-  command -v walker >/dev/null 2>&1 || {
-    printf 'missing required command: walker\n' >&2
-    exit 1
-  }
-
-  command -v elephant >/dev/null 2>&1 || {
-    printf 'missing required command: elephant\n' >&2
-    exit 1
-  }
+  require_menu_commands
 
   exec walker --width 980 --maxheight 520 --minheight 520 --provider clipboard --placeholder "Clipboard history"
 }
@@ -1636,7 +1636,7 @@ disk_usage() {
 }
 
 launch_disk_usage() {
-  hyprbole_launch_floating_terminal com.hyprbole.disk-usage "Disk Usage" bash -lc 'if (($# == 0)); then cd "$HOME" || exit; fi; hyprbole disk-usage "$@"; status=$?; if (( status != 0 )); then printf "\nDisk Usage exited with status %d\n" "$status"; printf "\nPress Enter to close..."; read -r _; fi' hyprbole-disk-usage "$@"
+  hyprbole_launch_floating_terminal com.hyprbole.disk-usage "Disk Usage" bash -lc 'if (($# == 0)); then cd "$HOME" || exit; fi; hyprbole disk-usage "$@"; status=$?; if (( status != 0 )); then printf "\nDisk Usage exited with status %d\n" "$status"; printf "\nPress Enter to close..."; read -r _; fi; exit "$status"' hyprbole-disk-usage "$@"
 }
 
 health_report() {
@@ -1663,42 +1663,30 @@ health_report() {
 }
 
 launch_health() {
-  hyprbole_launch_floating_terminal com.hyprbole.system "System Health" bash -lc 'hyprbole health; printf "\nPress Enter to close..."; read -r _'
+  hyprbole_launch_floating_terminal com.hyprbole.system "System Health" bash -lc 'hyprbole health; status=$?; printf "\nPress Enter to close..."; read -r _; exit "$status"'
 }
 
 launch_launcher() {
-  command -v walker >/dev/null 2>&1 || {
-    printf 'missing required command: walker\n' >&2
-    exit 1
-  }
-
-  command -v elephant >/dev/null 2>&1 || {
-    printf 'missing required command: elephant\n' >&2
-    exit 1
-  }
+  require_menu_commands
 
   exec walker --width 980 --maxheight 520 --minheight 520
 }
 
 launch_themes() {
-  command -v walker >/dev/null 2>&1 || {
-    printf 'missing required command: walker\n' >&2
-    exit 1
-  }
-
-  command -v elephant >/dev/null 2>&1 || {
-    printf 'missing required command: elephant\n' >&2
-    exit 1
-  }
+  require_menu_commands
 
   exec walker --width 900 --minheight 300 --maxheight 560 --provider menus:hyprbolethemes --placeholder "Select theme"
 }
 
 launch_wallpaper_menu() {
+  require_menu_commands
+
   exec walker --width 900 --minheight 300 --maxheight 560 --provider menus:hyprbolewallpapers --placeholder "Select wallpaper"
 }
 
 launch_my_wallpaper_menu() {
+  require_menu_commands
+
   exec walker --width 900 --minheight 300 --maxheight 560 --provider menus:hyprbolemywallpapers --placeholder "Select custom wallpaper"
 }
 
@@ -1726,11 +1714,47 @@ launch_extra_install() {
     return 1
   }
 
-  hyprbole_launch_floating_terminal com.hyprbole.extra-install "Install Extra" bash -lc 'hyprbole extra install "$1"; status=$?; if (( status != 0 )); then printf "\nExtra install failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _' hyprbole-extra-install "$extra_id"
+  hyprbole_launch_floating_terminal com.hyprbole.extra-install "Install Extra" bash -lc 'hyprbole extra install "$1"; status=$?; if (( status != 0 )); then printf "\nExtra install failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _; exit "$status"' hyprbole-extra-install "$extra_id"
 }
 
 launch_pkg_remove() {
-  hyprbole_launch_floating_terminal com.hyprbole.pkg-remove "Remove Packages" bash -lc 'hyprbole pkg remove; status=$?; if (( status != 0 )); then printf "\nPackage removal failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _'
+  hyprbole_launch_floating_terminal com.hyprbole.pkg-remove "Remove Packages" bash -lc 'hyprbole pkg remove; status=$?; if (( status != 0 )); then printf "\nPackage removal failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _; exit "$status"'
+}
+
+launch_steam() {
+  if ! command -v steam >/dev/null 2>&1; then
+    launch_extra_install steam
+  fi
+
+  exec steam "$@"
+}
+
+launch_steam_gaming_mode() {
+  if ! command -v steam >/dev/null 2>&1; then
+    launch_extra_install steam
+  fi
+
+  if ! command -v gamescope >/dev/null 2>&1; then
+    launch_extra_install steam
+  fi
+
+  exec gamescope -e -f --adaptive-sync -- steam -steamdeck -steamos3 "$@"
+}
+
+launch_obsidian() {
+  if ! command -v obsidian >/dev/null 2>&1; then
+    launch_extra_install obsidian
+  fi
+
+  exec uwsm-app -- obsidian "$@"
+}
+
+launch_passwords() {
+  if ! command -v 1password >/dev/null 2>&1; then
+    launch_extra_install onepassword
+  fi
+
+  exec uwsm-app -- 1password "$@"
 }
 
 pkg_install() {
@@ -2315,13 +2339,29 @@ main() {
           ;;
         mount-share)
           shift 2
-          hyprbole_launch_floating_terminal com.hyprbole.mount-share "Mount Share" bash -lc 'hyprbole-mount-share; printf "\nPress Enter to close..."; read -r _'
+          hyprbole_launch_floating_terminal com.hyprbole.mount-share "Mount Share" bash -lc 'hyprbole-mount-share; status=$?; printf "\nPress Enter to close..."; read -r _; exit "$status"'
           ;;
         themes)
           launch_themes
           ;;
         my-wallpaper-menu)
           launch_my_wallpaper_menu
+          ;;
+        obsidian)
+          shift 2
+          launch_obsidian "$@"
+          ;;
+        passwords)
+          shift 2
+          launch_passwords "$@"
+          ;;
+        steam)
+          shift 2
+          launch_steam "$@"
+          ;;
+        steam-gaming-mode)
+          shift 2
+          launch_steam_gaming_mode "$@"
           ;;
         wallpaper-menu)
           launch_wallpaper_menu

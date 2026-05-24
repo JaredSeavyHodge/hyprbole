@@ -39,6 +39,7 @@ This repository defines the `hyprbole` desktop layer for Arch Linux. The project
 - Prefer short top-level `hyprbole` routes for very common interactive actions when they improve ergonomics without creating ambiguity
 - Keep `bin/hyprbole-*` leaf scripts for integration points such as Hyprland keybinds, Walker/Elephant menus, systemd services, and file manager actions
 - When a leaf script and `bin/hyprbole` overlap, prefer making the leaf script a thin wrapper around `hyprbole ...`
+- Shared workflow logic belongs in `bin/hyprbole` or `bin/hyprbole-lib`; leaf scripts should forward args and add integration context, not duplicate route parsing, install fallback policy, terminal launch policy, or persistence logic
 - Do not expose one-off install repair commands on the public `hyprbole` command surface unless they are normal user workflows; prefer `doctor --fix` or internal leaf scripts
 
 ## Design Decisions To Preserve
@@ -47,11 +48,13 @@ This repository defines the `hyprbole` desktop layer for Arch Linux. The project
 - Leaf scripts should be thin wrappers around `hyprbole ...` when the workflow is user-facing
 - Terminal workflows launched from menus must open in floating terminals through `hyprbole_launch_floating_terminal` or `hyprbole-launch-floating`
 - Hyprland floating terminal windows use `com.hyprbole.*` classes and are covered by the default floating window rule
+- Floating terminal helpers must preserve the configured `com.hyprbole.*` class/title metadata for supported terminal backends, or fail loudly instead of silently opening a non-floating terminal
+- Avoid duplicated menu entries across sibling submenus unless there is a deliberate product reason; prefer one canonical menu location and link to it
 - `doctor` should not require sudo unless running `doctor --fix`; normal checks must use non-privileged probes where possible
 - Package arrays must not drift: packages checked as required by doctor should be installed by the default install path, or explicitly marked optional/lazy
 - `default/systemd/user/` contains Hyprbole-owned user units and should be deployed as vendor state; `config/` remains user-owned copy-if-missing config
 - User timers should be modeled separately from graphical session services; do not put timers in graphical-service groups unless they are actually session-bound
-- Network share persistence is owned by the Mount Share workflow. It uses `/etc/fstab` entries marked with `# hyprbole mount-share`, safe automount options, and SMB credentials under `/etc/smb-credentials` with root-only permissions
+- Network share persistence is owned by the Mount Share workflow. It uses `/etc/fstab` entries marked with `# hyprbole mount-share`, safe automount options, validated fstab fields, and SMB credentials under `/etc/smb-credentials` with root-only permissions
 - Browser flags have two paths: system Brave desktop launches read `~/.config/brave-origin-nightly-flags.conf`; Hyprbole wrapper launches read `~/.config/hyprbole/brave-origin-nightly-flags.conf`
 - Synced external themes under `~/.config/hyprbole/themes/.sources/` are source-owned and should not be edited directly; use user-authored theme overrides or install missing dependencies
 - Docs must be updated whenever user-facing commands, menu entries, extras, install behavior, or persistence/security behavior changes
@@ -60,11 +63,13 @@ This repository defines the `hyprbole` desktop layer for Arch Linux. The project
 
 - Add or update the `hyprbole` route if the workflow is normal terminal use
 - Add a leaf script only when needed for menus, keybinds, services, or file-manager integration
+- If a workflow exists in both CLI and integration form, implement it once as a `hyprbole` route and make the leaf script a thin `exec hyprbole ... "$@"` wrapper
 - If the workflow opens an interactive terminal from a menu, make it floating
 - Add package dependencies to the correct install set or make the workflow install/check them lazily
 - Add doctor checks only if they are actionable and non-sudo by default
 - Keep install reruns idempotent: no duplicate fstab entries, service definitions, source lines, desktop entries, PAM lines, or backups
 - Update user-guide docs and implementation-plan status in the same change
+- When adding a new command family, launcher pattern, menu taxonomy, or persistence/security workflow, update the relevant `.opencode/agent/*.md` reviewer scope so future reviews cover it
 
 ## Config Guidance
 
@@ -99,7 +104,7 @@ This repository defines the `hyprbole` desktop layer for Arch Linux. The project
 - Secret Service setup creates a passwordless `Default_keyring`, backs up an encrypted `login.keyring`, removes SDDM `auth`/`password` GNOME Keyring PAM hooks, keeps session autostart hooks, and restarts the user keyring daemon when possible
 - Brave Origin Nightly is launched through `bin/hyprbole-launch-brave-origin-nightly`
 - `bin/hyprbole-refresh-browser-launchers` writes browser flags to `~/.config/brave-origin-nightly-flags.conf` and sets the system desktop entry as the default browser
-- Gaming is surfaced through a `hyprbole-gaming` Elephant submenu with Steam launch, Gamescope gaming mode launch, and Steam install options
+- Gaming is surfaced through a `hyprbole-gaming` Elephant submenu with Steam launch, Gamescope gaming mode launch, and a link to the shared curated Extras install menu
 - `bin/hyprbole-launch-steam` and `bin/hyprbole-launch-steam-gaming-mode` are the leaf scripts for gaming menu actions
 - Hyprbole's Brave wrapper always passes `--password-store=gnome-libsecret` and `--ozone-platform-hint=auto`
 - Keep `~/.config/brave-origin-nightly-flags.conf` single-flag safe for the package wrapper; user extra Brave flags belong in `~/.config/hyprbole/brave-origin-nightly-flags.conf`

@@ -1,11 +1,8 @@
 #!/bin/bash
 
 # hyprbole:summary=Launch Obsidian or install the Obsidian extra
+# hyprbole:args=[obsidian args...]
 
 set -euo pipefail
 
-if ! command -v obsidian >/dev/null 2>&1; then
-  exec hyprbole launch extra-install obsidian
-fi
-
-exec uwsm-app -- obsidian "$@"
+exec hyprbole launch obsidian "$@"

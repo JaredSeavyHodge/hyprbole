@@ -13,11 +13,13 @@ Focus on:
 
 - `hyprbole` as the human CLI and `bin/hyprbole-*` as integration leaf scripts
 - leaf scripts delegating to `hyprbole ...` for user-facing workflows
+- duplicated workflow policy between `bin/hyprbole`, `bin/hyprbole-lib`, and leaf scripts, especially route parsing, install fallback, terminal launch policy, and persistence logic
 - menu-launched terminal workflows opening floating terminals
 - `com.hyprbole.*` window classes matching Hyprland floating rules
+- floating terminal helpers preserving class/title metadata for supported terminals or failing loudly when they cannot
 - Walker/Elephant menu consistency, duplicate menu entries, and stale activate commands
 - package/extras workflows launched from menus and terminal
 - mount-share behavior, fstab markers, safe credentials, idempotency, and removal flows
 - naming consistency between tools/utilities/install/extras/gaming
 
-Return findings first, ordered by severity, with exact file paths and line references. Include concrete recommendations and note whether docs should be updated. Do not edit files.
+Return findings first, ordered by severity, with exact file paths and line references. Include concrete recommendations and note whether docs or reviewer scopes should be updated. Do not edit files.

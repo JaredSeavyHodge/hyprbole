@@ -24,6 +24,10 @@ done
 
 hyprbole_sync_theme_assets "$(hyprbole_current_theme)"
 
+for relative_path in "${HYPRBOLE_RETIRED_USER_CONFIG_PATHS[@]}"; do
+  rm -f -- "$HOME/.config/$relative_path"
+done
+
 if (( include_user_configs == 1 )); then
   for relative_path in "${HYPRBOLE_REFRESH_USER_CONFIG_PATHS[@]}"; do
     hyprbole_refresh_config_path "$relative_path" 1

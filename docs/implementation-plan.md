@@ -43,6 +43,8 @@
 - Evaluate lightweight, nicely themable text/PDF default app candidates. Done.
 - Use `mousepad` and `papers` as default text/PDF apps. Done.
 - Evaluate clean, free, lightweight Markdown viewer candidates. Done.
+- Add a simple TUI for mounting NAS NFS or SMB shares with proper permissions. Done.
+- Add a main Walker `Gaming` submenu with Steam launch, a shared Extras install link, and Steam gaming mode. Done.
 
 ## Future Features
 
@@ -54,13 +56,10 @@
 - Let the default-app menu install missing supported alternatives, update `settings.toml`, refresh MIME associations, and restart or reload affected runtime components.
 - Add a CLI cleanup pass before broadening the public `hyprbole` command surface.
 - Consider an opt-in browser scaling helper that writes Chromium fractional-scaling flags to `~/.config/hyprbole/brave-origin-nightly-flags.conf`.
-- Add a simple TUI for mounting NAS NFS or SMB shares with proper permissions.
 - Discuss whether a deeply integrated optional agentic OS layer, similar to Hermes, is viable with efficient access to Hyprland, Hyprbole, and Linux while preserving security and avoiding excessive tool calls or token use.
 - Add optional `xournalpp` or `okular` install workflows for PDF signing/annotation.
 - Consider a `glow`-backed Markdown viewer role or launcher for read-only Markdown viewing; keep `text/markdown` editable in Mousepad unless users explicitly choose a viewer workflow.
 - Add a Walker `Install` submenu for office suites, including LibreOffice and any better alternatives, with an option to consider a Brave-powered Microsoft Office web app.
-- Add a main Walker `Gaming` submenu with an install menu for Steam and, if officially available for Linux, Discord.
-- Discuss a Steam Deck-like gaming mode that launches Steam through `gamescope` or compositor switching for media-center PCs, while accounting for the added complexity.
 
 ## Current Open Questions
 

@@ -36,6 +36,38 @@ clean_fstab_entry() {
   printf '%s' "$content" | xargs
 }
 
+validate_fstab_field() {
+  local value="$1"
+  local label="$2"
+
+  if [[ -z $value ]]; then
+    gum style --foreground 9 "$label is required."
+    return 1
+  fi
+
+  if [[ $value =~ [[:space:]] || $value == *'#'* || $value == *"$MANAGED_MARKER"* ]]; then
+    gum style --foreground 9 "$label cannot contain whitespace, '#', or Hyprbole markers."
+    return 1
+  fi
+}
+
+validate_mount_point() {
+  local value="$1"
+
+  validate_fstab_field "$value" "Mount point" || return 1
+  if [[ $value != /* ]]; then
+    gum style --foreground 9 "Mount point must be an absolute path."
+    return 1
+  fi
+}
+
+safe_smb_credential_name() {
+  local server="$1"
+  local share="$2"
+
+  printf '%s_%s' "$server" "$share" | tr -c 'A-Za-z0-9._-' '_'
+}
+
 write_managed_fstab_entry() {
   local source="$1"
   local mount_point="$2"
@@ -108,9 +140,49 @@ remove_share() {
     return 1
   }
 
+  local picked_entry
+  local selected_source
+  local selected_mount_point
+  local selected_fs_type
+  local selected_options
+  local credential_file=""
+  local mount_options=()
+  local option
+  picked_entry=$(sed -n "${picked_line}p" /etc/fstab 2>/dev/null || true)
+  if [[ $picked_entry != *"$MANAGED_MARKER"* ]]; then
+    gum style --foreground 9 "Selected fstab entry is no longer Hyprbole-managed."
+    return 1
+  fi
+
+  read -r selected_source selected_mount_point selected_fs_type selected_options _ <<<"$(clean_fstab_entry "$picked_entry")"
+  if [[ $selected_fs_type == "cifs" ]]; then
+    IFS=',' read -ra mount_options <<<"$selected_options"
+    for option in "${mount_options[@]}"; do
+      case "$option" in
+        credentials=/etc/smb-credentials/*)
+          credential_file="${option#credentials=}"
+          ;;
+      esac
+    done
+  fi
+
   if gum confirm "Remove this entry from /etc/fstab?" --default=false; then
+    if [[ -n $selected_mount_point ]] && findmnt -r --mountpoint "$selected_mount_point" >/dev/null 2>&1; then
+      if gum confirm "Unmount $selected_mount_point now?" --default=true; then
+        sudo umount "$selected_mount_point" || gum style --foreground 9 "Could not unmount $selected_mount_point."
+      fi
+    fi
+
     sudo sed -i "${picked_line}d" /etc/fstab
-    gum style --foreground 10 "Removed entry at line $picked_line from /etc/fstab."
+    sudo systemctl daemon-reload >/dev/null 2>&1 || true
+
+    if [[ -n $credential_file && -f $credential_file ]]; then
+      if gum confirm "Remove saved SMB credentials $credential_file?" --default=true; then
+        sudo rm -f -- "$credential_file"
+      fi
+    fi
+
+    gum style --foreground 10 "Removed $selected_source from /etc/fstab."
   fi
 }
 
@@ -125,7 +197,8 @@ mount_share() {
     ensure_commands mount.cifs:cifs-utils smbclient:smbclient
 
     server=$(gum input --placeholder "192.168.1.100" --header "Server address:")
-    [[ -n $server ]] || { echo "Server required"; exit 1; }
+    validate_fstab_field "$server" "Server" || exit 1
+    [[ $server != */* ]] || { gum style --foreground 9 "Server cannot contain slashes."; exit 1; }
 
     if gum confirm "Discover shares via smbclient?"; then
       gum spin --title "Listing shares..." -- smbclient -N -L "$server" 2>/dev/null || \
@@ -133,9 +206,11 @@ mount_share() {
     fi
 
     share=$(gum input --placeholder "sharename" --header "Share name:")
-    [[ -n $share ]] || { echo "Share required"; exit 1; }
+    validate_fstab_field "$share" "Share name" || exit 1
+    [[ $share != */* && $share != *..* ]] || { gum style --foreground 9 "Share name cannot contain slashes or '..'."; exit 1; }
 
     mount_point=$(gum input --value "/mnt/$share" --header "Mount point:")
+    validate_mount_point "$mount_point" || exit 1
 
     if gum confirm "Connect as guest?" --default=false; then
       username=""
@@ -147,8 +222,11 @@ mount_share() {
 
     local opts="uid=$(id -u),gid=$(id -g),iocharset=utf8,noperm"
     local creds_file=""
+    local creds_name=""
     if [[ -n $username ]]; then
-      creds_file="/etc/smb-credentials/$share"
+      creds_name=$(safe_smb_credential_name "$server" "$share")
+      [[ -n $creds_name ]] || { gum style --foreground 9 "Could not create safe credentials filename."; exit 1; }
+      creds_file="/etc/smb-credentials/$creds_name"
       sudo mkdir -p /etc/smb-credentials
       sudo chmod 700 /etc/smb-credentials
       printf 'username=%s\npassword=%s\n' "$username" "$password" | sudo tee "$creds_file" >/dev/null
@@ -179,12 +257,15 @@ mount_share() {
     ensure_commands mount.nfs:nfs-utils
 
     server=$(gum input --placeholder "192.168.1.100" --header "Server address:")
-    [[ -n $server ]] || { echo "Server required"; exit 1; }
+    validate_fstab_field "$server" "Server" || exit 1
+    [[ $server != *:* ]] || { gum style --foreground 9 "Server cannot contain colons."; exit 1; }
 
     export_path=$(gum input --placeholder "/srv/nfs/share" --header "Export path:")
-    [[ -n $export_path ]] || { echo "Export path required"; exit 1; }
+    validate_fstab_field "$export_path" "Export path" || exit 1
+    [[ $export_path == /* ]] || { gum style --foreground 9 "Export path must be absolute."; exit 1; }
 
     mount_point=$(gum input --value "/mnt/$(basename "$export_path")" --header "Mount point:")
+    validate_mount_point "$mount_point" || exit 1
 
     sudo mkdir -p "$mount_point"
     if gum spin --title "Mounting..." -- sudo mount -t nfs "$server:$export_path" "$mount_point"; then

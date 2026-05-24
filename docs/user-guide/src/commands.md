@@ -21,7 +21,10 @@ hb keybinds
 hb menu
 hb restart waybar
 hb lock
+hb logout
 hb suspend
+hb reboot
+hb poweroff
 ```
 
 ## Themes
@@ -43,6 +46,7 @@ hb theme source sync
 ```bash
 hb extra list
 hb extra install vscode
+hb extra install steam
 hb pkg installed
 hb pkg install
 hb pkg aur-install
@@ -86,9 +90,22 @@ hb refresh-shell
 
 ```bash
 hb launch apps
+hb launch launcher
+hb launch tools
+hb launch utilities
+hb launch keybinds
 hb launch clipboard
 hb launch themes
 hb launch wallpaper-menu
+hb launch obsidian
+hb launch passwords
+hb launch steam
+hb launch steam-gaming-mode
+hb launch pkg-installed
+hb launch pkg-install
+hb launch pkg-aur-install
+hb launch pkg-remove
+hb launch extra-install steam
 hb capture region
 hb capture screen
 hb capture record-region
@@ -96,6 +113,23 @@ hb capture record-screen
 ```
 
 The short top-level commands `hb apps`, `hb clipboard`, and `hb keybinds` are aliases for common launcher actions.
+
+## System And Power
+
+```bash
+hb lock
+hb logout
+hb suspend
+hb reboot
+hb poweroff
+hb system lock
+hb system logout
+hb power suspend
+hb power reboot
+hb power off
+```
+
+Short top-level routes cover common session and power actions. Grouped `system` and `power` routes remain available for scripts and clarity.
 
 ## Restart UI Components
 
@@ -118,13 +152,16 @@ hb utilities
 hb disk-usage
 hb disk-usage ~/Downloads
 hb launch disk-usage
+hb launch mount-share
+hb mount
+hb mirrors
 hb health
 hb health refresh
 hb health updates
 hb launch health
 ```
 
-`hb tools` and `hb utilities` open the Utilities menu. `hb disk-usage` runs `dua i` in the current terminal. `hb launch disk-usage` opens it in a floating terminal for menu and launcher workflows.
+`hb tools` and `hb utilities` open the Utilities menu. `hb disk-usage` runs `dua i` in the current terminal. `hb mount` runs the Mount Share workflow in the current terminal. `hb launch disk-usage`, `hb launch health`, `hb launch mount-share`, `hb launch pkg-*`, and `hb launch extra-install <name>` open `com.hyprbole.*` floating terminals for menu and launcher workflows. `hb mirrors` opens the mirror refresh helper.
 
 Health commands:
 

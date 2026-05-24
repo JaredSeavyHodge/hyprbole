@@ -49,6 +49,8 @@ Examples:
 - `hyprbole theme set default-theme`
 - `hyprbole pkg install`
 - `hyprbole pkg aur-install`
+- `hyprbole launch steam`
+- `hyprbole launch obsidian`
 - `hyprbole apps`
 - `hyprbole keybinds`
 - `hyprbole menu`

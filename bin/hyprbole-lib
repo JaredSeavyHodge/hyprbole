@@ -297,6 +297,11 @@ hyprbole_launch_floating_terminal() {
   app="$(hyprbole_default_app terminal)"
   command_name="$(hyprbole_app_command "$app")"
 
+  command -v "$command_name" >/dev/null 2>&1 || {
+    printf 'missing terminal command for %s: %s\n' "$app" "$command_name" >&2
+    return 1
+  }
+
   case "$app" in
     ghostty)
       exec "$command_name" --class="$class_name" --title="$title" -e "$@"
@@ -305,7 +310,9 @@ hyprbole_launch_floating_terminal() {
       exec "$command_name" --class "$class_name" --title "$title" -e "$@"
       ;;
     *)
-      hyprbole_launch_terminal_command "$@"
+      printf 'terminal does not support Hyprbole floating window metadata: %s\n' "$app" >&2
+      printf 'Set default_terminal to ghostty or kitty, or add class/title support before using floating terminal workflows.\n' >&2
+      return 1
       ;;
   esac
 }

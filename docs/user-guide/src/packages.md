@@ -38,7 +38,10 @@ hb extra list
 hb extra install vscode
 hb extra install onepassword
 hb extra install obsidian
+hb extra install steam
 ```
+
+The Gaming menu links to the same Extras submenu for Steam, Discord, and related optional app installs so there is one canonical curated install location.
 
 Current extras:
 
@@ -47,6 +50,9 @@ Current extras:
 | VS Code | Editor install, theme data, Secret Service flags, Nautilus context action when `code` exists |
 | 1Password | Password manager, launcher action, Walker/Elephant password provider |
 | Obsidian | Markdown knowledge-base app and Hyprbole keybind launcher |
+| Steam | Steam, Gamescope, GameMode, MangoHud, and controller support best-effort setup |
+| Discord | Discord chat client |
+| LibreOffice | LibreOffice office suite |
 
 Mousepad, Papers, Apostrophe, and Neovim are installed with the base desktop because they are basic local file/editing tools. Doctor checks the selected runtime default roles by command availability and reports curated extras only when they are installed.
 

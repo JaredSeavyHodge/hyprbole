@@ -33,7 +33,7 @@ From a terminal, `hb disk-usage` runs `dua i` in the current terminal. Launcher 
 
 ## System Health
 
-`System Health` opens the cached hourly health report. Waybar shows a health heart beside the date; it inherits the theme when there are no alerts, turns orange for warnings, and turns red for high alerts.
+`System Health` opens the cached hourly health report. Waybar shows a health heart to the left of the date; it inherits the theme when there are no alerts, turns orange for warnings, and turns red for critical alerts.
 
 Left-click the Waybar heart to open the report. Right-click it to refresh the health check and update the heart state.
 
@@ -47,9 +47,23 @@ hb health updates
 
 `hb health updates` is the quickest way to check whether your last full system update is stale or the Hyprbole repo has upstream updates available.
 
-The Utilities menu also includes `System Monitor` for `btop`, `System Info` for Hyprland system information, and refresh actions for Hyprbole runtime state and shipped configs.
+The Utilities menu also includes `System Monitor` for `btop`, `System Info` for Hyprland system information, `Mount Share` for NAS shares, and refresh actions for Hyprbole runtime state and shipped configs.
 
 `Refresh Desktop` reapplies theme and runtime state. `Refresh Shipped Configs` runs the same refresh with user config files included, which can overwrite local customizations after backing them up.
+
+## Mount Share
+
+`Mount Share` mounts SMB/CIFS or NFS network shares and can save Hyprbole-managed `/etc/fstab` entries marked with `# hyprbole mount-share`.
+
+Mount Share installs missing helper packages with `sudo pacman` when needed, including `gum`, `cifs-utils`, `smbclient`, and `nfs-utils`.
+
+For SMB shares with a username and password, credentials are stored under `/etc/smb-credentials` with root-only permissions. Hyprbole rejects share, export, and mount fields that would corrupt fstab entries, including whitespace and `#`, and it derives a safe credential filename from the SMB server and share name. NFS server input currently supports non-colon hostnames or IPv4 addresses, not IPv6 literals. Saved entries use `nofail`, `x-systemd.automount`, `x-systemd.mount-timeout=30`, and `_netdev` so boot is not blocked by an offline network share. Removing a saved share from the Mount Share workflow removes the managed fstab entry, offers to unmount the active mount, reloads systemd, and offers to remove the related Hyprbole-owned SMB credential file.
+
+Open it from `System`, `Utilities`, `Mount Share`, or run:
+
+```bash
+hb launch mount-share
+```
 
 ## Notifications
 
