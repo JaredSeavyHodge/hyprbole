@@ -41,6 +41,31 @@ This repository defines the `hyprbole` desktop layer for Arch Linux. The project
 - When a leaf script and `bin/hyprbole` overlap, prefer making the leaf script a thin wrapper around `hyprbole ...`
 - Do not expose one-off install repair commands on the public `hyprbole` command surface unless they are normal user workflows; prefer `doctor --fix` or internal leaf scripts
 
+## Design Decisions To Preserve
+
+- `hyprbole` is the human CLI; `bin/hyprbole-*` scripts are integration leaf scripts for menus, keybinds, systemd, Nautilus, and wrappers
+- Leaf scripts should be thin wrappers around `hyprbole ...` when the workflow is user-facing
+- Terminal workflows launched from menus must open in floating terminals through `hyprbole_launch_floating_terminal` or `hyprbole-launch-floating`
+- Hyprland floating terminal windows use `com.hyprbole.*` classes and are covered by the default floating window rule
+- `doctor` should not require sudo unless running `doctor --fix`; normal checks must use non-privileged probes where possible
+- Package arrays must not drift: packages checked as required by doctor should be installed by the default install path, or explicitly marked optional/lazy
+- `default/systemd/user/` contains Hyprbole-owned user units and should be deployed as vendor state; `config/` remains user-owned copy-if-missing config
+- User timers should be modeled separately from graphical session services; do not put timers in graphical-service groups unless they are actually session-bound
+- Network share persistence is owned by the Mount Share workflow. It uses `/etc/fstab` entries marked with `# hyprbole mount-share`, safe automount options, and SMB credentials under `/etc/smb-credentials` with root-only permissions
+- Browser flags have two paths: system Brave desktop launches read `~/.config/brave-origin-nightly-flags.conf`; Hyprbole wrapper launches read `~/.config/hyprbole/brave-origin-nightly-flags.conf`
+- Synced external themes under `~/.config/hyprbole/themes/.sources/` are source-owned and should not be edited directly; use user-authored theme overrides or install missing dependencies
+- Docs must be updated whenever user-facing commands, menu entries, extras, install behavior, or persistence/security behavior changes
+
+## Before Adding User-Facing Features
+
+- Add or update the `hyprbole` route if the workflow is normal terminal use
+- Add a leaf script only when needed for menus, keybinds, services, or file-manager integration
+- If the workflow opens an interactive terminal from a menu, make it floating
+- Add package dependencies to the correct install set or make the workflow install/check them lazily
+- Add doctor checks only if they are actionable and non-sudo by default
+- Keep install reruns idempotent: no duplicate fstab entries, service definitions, source lines, desktop entries, PAM lines, or backups
+- Update user-guide docs and implementation-plan status in the same change
+
 ## Config Guidance
 
 - User-editable config should live under `config/`
