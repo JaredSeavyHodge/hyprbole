@@ -59,6 +59,9 @@ HYPRBOLE_OFFICIAL_PACKAGES=(
   gnome-keyring
   playerctl
   brightnessctl
+  cifs-utils
+  nfs-utils
+  ufw
   xdg-user-dirs
   xdg-utils
   gvfs
@@ -74,6 +77,7 @@ HYPRBOLE_OFFICIAL_PACKAGES=(
   imagemagick
   libqalculate
   pacman-contrib
+  rate-mirrors
   limine
   gnome-themes-extra
   noto-fonts

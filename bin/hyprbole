@@ -1402,8 +1402,10 @@ doctor() {
 
   doctor_section_start "Firewall"
   if command -v ufw >/dev/null 2>&1; then
-    if sudo ufw status | grep -q 'Status: active'; then
+    if systemctl is-active --quiet ufw.service; then
       doctor_report ok "UFW active"
+    elif systemctl is-enabled --quiet ufw.service; then
+      doctor_report warn "UFW enabled but inactive"
     else
       doctor_report warn "UFW installed but inactive"
     fi

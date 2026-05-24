@@ -3,4 +3,4 @@ Description=Clean trash files older than 30 days
 
 [Service]
 Type=oneshot
-ExecStart=bash -c 'find "%h/.local/share/Trash" -mindepth 1 -maxdepth 3 -mtime +30 -exec rm -rf {} + 2>/dev/null || true'
+ExecStart=bash -lc 'trash_dir="$HOME/.local/share/Trash"; find "$trash_dir/files" -mindepth 1 -maxdepth 1 -mtime +30 -exec rm -rf -- {} + 2>/dev/null || true; find "$trash_dir/info" -mindepth 1 -maxdepth 1 -name "*.trashinfo" -mtime +30 -delete 2>/dev/null || true'

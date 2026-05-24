@@ -95,5 +95,5 @@ deploy_user_units() {
       cp "$unit" "$unit_dir/$name"
       log_info "deployed user unit: $name"
     fi
-  done < <(find "$source_dir" -type f -name '*.service' -o -name '*.timer' -print0)
+  done < <(find "$source_dir" -type f \( -name '*.service' -o -name '*.timer' \) -print0)
 }

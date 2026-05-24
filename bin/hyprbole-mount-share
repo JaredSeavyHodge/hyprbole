@@ -4,40 +4,77 @@
 
 set -euo pipefail
 
-REQUIRED_PKGS=()
-command -v gum >/dev/null 2>&1 || REQUIRED_PKGS+=(gum)
-command -v mount.cifs >/dev/null 2>&1 || REQUIRED_PKGS+=(cifs-utils)
-if ! command -v smbclient >/dev/null 2>&1; then
-  HAS_SMBCLIENT=0
-  REQUIRED_PKGS+=(smbclient)
-else
-  HAS_SMBCLIENT=1
-fi
+MANAGED_MARKER="# hyprbole mount-share"
 
-if ((${#REQUIRED_PKGS[@]} > 0)); then
-  printf 'Installing required packages: %s\n' "${REQUIRED_PKGS[*]}"
-  sudo pacman -S --needed --noconfirm "${REQUIRED_PKGS[@]}"
-fi
+ensure_commands() {
+  local missing=()
+  local command_name
+  local package_name
+  local requirement
+
+  for requirement in "$@"; do
+    command_name="${requirement%%:*}"
+    package_name="${requirement#*:}"
+    command -v "$command_name" >/dev/null 2>&1 || missing+=("$package_name")
+  done
+
+  if ((${#missing[@]} > 0)); then
+    printf 'Installing required packages: %s\n' "${missing[*]}"
+    sudo pacman -S --needed --noconfirm "${missing[@]}"
+  fi
+}
+
+ensure_commands gum:gum
+
+managed_fstab_entries() {
+  grep -nF "$MANAGED_MARKER" /etc/fstab 2>/dev/null || true
+}
+
+clean_fstab_entry() {
+  local content="$1"
+  content="${content%%$MANAGED_MARKER*}"
+  printf '%s' "$content" | xargs
+}
+
+write_managed_fstab_entry() {
+  local source="$1"
+  local mount_point="$2"
+  local fs_type="$3"
+  local options="$4"
+  local tmp_file
+
+  tmp_file=$(mktemp)
+  awk -v src="$source" -v mount_point="$mount_point" -v marker="$MANAGED_MARKER" '
+    $0 ~ marker {
+      split($0, fields, /[[:space:]]+/)
+      if (fields[1] == src || fields[2] == mount_point) next
+    }
+    { print }
+  ' /etc/fstab >"$tmp_file"
+
+  printf '%s  %s  %s  %s  0  0  %s\n' "$source" "$mount_point" "$fs_type" "$options" "$MANAGED_MARKER" >>"$tmp_file"
+  sudo install -m 644 "$tmp_file" /etc/fstab
+  rm -f "$tmp_file"
+}
 
 list_saved_shares() {
   local entries
-  entries=$(grep -n '# hyprbole' /etc/fstab 2>/dev/null || true)
+  entries=$(managed_fstab_entries)
   if [[ -z $entries ]]; then
     printf 'No Hyprbole-managed shares found in /etc/fstab.\n'
     return
   fi
   printf 'Hyprbole-managed shares in /etc/fstab:\n\n'
   while IFS=: read -r line_num content; do
-    # Remove leading whitespace and trailing comment
     local clean
-    clean=$(printf '%s' "$content" | sed 's/\s*# hyprbole.*$//' | xargs)
+    clean=$(clean_fstab_entry "$content")
     printf '  [%d] %s\n' "$line_num" "$clean"
   done <<< "$entries"
 }
 
 remove_share() {
   local entries
-  entries=$(grep -n '# hyprbole' /etc/fstab 2>/dev/null || true)
+  entries=$(managed_fstab_entries)
   if [[ -z $entries ]]; then
     gum style --foreground 212 "No Hyprbole-managed shares to remove."
     return
@@ -46,7 +83,7 @@ remove_share() {
   local lines=()
   while IFS=: read -r line_num content; do
     local clean
-    clean=$(printf '%s' "$content" | sed 's/\s*# hyprbole.*$//' | xargs)
+    clean=$(clean_fstab_entry "$content")
     lines+=("$line_num|$clean")
   done <<< "$entries"
 
@@ -55,7 +92,7 @@ remove_share() {
     local num label
     num="${item%%|*}"
     label="${item#*|}"
-    choices+=("$num" "$label")
+    choices+=("$num  $label")
   done
 
   local picked
@@ -64,9 +101,16 @@ remove_share() {
     return
   fi
 
+  local picked_line
+  picked_line="${picked%%[[:space:]]*}"
+  [[ $picked_line =~ ^[0-9]+$ ]] || {
+    gum style --foreground 9 "Could not parse selected fstab line."
+    return 1
+  }
+
   if gum confirm "Remove this entry from /etc/fstab?" --default=false; then
-    sudo sed -i "${picked}d" /etc/fstab
-    gum style --foreground 10 "Removed entry at line $picked from /etc/fstab."
+    sudo sed -i "${picked_line}d" /etc/fstab
+    gum style --foreground 10 "Removed entry at line $picked_line from /etc/fstab."
   fi
 }
 
@@ -77,14 +121,15 @@ mount_share() {
 
   if [[ $protocol == "SMB/CIFS" ]]; then
     local server share mount_point username password
+
+    ensure_commands mount.cifs:cifs-utils smbclient:smbclient
+
     server=$(gum input --placeholder "192.168.1.100" --header "Server address:")
     [[ -n $server ]] || { echo "Server required"; exit 1; }
 
-    if (( HAS_SMBCLIENT == 1 )); then
-      if gum confirm "Discover shares via smbclient?"; then
-        gum spin --title "Listing shares..." -- smbclient -N -L "$server" 2>/dev/null || \
-          echo "Discovery failed; enter share name manually."
-      fi
+    if gum confirm "Discover shares via smbclient?"; then
+      gum spin --title "Listing shares..." -- smbclient -N -L "$server" 2>/dev/null || \
+        echo "Discovery failed; enter share name manually."
     fi
 
     share=$(gum input --placeholder "sharename" --header "Share name:")
@@ -123,13 +168,16 @@ mount_share() {
 
     if gum confirm "Add to /etc/fstab for automatic mounting?"; then
       local fstab_opts="$opts,nofail,x-systemd.automount,x-systemd.mount-timeout=30,_netdev"
-      printf '//%s/%s  %s  cifs  %s  0  0  # hyprbole\n' "$server" "$share" "$mount_point" "$fstab_opts" | sudo tee -a /etc/fstab >/dev/null
-      gum style --foreground 10 "Added to /etc/fstab with nofail and systemd automount."
+      write_managed_fstab_entry "//$server/$share" "$mount_point" cifs "$fstab_opts"
+      gum style --foreground 10 "Saved /etc/fstab entry with nofail and systemd automount."
     fi
   fi
 
   if [[ $protocol == "NFS" ]]; then
     local server export_path mount_point
+
+    ensure_commands mount.nfs:nfs-utils
+
     server=$(gum input --placeholder "192.168.1.100" --header "Server address:")
     [[ -n $server ]] || { echo "Server required"; exit 1; }
 
@@ -148,8 +196,8 @@ mount_share() {
 
     if gum confirm "Add to /etc/fstab for automatic mounting?"; then
       local fstab_opts="nofail,x-systemd.automount,x-systemd.mount-timeout=30,_netdev"
-      printf '%s:%s  %s  nfs  %s  0  0  # hyprbole\n' "$server" "$export_path" "$mount_point" "$fstab_opts" | sudo tee -a /etc/fstab >/dev/null
-      gum style --foreground 10 "Added to /etc/fstab with nofail and systemd automount."
+      write_managed_fstab_entry "$server:$export_path" "$mount_point" nfs "$fstab_opts"
+      gum style --foreground 10 "Saved /etc/fstab entry with nofail and systemd automount."
     fi
   fi
 }
