@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# hyprbole:summary=Launch a command in a floating Hyprland terminal
+# hyprbole:args=<command> [args...]
+
+set -euo pipefail
+
+if [[ $# -eq 0 ]]; then
+  echo "Usage: hyprbole-launch-floating <command> [args...]"
+  exit 1
+fi
+
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+
+hyprbole_launch_floating_terminal com.hyprbole.floating-terminal "Hyprbole Terminal" bash -lc '"$@"' -- "$@"
