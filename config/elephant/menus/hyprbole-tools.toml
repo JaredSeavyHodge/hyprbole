@@ -7,13 +7,13 @@ fixed_order = true
 [[entries]]
 text = "󰋊  Disk Usage"
 subtext = "Inspect disk space with dua"
-actions = { activate = "hyprbole-launch-disk-usage" }
+actions = { activate = "hyprbole launch disk-usage" }
 state = ["sublevel"]
 
 [[entries]]
 text = "󰍛  System Monitor"
 subtext = "Open btop"
-actions = { activate = "hyprbole-launch-btop" }
+actions = { activate = "hyprbole launch btop" }
 state = ["sublevel"]
 
 [[entries]]
@@ -25,13 +25,13 @@ state = ["sublevel"]
 [[entries]]
 text = "  System Health"
 subtext = "Show disk and OS health warnings"
-actions = { activate = "hyprbole-launch-health" }
+actions = { activate = "hyprbole launch health" }
 state = ["sublevel"]
 
 [[entries]]
 text = "󱦲  Mount Share"
 subtext = "Mount a NAS SMB or NFS share"
-actions = { activate = "hyprbole-launch-mount-share" }
+actions = { activate = "hyprbole launch mount-share" }
 state = ["sublevel"]
 
 [[entries]]

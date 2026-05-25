@@ -47,7 +47,7 @@ hb health updates
 
 `hb health updates` is the quickest way to check whether your last full system update is stale or the Hyprbole repo has upstream updates available.
 
-The Utilities menu also includes `System Monitor` for `btop`, `System Info` for Hyprland system information, `Mount Share` for NAS shares, and refresh actions for Hyprbole runtime state and shipped configs.
+The Utilities menu also includes `System Monitor` for `btop`, `System Info` for Hyprland system information, `Mount Share` for NAS shares, and refresh actions for Hyprbole runtime state and shipped configs. App-like utility actions call `hyprbole launch ...` routes directly; refresh and toggle actions keep dedicated helper scripts where the script is the integration point.
 
 `Refresh Desktop` reapplies theme and runtime state. `Refresh Shipped Configs` runs the same refresh with user config files included, which can overwrite local customizations after backing them up.
 
@@ -99,8 +99,8 @@ Hyprbole generates this desktop entry so Walker's app launcher can find Disk Usa
 ~/.local/share/applications/hyprbole-disk-usage.desktop
 ```
 
-Refresh generated tool launchers with:
+Refresh generated tool launchers through the normal runtime refresh route:
 
 ```bash
-hyprbole-refresh-tool-launchers
+hb refresh-all
 ```

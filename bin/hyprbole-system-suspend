@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Lock the session and suspend the system
-
-set -euo pipefail
-
-exec hyprbole power suspend

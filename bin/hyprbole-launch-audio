@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Launch audio controls
-
-set -euo pipefail
-
-exec pavucontrol

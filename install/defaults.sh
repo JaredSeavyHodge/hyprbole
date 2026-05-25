@@ -21,9 +21,8 @@ deploy_defaults() {
     fi
   done < <(find "$HYPRBOLE_PATH/config" -type f ! -path '*/__pycache__/*' ! -name '*.py[co]' -print0)
 
-  for relative_path in "${HYPRBOLE_RETIRED_USER_CONFIG_PATHS[@]}"; do
-    rm -f -- "$HOME/.config/$relative_path"
-  done
+  cleanup_retired_user_configs
+  cleanup_retired_bin_links
 
   cleanup_hyprland_generated_stub
 
@@ -50,6 +49,38 @@ deploy_defaults() {
   fi
 
   log_info "copied $copied_count user config file(s) that were missing"
+}
+
+cleanup_retired_user_configs() {
+  local relative_path
+  local path
+
+  for relative_path in "${HYPRBOLE_RETIRED_USER_CONFIG_PATHS[@]}"; do
+    path="$HOME/.config/$relative_path"
+    [[ -f $path ]] || continue
+    case "$relative_path" in
+      elephant/menus/hyprbole-gaming-install.toml)
+        grep -Fxq 'name = "hyprbole-gaming-install"' "$path" && rm -f -- "$path"
+        ;;
+      elephant/menus/hyprbole-session.toml)
+        grep -Fxq 'name = "hyprbole-session"' "$path" && rm -f -- "$path"
+        ;;
+    esac
+  done
+}
+
+cleanup_retired_bin_links() {
+  local bin_name
+  local path
+  local target
+
+  for bin_name in "${HYPRBOLE_RETIRED_BIN_NAMES[@]}"; do
+    path="$HOME/.local/bin/$bin_name"
+    [[ -L $path ]] || continue
+    target=$(readlink "$path" || true)
+    [[ $target == "$HYPRBOLE_PATH/bin/$bin_name" ]] || continue
+    rm -f -- "$path"
+  done
 }
 
 ensure_hyprbole_checkout() {

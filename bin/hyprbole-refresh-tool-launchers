@@ -7,7 +7,7 @@ set -euo pipefail
 HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
 APPLICATIONS_DIR="$HOME/.local/share/applications"
 DISK_USAGE_DESKTOP_FILE="$APPLICATIONS_DIR/hyprbole-disk-usage.desktop"
-DISK_USAGE_LAUNCHER="$HYPRBOLE_PATH/bin/hyprbole-launch-disk-usage"
+DISK_USAGE_LAUNCHER="$HYPRBOLE_PATH/bin/hyprbole launch disk-usage"
 
 write_disk_usage_desktop_file() {
   mkdir -p "$APPLICATIONS_DIR"

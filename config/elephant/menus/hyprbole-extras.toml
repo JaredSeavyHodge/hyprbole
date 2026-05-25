@@ -7,35 +7,35 @@ fixed_order = true
 [[entries]]
 text = "󰨞  VS Code"
 subtext = "Install editor with Hyprbole theme and Secret Service setup"
-actions = { activate = "hyprbole-launch-extra-install vscode" }
+actions = { activate = "hyprbole launch extra-install vscode" }
 state = ["sublevel"]
 
 [[entries]]
 text = "󰢁  1Password"
 subtext = "Install password manager and Elephant provider"
-actions = { activate = "hyprbole-launch-extra-install onepassword" }
+actions = { activate = "hyprbole launch extra-install onepassword" }
 state = ["sublevel"]
 
 [[entries]]
 text = "󰎞  Obsidian"
 subtext = "Install Markdown knowledge-base app"
-actions = { activate = "hyprbole-launch-extra-install obsidian" }
+actions = { activate = "hyprbole launch extra-install obsidian" }
 state = ["sublevel"]
 
 [[entries]]
 text = "󰓓  Steam"
 subtext = "Install Steam with Gamescope, GameMode, and controller support"
-actions = { activate = "hyprbole-launch-extra-install steam" }
+actions = { activate = "hyprbole launch extra-install steam" }
 state = ["sublevel"]
 
 [[entries]]
 text = "󰙯  Discord"
 subtext = "Install Discord chat client"
-actions = { activate = "hyprbole-launch-extra-install discord" }
+actions = { activate = "hyprbole launch extra-install discord" }
 state = ["sublevel"]
 
 [[entries]]
 text = "󰈙  LibreOffice"
 subtext = "Install LibreOffice office suite"
-actions = { activate = "hyprbole-launch-extra-install libreoffice" }
+actions = { activate = "hyprbole launch extra-install libreoffice" }
 state = ["sublevel"]

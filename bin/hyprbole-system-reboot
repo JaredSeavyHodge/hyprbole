@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Reboot the system
-
-set -euo pipefail
-
-exec hyprbole power reboot

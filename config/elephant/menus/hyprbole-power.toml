@@ -13,17 +13,17 @@ state = ["sublevel", "submenu"]
 [[entries]]
 text = "󰒲  Suspend"
 subtext = "Lock and suspend the system"
-actions = { activate = "hyprbole-system-suspend" }
+actions = { activate = "hyprbole power suspend" }
 state = ["sublevel"]
 
 [[entries]]
 text = "󰜉  Reboot"
 subtext = "Restart the system"
-actions = { activate = "hyprbole-system-reboot" }
+actions = { activate = "hyprbole power reboot" }
 state = ["sublevel"]
 
 [[entries]]
 text = "  Power Off"
 subtext = "Shut down the system"
-actions = { activate = "hyprbole-system-poweroff" }
+actions = { activate = "hyprbole power off" }
 state = ["sublevel"]

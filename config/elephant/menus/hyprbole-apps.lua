@@ -40,7 +40,7 @@ function GetEntries()
       Text = "󰖟  Browser",
       Subtext = app_label("browser"),
       Actions = {
-        activate = "hyprbole-launch-browser",
+        activate = "hyprbole launch browser",
       },
       State = { "sublevel" },
     },
@@ -48,7 +48,7 @@ function GetEntries()
       Text = "󰉋  Files",
       Subtext = app_label("files"),
       Actions = {
-        activate = "hyprbole-launch-files",
+        activate = "hyprbole launch files",
       },
       State = { "sublevel" },
     },
@@ -56,7 +56,7 @@ function GetEntries()
       Text = "󰌆  Passwords",
       Subtext = command_exists("1password") and "Open 1Password" or "Install 1Password from Extras",
       Actions = {
-        activate = "hyprbole-launch-passwords",
+        activate = "hyprbole launch passwords",
       },
       State = { "sublevel" },
     },

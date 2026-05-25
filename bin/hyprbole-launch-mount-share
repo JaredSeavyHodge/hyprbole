@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Mount a NAS SMB or NFS share interactively
-
-set -euo pipefail
-
-exec hyprbole launch mount-share "$@"

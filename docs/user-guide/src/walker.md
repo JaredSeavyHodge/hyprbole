@@ -86,6 +86,11 @@ Useful terminal equivalents:
 
 ```bash
 hb apps
+hb menu hyprbole "Hyprbole menu"
+hb launch menu hyprbole "Hyprbole menu"
+hb launch browser
+hb launch files
+hb launch terminal
 hb launch launcher
 hb tools
 hb launch tools
@@ -93,7 +98,12 @@ hb utilities
 hb launch utilities
 hb keybinds
 hb launch keybinds
+hb launch audio
+hb launch network
+hb launch bluetooth
 hb disk-usage
+hb launch btop
+hb launch update
 hb launch themes
 hb launch wallpaper-menu
 hb launch my-wallpaper-menu
@@ -114,11 +124,11 @@ Use `/` to browse files through Walker's file provider.
 
 Use `:` or `SUPER + V` for clipboard history.
 
-Use `p:` or the 1Password entry from the Apps menu for password lookup after installing the 1Password extra from `Install`, `Extras`.
+Use `p:` or the Passwords entry from the Applications menu for password lookup after installing the 1Password extra from `Install`, `Extras`.
 
 ## Utilities Menu
 
-Open `System`, `Utilities` from the Hyprbole menu to launch utility and maintenance workflows. `Disk Usage` opens `dua i` in a floating terminal. `Mount Share` opens the NAS share workflow in a floating terminal. `Refresh Desktop` reapplies Hyprbole runtime state. `Refresh Shipped Configs` also refreshes shipped user config files and can overwrite local customizations after creating backups.
+Open `System`, `Utilities` from the Hyprbole menu to launch utility and maintenance workflows. `Disk Usage` opens `dua i` in a floating terminal. `Mount Share` opens the NAS share workflow in a floating terminal. `Refresh Desktop` reapplies Hyprbole runtime state through a retained refresh helper. `Refresh Shipped Configs` also refreshes shipped user config files and can overwrite local customizations after creating backups.
 
 ## Configuration
 

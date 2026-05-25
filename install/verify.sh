@@ -202,7 +202,7 @@ verify_installation() {
     failures=$((failures + 1))
   fi
 
-  if [[ -f $HOME/.local/share/applications/hyprbole-disk-usage.desktop ]] && ! grep -Fxq "Exec=$HYPRBOLE_PATH/bin/hyprbole-launch-disk-usage" "$HOME/.local/share/applications/hyprbole-disk-usage.desktop"; then
+  if [[ -f $HOME/.local/share/applications/hyprbole-disk-usage.desktop ]] && ! grep -Fxq "Exec=$HYPRBOLE_PATH/bin/hyprbole launch disk-usage" "$HOME/.local/share/applications/hyprbole-disk-usage.desktop"; then
     printf 'Disk Usage desktop launcher should use Hyprbole wrapper: %s\n' "$HOME/.local/share/applications/hyprbole-disk-usage.desktop" >&2
     failures=$((failures + 1))
   fi

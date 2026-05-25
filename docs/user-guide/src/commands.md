@@ -90,11 +90,21 @@ hb refresh-shell
 
 ```bash
 hb launch apps
+hb menu hyprbole "Hyprbole menu"
+hb launch menu hyprbole "Hyprbole menu"
+hb launch browser
+hb launch files
+hb launch terminal
 hb launch launcher
 hb launch tools
 hb launch utilities
 hb launch keybinds
+hb launch audio
+hb launch network
+hb launch bluetooth
 hb launch clipboard
+hb launch btop
+hb launch update
 hb launch themes
 hb launch wallpaper-menu
 hb launch obsidian
@@ -112,7 +122,7 @@ hb capture record-region
 hb capture record-screen
 ```
 
-The short top-level commands `hb apps`, `hb clipboard`, and `hb keybinds` are aliases for common launcher actions.
+The short top-level commands `hb apps`, `hb clipboard`, and `hb keybinds` are aliases for common launcher actions. Use `hb menu [menu] [placeholder]` or `hb launch menu [menu] [placeholder]` for custom Elephant menu providers.
 
 ## System And Power
 

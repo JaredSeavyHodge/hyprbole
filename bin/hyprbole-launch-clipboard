@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Open clipboard history picker
-
-set -euo pipefail
-
-exec hyprbole launch clipboard

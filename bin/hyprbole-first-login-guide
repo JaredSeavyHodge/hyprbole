@@ -22,7 +22,7 @@ date --iso-8601=seconds >"$opened_path"
 
 (
   sleep 2
-  "$HYPRBOLE_PATH/bin/hyprbole-launch-browser" --app="file://$docs_index"
+  "$HYPRBOLE_PATH/bin/hyprbole" launch browser --app="file://$docs_index"
 ) >/dev/null 2>&1 &
 
 exit 0

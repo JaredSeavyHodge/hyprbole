@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Lock the current session
-
-set -euo pipefail
-
-exec hyprbole system lock

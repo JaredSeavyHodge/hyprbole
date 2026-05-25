@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Open Walker launcher
-
-set -euo pipefail
-
-exec hyprbole launch launcher

@@ -17,13 +17,13 @@
     "exec-if": "$HYPRBOLE_PATH/bin/hyprbole-update-indicator --has-updates",
     "return-type": "json",
     "interval": 60,
-    "on-click": "$HYPRBOLE_PATH/bin/hyprbole-launch-update"
+    "on-click": "$HYPRBOLE_PATH/bin/hyprbole launch update"
   },
   "custom/health": {
     "exec": "$HYPRBOLE_PATH/bin/hyprbole-health-indicator",
     "return-type": "json",
     "interval": 60,
-    "on-click": "$HYPRBOLE_PATH/bin/hyprbole-launch-health",
+    "on-click": "$HYPRBOLE_PATH/bin/hyprbole launch health",
     "on-click-right": "$HYPRBOLE_PATH/bin/hyprbole health refresh >/dev/null 2>&1"
   },
   "custom/recording-indicator": {
@@ -88,7 +88,7 @@
   "custom/btop": {
     "format": "",
     "tooltip-format": "btop",
-    "on-click": "$HYPRBOLE_PATH/bin/hyprbole-launch-btop"
+    "on-click": "$HYPRBOLE_PATH/bin/hyprbole launch btop"
   },
   "battery": {
     "format": "{icon} {capacity}%",
@@ -108,11 +108,11 @@
     "format-disabled": "󰂲",
     "format-connected": "󰂱",
     "format-no-controller": "",
-    "on-click": "$HYPRBOLE_PATH/bin/hyprbole-launch-bluetooth"
+    "on-click": "$HYPRBOLE_PATH/bin/hyprbole launch bluetooth"
   },
   "pulseaudio": {
     "format": "{icon} {volume}%",
-    "on-click": "$HYPRBOLE_PATH/bin/hyprbole-launch-audio",
+    "on-click": "$HYPRBOLE_PATH/bin/hyprbole launch audio",
     "on-click-right": "$HYPRBOLE_PATH/bin/hyprbole-audio-mute",
     "format-muted": "",
     "format-icons": {

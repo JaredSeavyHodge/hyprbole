@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Open the Hyprbole OS menu
-
-set -euo pipefail
-
-exec hyprbole launch menu "${1:-hyprbole}" "${2:-Hyprbole menu}"

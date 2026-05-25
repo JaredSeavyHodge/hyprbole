@@ -54,9 +54,9 @@ class HyprboleVSCodeExtension(GObject.GObject, Nautilus.MenuProvider):
         subprocess.Popen(["code", path])
 
     def _open_in_neovim(self, _menu, path):
-        terminal_launcher = self._hyprbole_bin("hyprbole-launch-terminal")
-        if terminal_launcher:
-            subprocess.Popen([terminal_launcher, "nvim", path])
+        hyprbole_path = self._hyprbole_command()
+        if hyprbole_path:
+            subprocess.Popen([hyprbole_path, "launch", "terminal", "nvim", path])
             return
 
         subprocess.Popen(["ghostty", "-e", "nvim", path])
@@ -89,21 +89,6 @@ class HyprboleVSCodeExtension(GObject.GObject, Nautilus.MenuProvider):
                 return managed_bin
 
         return shutil.which("hyprbole")
-
-    def _hyprbole_bin(self, name):
-        local_bin = os.path.expanduser(os.path.join("~/.local/bin", name))
-        if os.path.isfile(local_bin) and os.access(local_bin, os.X_OK):
-            return local_bin
-
-        hyprbole_root = os.environ.get("HYPRBOLE_PATH")
-        if not hyprbole_root:
-            hyprbole_root = os.path.expanduser("~/.local/share/hyprbole")
-
-        managed_bin = os.path.join(hyprbole_root, "bin", name)
-        if os.path.isfile(managed_bin) and os.access(managed_bin, os.X_OK):
-            return managed_bin
-
-        return shutil.which(name)
 
     def _file_path(self, file):
         uri = file.get_uri()

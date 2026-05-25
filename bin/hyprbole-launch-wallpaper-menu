@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Open the current-theme wallpaper picker
-
-set -euo pipefail
-
-exec hyprbole launch wallpaper-menu

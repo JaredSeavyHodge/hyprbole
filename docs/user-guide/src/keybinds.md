@@ -78,7 +78,7 @@ Examples:
 
 ```lua
 -- Launch a terminal file manager.
-hl.bind("SUPER + E", hl.dsp.exec_cmd("hyprbole-launch-terminal yazi"))
+hl.bind("SUPER + E", hl.dsp.exec_cmd("hyprbole launch terminal yazi"))
 
 -- Launch an app directly.
 hl.bind("SUPER + SHIFT + C", hl.dsp.exec_cmd("code"))
@@ -113,7 +113,7 @@ Hyprbole exposes shipped default binding handles through `Hyprbole.bindings`, so
 ```lua
 -- Replace the default browser binding.
 Hyprbole.bindings.browser:unbind()
-hl.bind("SUPER + SHIFT + W", hl.dsp.exec_cmd("hyprbole-launch-browser"))
+hl.bind("SUPER + SHIFT + W", hl.dsp.exec_cmd("hyprbole launch browser"))
 ```
 
 Common default handles include `browser`, `terminal`, `files`, `launcher`, `menu`, `clipboard`, `close_window`, `toggle_floating`, `fullscreen`, `lock`, `logout`, `screenshot_region`, and `screenshot_screen`. Workspace defaults are grouped as `Hyprbole.bindings.focus_workspace[1]` through `[10]` and `Hyprbole.bindings.move_to_workspace[1]` through `[10]`.

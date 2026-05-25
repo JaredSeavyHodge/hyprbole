@@ -1,10 +1,12 @@
 local hyprbole_path = os.getenv("HYPRBOLE_PATH") or (os.getenv("HOME") .. "/.local/share/hyprbole")
 
-local terminal = hyprbole_path .. "/bin/hyprbole-launch-terminal"
-local browser = hyprbole_path .. "/bin/hyprbole-launch-browser"
-local file_manager = hyprbole_path .. "/bin/hyprbole-launch-files"
-local obsidian = hyprbole_path .. "/bin/hyprbole-launch-obsidian"
-local launcher = hyprbole_path .. "/bin/hyprbole-launch-walker"
+local hyprbole = hyprbole_path .. "/bin/hyprbole"
+
+local terminal = hyprbole .. " launch terminal"
+local browser = hyprbole .. " launch browser"
+local file_manager = hyprbole .. " launch files"
+local obsidian = hyprbole .. " launch obsidian"
+local launcher = hyprbole .. " launch launcher"
 
 local audio_up = hyprbole_path .. "/bin/hyprbole-audio-up"
 local audio_down = hyprbole_path .. "/bin/hyprbole-audio-down"
@@ -16,15 +18,15 @@ local screenshot_region = hyprbole_path .. "/bin/hyprbole-screenshot region"
 local screenshot_screen = hyprbole_path .. "/bin/hyprbole-screenshot screen"
 local record_region = hyprbole_path .. "/bin/hyprbole-record-toggle region"
 local record_screen = hyprbole_path .. "/bin/hyprbole-record-toggle screen"
-local system_lock = hyprbole_path .. "/bin/hyprbole-system-lock"
-local system_logout = hyprbole_path .. "/bin/hyprbole-system-logout"
+local system_lock = hyprbole .. " system lock"
+local system_logout = hyprbole .. " system logout"
 
-local launch_audio = hyprbole_path .. "/bin/hyprbole-launch-audio"
-local launch_network = hyprbole_path .. "/bin/hyprbole-launch-network"
-local launch_bluetooth = hyprbole_path .. "/bin/hyprbole-launch-bluetooth"
-local launch_passwords = hyprbole_path .. "/bin/hyprbole-launch-passwords"
-local launch_clipboard = hyprbole_path .. "/bin/hyprbole-launch-clipboard"
-local launch_menu = hyprbole_path .. "/bin/hyprbole-launch-menu"
+local launch_audio = hyprbole .. " launch audio"
+local launch_network = hyprbole .. " launch network"
+local launch_bluetooth = hyprbole .. " launch bluetooth"
+local launch_passwords = hyprbole .. " launch passwords"
+local launch_clipboard = hyprbole .. " launch clipboard"
+local launch_menu = hyprbole .. " launch menu"
 local bindings = {}
 
 bindings.terminal = hl.bind("SUPER + RETURN", hl.dsp.exec_cmd(terminal))

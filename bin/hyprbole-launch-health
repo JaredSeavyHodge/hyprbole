@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Launch the Hyprbole health report in a floating terminal
-
-set -euo pipefail
-
-exec hyprbole launch health

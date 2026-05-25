@@ -74,12 +74,18 @@ Launch:
   reboot
   suspend
   launch apps
+  launch audio
+  launch bluetooth
+  launch browser [args...]
+  launch btop
   launch menu [menu] [placeholder]
+  launch files [args...]
   launch tools
   launch utilities
   launch keybinds
   launch clipboard
   launch launcher
+  launch network
   launch disk-usage [path...]
   launch health
   launch mount-share
@@ -96,6 +102,7 @@ Launch:
   launch pkg-aur-install
   launch pkg-remove
   launch extra-install <name>
+  launch terminal [args...]
 
 Capture:
   capture region
@@ -1493,7 +1500,7 @@ doctor() {
   fi
 
   if [[ -f $HOME/.local/share/applications/hyprbole-disk-usage.desktop ]]; then
-    if grep -Fxq "Exec=$HYPRBOLE_PATH/bin/hyprbole-launch-disk-usage" "$HOME/.local/share/applications/hyprbole-disk-usage.desktop"; then
+    if grep -Fxq "Exec=$HYPRBOLE_PATH/bin/hyprbole launch disk-usage" "$HOME/.local/share/applications/hyprbole-disk-usage.desktop"; then
       doctor_report ok "$HOME/.local/share/applications/hyprbole-disk-usage.desktop uses Hyprbole launcher"
     else
       doctor_report warn "$HOME/.local/share/applications/hyprbole-disk-usage.desktop does not use Hyprbole launcher"
@@ -1626,6 +1633,56 @@ launch_tools() {
   launch_menu "hyprbole-tools" "Utilities"
 }
 
+launch_default_app_role() {
+  local role="$1"
+  local app
+  local command_name
+
+  shift
+
+  app="$(hyprbole_default_app "$role")" || {
+    printf 'unknown default app role: %s\n' "$role" >&2
+    return 1
+  }
+  command_name="$(hyprbole_app_command "$app")"
+
+  command -v "$command_name" >/dev/null 2>&1 || {
+    printf 'missing %s command for %s: %s\n' "$role" "$app" "$command_name" >&2
+    return 1
+  }
+
+  exec "$command_name" "$@"
+}
+
+launch_terminal() {
+  hyprbole_launch_terminal_command "$@"
+}
+
+launch_browser() {
+  launch_default_app_role browser "$@"
+}
+
+launch_files() {
+  launch_default_app_role files "$@"
+}
+
+launch_audio() {
+  exec pavucontrol
+}
+
+launch_network() {
+  exec nm-connection-editor
+}
+
+launch_bluetooth() {
+  command -v blueman-manager >/dev/null 2>&1 || {
+    printf 'missing required command: blueman-manager\n' >&2
+    return 1
+  }
+
+  exec blueman-manager
+}
+
 disk_usage() {
   command -v dua >/dev/null 2>&1 || {
     printf 'missing required command: dua\n' >&2
@@ -1691,19 +1748,45 @@ launch_my_wallpaper_menu() {
 }
 
 launch_update() {
-  exec hyprbole-launch-update
+  hyprbole_launch_floating_terminal com.hyprbole.update "Hyprbole Update" bash -lc '
+    if hyprbole-update-confirm; then
+      hyprbole update
+      status=$?
+      if (( status == 0 )); then
+        printf "\nUpdate complete.\n"
+      elif (( status == 11 )); then
+        printf "\nUpdate not started.\n"
+        printf "Hyprbole has local repo changes that would be overwritten or mixed with an update.\n"
+        printf "\nFinish or save your local work first, then run the update again.\n"
+        printf "\nUseful commands:\n"
+        printf "  git -C \"%s\" status --short\n" "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
+        printf "  git -C \"%s\" diff\n" "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
+      else
+        printf "\nUpdate failed.\n"
+        printf "Review the output above and retry after fixing the issue.\n"
+        printf "Log: /tmp/hyprbole-update.log\n"
+      fi
+    else
+      status=0
+      printf "\nUpdate cancelled.\n"
+    fi
+
+    printf "\nPress Enter to close..."
+    read -r _
+    exit "$status"
+  '
 }
 
 launch_pkg_installed() {
-  hyprbole_launch_floating_terminal com.hyprbole.pkg-installed "Installed Packages" hyprbole-pkg-installed
+  hyprbole_launch_floating_terminal com.hyprbole.pkg-installed "Installed Packages" hyprbole pkg installed
 }
 
 launch_pkg_install() {
-  hyprbole_launch_floating_terminal com.hyprbole.pkg-install "Install Packages" hyprbole-pkg-install
+  hyprbole_launch_floating_terminal com.hyprbole.pkg-install "Install Packages" hyprbole pkg install
 }
 
 launch_pkg_aur_install() {
-  hyprbole_launch_floating_terminal com.hyprbole.pkg-aur-install "Install AUR Packages" hyprbole-pkg-aur-install
+  hyprbole_launch_floating_terminal com.hyprbole.pkg-aur-install "Install AUR Packages" hyprbole pkg aur-install
 }
 
 launch_extra_install() {
@@ -2312,8 +2395,25 @@ main() {
         apps)
           launch_apps
           ;;
+        audio)
+          launch_audio
+          ;;
+        bluetooth)
+          launch_bluetooth
+          ;;
+        browser)
+          shift 2
+          launch_browser "$@"
+          ;;
+        btop)
+          hyprbole_launch_floating_terminal com.hyprbole.btop btop btop
+          ;;
         menu)
           launch_menu "${3:-hyprbole}" "${4:-Hyprbole menu}"
+          ;;
+        files)
+          shift 2
+          launch_files "$@"
           ;;
         tools)
           launch_tools
@@ -2329,6 +2429,9 @@ main() {
           ;;
         launcher)
           launch_launcher
+          ;;
+        network)
+          launch_network
           ;;
         disk-usage)
           shift 2
@@ -2384,6 +2487,10 @@ main() {
         extra-install)
           [[ -n ${3:-} ]] || usage
           launch_extra_install "$3"
+          ;;
+        terminal)
+          shift 2
+          launch_terminal "$@"
           ;;
         *)
           usage

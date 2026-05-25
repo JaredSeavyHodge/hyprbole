@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Show a fuzzy-finder TUI for picking Arch packages to install
-
-set -euo pipefail
-
-exec hyprbole pkg install

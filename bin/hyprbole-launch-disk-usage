@@ -1,8 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Launch disk usage browser in an interactive terminal
-# hyprbole:args=[path...]
-
-set -euo pipefail
-
-exec hyprbole launch disk-usage "$@"

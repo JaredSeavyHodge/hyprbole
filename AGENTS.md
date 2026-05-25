@@ -37,15 +37,16 @@ This repository defines the `hyprbole` desktop layer for Arch Linux. The project
 - When introducing user-facing commands in `bin/`, add metadata comments near the top of the file
 - Prefer extending `bin/hyprbole` for human-facing terminal workflows
 - Prefer short top-level `hyprbole` routes for very common interactive actions when they improve ergonomics without creating ambiguity
-- Keep `bin/hyprbole-*` leaf scripts for integration points such as Hyprland keybinds, Walker/Elephant menus, systemd services, and file manager actions
-- When a leaf script and `bin/hyprbole` overlap, prefer making the leaf script a thin wrapper around `hyprbole ...`
+- Prefer direct `hyprbole ...` routes for Hyprland keybinds, Walker/Elephant menus, Waybar click actions, and file manager actions when quoting is simple
+- Keep `bin/hyprbole-*` leaf scripts only for stable executable integration points, status probes, app wrappers, service jobs, or low-latency keybind helpers that should not pay full CLI route startup cost
+- When a leaf script and `bin/hyprbole` overlap, remove the leaf script unless a concrete external executable-path need exists
 - Shared workflow logic belongs in `bin/hyprbole` or `bin/hyprbole-lib`; leaf scripts should forward args and add integration context, not duplicate route parsing, install fallback policy, terminal launch policy, or persistence logic
 - Do not expose one-off install repair commands on the public `hyprbole` command surface unless they are normal user workflows; prefer `doctor --fix` or internal leaf scripts
 
 ## Design Decisions To Preserve
 
-- `hyprbole` is the human CLI; `bin/hyprbole-*` scripts are integration leaf scripts for menus, keybinds, systemd, Nautilus, and wrappers
-- Leaf scripts should be thin wrappers around `hyprbole ...` when the workflow is user-facing
+- `hyprbole` is the human CLI and the preferred command target for menus, keybinds, Waybar actions, and file-manager actions
+- Leaf scripts are reserved for real wrappers, status probes, service jobs, and low-latency helpers rather than route aliases
 - Terminal workflows launched from menus must open in floating terminals through `hyprbole_launch_floating_terminal` or `hyprbole-launch-floating`
 - Hyprland floating terminal windows use `com.hyprbole.*` classes and are covered by the default floating window rule
 - Floating terminal helpers must preserve the configured `com.hyprbole.*` class/title metadata for supported terminal backends, or fail loudly instead of silently opening a non-floating terminal
@@ -62,8 +63,8 @@ This repository defines the `hyprbole` desktop layer for Arch Linux. The project
 ## Before Adding User-Facing Features
 
 - Add or update the `hyprbole` route if the workflow is normal terminal use
-- Add a leaf script only when needed for menus, keybinds, services, or file-manager integration
-- If a workflow exists in both CLI and integration form, implement it once as a `hyprbole` route and make the leaf script a thin `exec hyprbole ... "$@"` wrapper
+- Add a leaf script only when a stable executable path, service entrypoint, status probe, external wrapper, or low-latency helper is concretely needed
+- If a workflow exists in both CLI and integration form, implement it once as a `hyprbole` route and call that route directly from the integration config when possible
 - If the workflow opens an interactive terminal from a menu, make it floating
 - Add package dependencies to the correct install set or make the workflow install/check them lazily
 - Add doctor checks only if they are actionable and non-sudo by default
@@ -105,7 +106,7 @@ This repository defines the `hyprbole` desktop layer for Arch Linux. The project
 - Brave Origin Nightly is launched through `bin/hyprbole-launch-brave-origin-nightly`
 - `bin/hyprbole-refresh-browser-launchers` writes browser flags to `~/.config/brave-origin-nightly-flags.conf` and sets the system desktop entry as the default browser
 - Gaming is surfaced through a `hyprbole-gaming` Elephant submenu with Steam launch, Gamescope gaming mode launch, and a link to the shared curated Extras install menu
-- `bin/hyprbole-launch-steam` and `bin/hyprbole-launch-steam-gaming-mode` are the leaf scripts for gaming menu actions
+- Gaming menu actions call `hyprbole launch steam` and `hyprbole launch steam-gaming-mode` directly
 - Hyprbole's Brave wrapper always passes `--password-store=gnome-libsecret` and `--ozone-platform-hint=auto`
 - Keep `~/.config/brave-origin-nightly-flags.conf` single-flag safe for the package wrapper; user extra Brave flags belong in `~/.config/hyprbole/brave-origin-nightly-flags.conf`
 - Do not enable Chromium fractional-scaling flags globally; keep them opt-in through the Hyprbole Brave extra flags file

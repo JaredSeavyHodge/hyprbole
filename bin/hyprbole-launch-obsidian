@@ -1,8 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Launch Obsidian or install the Obsidian extra
-# hyprbole:args=[obsidian args...]
-
-set -euo pipefail
-
-exec hyprbole launch obsidian "$@"

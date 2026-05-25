@@ -34,7 +34,7 @@ Hyprbole is a curated post-install desktop layer for Arch Linux built around Hyp
 - Keep reusable framework pieces in `~/.local/share/hyprbole`
 - Prefer small, composable shell scripts over a large monolithic installer
 - Prefer `hyprbole ...` as the primary human-facing CLI
-- Keep leaf scripts for integration points such as keybinds, menus, services, and file manager actions
+- Prefer direct `hyprbole ...` routes for user-facing keybinds, menus, Waybar actions, and file manager actions
 - Prefer official Arch packages first, then a small curated AUR set through `yay`
 - Keep Hyprland config modular and readable
 - Treat theming as a first-class system concern, not an afterthought
@@ -65,7 +65,7 @@ Examples of equivalent grouped routes:
 - `hyprbole system lock`
 - `hyprbole power suspend`
 
-Leaf scripts under `bin/hyprbole-*` still exist for desktop plumbing such as Hyprland binds, Walker/Elephant menus, systemd units, and Nautilus actions.
+Leaf scripts under `bin/hyprbole-*` still exist for stable executable integration points such as status probes, service jobs, app wrappers, and low-latency helpers. Normal user workflows should call `hyprbole ...` routes directly.
 
 ## Install And Verify
 

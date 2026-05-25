@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Open the Hyprbole keybind cheat sheet
-
-set -euo pipefail
-
-exec hyprbole launch keybinds

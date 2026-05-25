@@ -992,4 +992,4 @@ if (( OPEN_DOCS == 0 )); then
   exit 0
 fi
 
-exec "$HYPRBOLE_PATH/bin/hyprbole-launch-browser" --app="file://$DOCS_INDEX"
+exec "$HYPRBOLE_PATH/bin/hyprbole" launch browser --app="file://$DOCS_INDEX"

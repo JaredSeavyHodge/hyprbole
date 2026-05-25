@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Open the Hyprbole theme picker
-
-set -euo pipefail
-
-exec hyprbole launch themes

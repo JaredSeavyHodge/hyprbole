@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Launch the AUR package picker in an interactive terminal
-
-set -euo pipefail
-
-exec hyprbole launch pkg-aur-install

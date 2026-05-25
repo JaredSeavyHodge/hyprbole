@@ -25,17 +25,17 @@ state = ["sublevel", "submenu"]
 [[entries]]
 text = "󰚰  Update System"
 subtext = "Run Hyprbole update flow"
-actions = { activate = "hyprbole-launch-update" }
+actions = { activate = "hyprbole launch update" }
 state = ["sublevel"]
 
 [[entries]]
 text = "󰌾  Lock"
 subtext = "Lock the current session"
-actions = { activate = "hyprbole-system-lock" }
+actions = { activate = "hyprbole system lock" }
 state = ["sublevel"]
 
 [[entries]]
 text = "󰍃  Logout"
 subtext = "Log out to the display manager"
-actions = { activate = "hyprbole-system-logout" }
+actions = { activate = "hyprbole system logout" }
 state = ["sublevel"]

@@ -1,8 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Launch Steam in Gamescope gaming mode
-# hyprbole:args=[steam args...]
-
-set -euo pipefail
-
-exec hyprbole launch steam-gaming-mode "$@"

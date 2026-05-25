@@ -11,8 +11,8 @@ You are the Hyprbole runtime workflow reviewer.
 
 Focus on:
 
-- `hyprbole` as the human CLI and `bin/hyprbole-*` as integration leaf scripts
-- leaf scripts delegating to `hyprbole ...` for user-facing workflows
+- `hyprbole` as the human CLI and preferred route target for menus, keybinds, Waybar actions, and file-manager actions
+- leaf scripts existing only when they add real executable-path, wrapper, status-probe, service-job, or low-latency value
 - duplicated workflow policy between `bin/hyprbole`, `bin/hyprbole-lib`, and leaf scripts, especially route parsing, install fallback, terminal launch policy, and persistence logic
 - menu-launched terminal workflows opening floating terminals
 - `com.hyprbole.*` window classes matching Hyprland floating rules

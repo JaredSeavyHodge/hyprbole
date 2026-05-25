@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Log out to the display manager
-
-set -euo pipefail
-
-exec hyprbole system logout

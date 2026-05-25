@@ -424,6 +424,45 @@ HYPRBOLE_RETIRED_USER_CONFIG_PATHS=(
   elephant/menus/hyprbole-session.toml
 )
 
+HYPRBOLE_RETIRED_BIN_NAMES=(
+  hyprbole-launch-audio
+  hyprbole-launch-bluetooth
+  hyprbole-launch-browser
+  hyprbole-launch-btop
+  hyprbole-launch-clipboard
+  hyprbole-launch-disk-usage
+  hyprbole-launch-extra-install
+  hyprbole-launch-files
+  hyprbole-launch-health
+  hyprbole-launch-keybinds
+  hyprbole-launch-menu
+  hyprbole-launch-mount-share
+  hyprbole-launch-my-wallpaper-menu
+  hyprbole-launch-network
+  hyprbole-launch-obsidian
+  hyprbole-launch-passwords
+  hyprbole-launch-pkg-aur-install
+  hyprbole-launch-pkg-install
+  hyprbole-launch-pkg-installed
+  hyprbole-launch-pkg-remove
+  hyprbole-launch-steam
+  hyprbole-launch-steam-gaming-mode
+  hyprbole-launch-terminal
+  hyprbole-launch-theme-menu
+  hyprbole-launch-update
+  hyprbole-launch-walker
+  hyprbole-launch-wallpaper-menu
+  hyprbole-pkg-aur-install
+  hyprbole-pkg-install
+  hyprbole-pkg-installed
+  hyprbole-pkg-remove
+  hyprbole-system-lock
+  hyprbole-system-logout
+  hyprbole-system-poweroff
+  hyprbole-system-reboot
+  hyprbole-system-suspend
+)
+
 HYPRBOLE_DOCTOR_CONFIG_PATHS=(
   "$HOME/.config/hypr/hyprland.lua"
   "$HYPRBOLE_CONFIG_PATH/theme-sources.conf"

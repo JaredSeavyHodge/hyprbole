@@ -84,20 +84,20 @@ Package, user-service, refresh-path, diagnostic-path, doctor-path, and verify-pa
 
 ## Command Model
 
-Hyprbole uses a hybrid command model.
+Hyprbole uses a route-first command model.
 
 - `hyprbole` is the primary human-facing CLI
-- `bin/hyprbole-*` leaf scripts remain for integration points that need stable executable paths
+- `bin/hyprbole-*` leaf scripts remain only for integration points that need stable executable paths, status probes, service jobs, app wrappers, or low-latency helpers
 
 In practice:
 
 - terminal users should prefer `hyprbole ...`
 - short common routes such as `hyprbole menu`, `hyprbole lock`, and `hyprbole suspend` are preferred for frequent interactive use
-- Hyprland binds, Walker/Elephant menus, systemd units, and Nautilus actions can continue to call leaf scripts
-- leaf scripts should prefer delegating to `hyprbole ...` when the behavior is part of the public command surface
+- Hyprland binds, Walker/Elephant menus, Waybar actions, and Nautilus actions should call `hyprbole ...` routes directly when quoting is simple
+- leaf scripts should not exist only to delegate to `hyprbole ...`; remove route-alias scripts unless a concrete executable-path need exists
 - one-off repair/setup behavior should stay out of the public command surface unless it is a normal user workflow; prefer `doctor --fix` or internal leaf scripts
 
-This keeps the user experience coherent without forcing desktop integration through a single giant script entrypoint.
+This keeps the user experience coherent while reserving leaf scripts for places where a script file adds real integration value.
 
 ## Browser Model
 

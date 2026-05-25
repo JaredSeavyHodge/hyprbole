@@ -7,11 +7,11 @@ fixed_order = true
 [[entries]]
 text = "󰏗  Browse Installed Packages"
 subtext = "Inspect installed packages with fzf"
-actions = { activate = "hyprbole-launch-pkg-installed" }
+actions = { activate = "hyprbole launch pkg-installed" }
 state = ["sublevel"]
 
 [[entries]]
 text = "󰆴  Remove Package"
 subtext = "Pick installed packages to remove with fzf"
-actions = { activate = "hyprbole-launch-pkg-remove" }
+actions = { activate = "hyprbole launch pkg-remove" }
 state = ["sublevel"]

@@ -1,8 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Launch Steam or install the Steam gaming extra
-# hyprbole:args=[steam args...]
-
-set -euo pipefail
-
-exec hyprbole launch steam "$@"

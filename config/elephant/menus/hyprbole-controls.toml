@@ -7,19 +7,19 @@ fixed_order = true
 [[entries]]
 text = "󰕾  Audio"
 subtext = "Open volume controls"
-actions = { activate = "hyprbole-launch-audio" }
+actions = { activate = "hyprbole launch audio" }
 state = ["sublevel"]
 
 [[entries]]
 text = "󰤨  Network"
 subtext = "Open network controls"
-actions = { activate = "hyprbole-launch-network" }
+actions = { activate = "hyprbole launch network" }
 state = ["sublevel"]
 
 [[entries]]
 text = "󰂯  Bluetooth"
 subtext = "Open bluetooth controls"
-actions = { activate = "hyprbole-launch-bluetooth" }
+actions = { activate = "hyprbole launch bluetooth" }
 state = ["sublevel"]
 
 [[entries]]
