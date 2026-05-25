@@ -13,6 +13,7 @@ Focus on:
 
 - `hyprbole` as the human CLI and preferred route target for menus, keybinds, Waybar actions, and file-manager actions
 - `bin/hyprbole-lib.d/*` helper module boundaries and lazy loading through `hyprbole_load <module>`
+- route-domain modules such as `theme-routes`, `package-routes`, `doctor-routes`, and `update-routes` staying aligned with dispatcher branches
 - leaf scripts existing only when they add real executable-path, wrapper, status-probe, service-job, or low-latency value
 - duplicated workflow policy between `bin/hyprbole`, `bin/hyprbole-lib`, and leaf scripts, especially route parsing, install fallback, terminal launch policy, and persistence logic
 - domain helper placement under `bin/hyprbole-lib.d/` and whether `bin/hyprbole` lazy-loads only the route modules it needs

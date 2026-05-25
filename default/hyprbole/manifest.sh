@@ -281,11 +281,11 @@ HYPRBOLE_SYSTEM_TOOL_PACKAGES=(
   snapper
   limine-snapper-sync
   limine-mkinitcpio-hook
-  hyprsysteminfo
 )
 
 HYPRBOLE_REQUIRED_COMMANDS=(
   hyprland
+  hyprsysteminfo
   uwsm
   waybar
   swaync
@@ -346,7 +346,6 @@ HYPRBOLE_FIRST_LOGIN_USER_UNITS=(
 
 HYPRBOLE_ENABLED_USER_UNITS=(
   gnome-keyring-daemon.socket
-  "${HYPRBOLE_USER_TIMER_UNITS[@]}"
   "${HYPRBOLE_GRAPHICAL_USER_UNITS[@]}"
   "${HYPRBOLE_FIRST_LOGIN_USER_UNITS[@]}"
 )
@@ -466,6 +465,7 @@ HYPRBOLE_RETIRED_BIN_NAMES=(
   hyprbole-system-poweroff
   hyprbole-system-reboot
   hyprbole-system-suspend
+  hyprbole-sync-theme-sources
 )
 
 HYPRBOLE_DOCTOR_CONFIG_PATHS=(
@@ -522,10 +522,14 @@ HYPRBOLE_DIAGNOSTIC_CONFIG_PATHS=(
 
 HYPRBOLE_VERIFY_REQUIRED_PATHS=(
   "$HYPRBOLE_PATH/bin/hyprbole-lib.d/core"
+  "$HYPRBOLE_PATH/bin/hyprbole-lib.d/doctor-routes"
   "$HYPRBOLE_PATH/bin/hyprbole-lib.d/mirrors"
+  "$HYPRBOLE_PATH/bin/hyprbole-lib.d/package-routes"
   "$HYPRBOLE_PATH/bin/hyprbole-lib.d/refresh"
   "$HYPRBOLE_PATH/bin/hyprbole-lib.d/terminal"
   "$HYPRBOLE_PATH/bin/hyprbole-lib.d/theme"
+  "$HYPRBOLE_PATH/bin/hyprbole-lib.d/theme-routes"
+  "$HYPRBOLE_PATH/bin/hyprbole-lib.d/update-routes"
   "$HYPRBOLE_PATH/bin/hyprbole-health-check"
   "$HYPRBOLE_PATH/bin/hyprbole-health-indicator"
   "$HYPRBOLE_PATH/bin/hyprbole-health-report"

@@ -73,11 +73,30 @@ diagnostic_unit_check() {
   done
 }
 
+diagnostic_timer_check() {
+  local scope="$1"
+  local unit
+  shift
+
+  for unit in "$@"; do
+    if systemctl $scope is-enabled "$unit" >/dev/null 2>&1 && systemctl $scope is-active "$unit" >/dev/null 2>&1; then
+      printf 'ok   enabled active %s\n' "$unit"
+    elif systemctl $scope is-active "$unit" >/dev/null 2>&1; then
+      printf 'warn active disabled %s\n' "$unit"
+    elif systemctl $scope is-enabled "$unit" >/dev/null 2>&1; then
+      printf 'warn enabled inactive %s\n' "$unit"
+    else
+      printf 'miss disabled/inactive %s\n' "$unit"
+    fi
+  done
+}
+
 write_install_diagnostics() {
   local status="$1"
   local diagnostics_file="${HYPRBOLE_INSTALL_DIAGNOSTICS_FILE:-}"
   local previous_errexit=0
   local user_units=("${HYPRBOLE_CORE_USER_UNITS[@]}" "${HYPRBOLE_GRAPHICAL_USER_UNITS[@]}")
+  local user_timer_units=("${HYPRBOLE_USER_TIMER_UNITS[@]}")
 
   [[ -n $diagnostics_file ]] || return 0
 
@@ -149,6 +168,9 @@ write_install_diagnostics() {
     diagnostic_section "User Services"
     diagnostic_unit_check --user "${user_units[@]}"
     diagnostic_command systemctl --user list-units --state=failed --no-pager
+
+    diagnostic_section "User Timers"
+    diagnostic_timer_check --user "${user_timer_units[@]}"
 
     diagnostic_section "System Services"
     diagnostic_unit_check "" sddm.service polkit.service hyprbole-health-check.timer limine-snapper-sync.service snapper-cleanup.timer snapper-timeline.timer

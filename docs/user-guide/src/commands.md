@@ -151,10 +151,11 @@ hb restart waybar
 hb restart wallpaper
 hb restart swaync
 hb restart swayosd
+hb restart terminal
 hb restart menus
 ```
 
-`hb restart menus` restarts both Walker and Elephant. Use `hb restart walker` or `hb restart elephant` when you only need one side of the menu stack.
+`hb restart terminal` restarts the floating-terminal helper state. `hb restart menus` restarts both Walker and Elephant. Use `hb restart walker` or `hb restart elephant` when you only need one side of the menu stack.
 
 ## Tools
 
@@ -218,5 +219,7 @@ Snapshots use Snapper when available. `refresh-limine` refreshes Limine boot ent
 ## Repairs
 
 Prefer `hb doctor --fix` for supported repair flows. One-off setup commands are intentionally kept out of the public command surface unless they are normal user workflows.
+
+Use `hb migrate` to run any pending repository migrations recorded under `~/.local/state/hyprbole/applied-migrations`.
 
 Use `hb verify` when you want a strict pass/fail check. Use `hb doctor --verbose` when you want a readable report with each section shown. See the [Doctor](doctor.md) guide for the exact checks and repair behavior.

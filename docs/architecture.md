@@ -108,6 +108,7 @@ Current helper modules:
 - `theme`: font, theme source, wallpaper, and theme asset behavior
 - `refresh`: user config refresh and backup pruning
 - `mirrors`: mirror ranking workflow
+- `theme-routes`, `package-routes`, `doctor-routes`, `update-routes`: route-domain functions loaded only by matching dispatcher branches
 
 ## Browser Model
 
@@ -165,7 +166,7 @@ Current examples include:
 
 Short-lived tray-style applications can still be launched from Hyprland autostart when they do not need service supervision.
 
-User timers are tracked separately from graphical session services. Timers such as `hyprbole-trash-clean.timer` are enabled and started independently of `graphical-session.target` so install reruns can repair them before the next GUI session.
+User timers are tracked separately from graphical session services. Timers such as `hyprbole-trash-clean.timer` are enabled and started independently of `graphical-session.target`, and verification checks that they remain enabled and active so install reruns can repair them before the next GUI session.
 
 ## Hyprland Config Model
 

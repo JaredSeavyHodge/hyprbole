@@ -54,6 +54,18 @@ hyprbole_git_checkout() {
   [[ $path_root == "$checkout_root" ]]
 }
 
+sudo_keepalive() {
+  sudo -v
+
+  while true; do
+    sudo -n true || break
+    sleep 60
+  done 2>/dev/null &
+
+  HYPRBOLE_SUDO_KEEPALIVE_PID=$!
+  trap 'if [[ -n ${HYPRBOLE_SUDO_KEEPALIVE_PID:-} ]]; then kill "$HYPRBOLE_SUDO_KEEPALIVE_PID" 2>/dev/null || true; fi' EXIT
+}
+
 hyprbole_setting_value() {
   local key="$1"
 

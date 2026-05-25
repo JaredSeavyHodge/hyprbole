@@ -1,0 +1,167 @@
+#!/bin/bash
+
+update_repo() {
+  hyprbole_git_checkout "$HYPRBOLE_PATH" || {
+    printf 'HYPRBOLE_PATH is not a git checkout root: %s\n' "$HYPRBOLE_PATH" >&2
+    printf 'Run install.sh from a git checkout to convert older partial deployments.\n' >&2
+    return 1
+  }
+
+  if [[ -n $(git -C "$HYPRBOLE_PATH" status --porcelain) ]]; then
+    printf 'HYPRBOLE_PATH has uncommitted changes: %s\n' "$HYPRBOLE_PATH" >&2
+    printf 'Commit or stash local changes before updating.\n' >&2
+    return 11
+  fi
+
+  git -C "$HYPRBOLE_PATH" pull --ff-only
+}
+aur_accessible() {
+  command -v curl >/dev/null 2>&1 || return 1
+
+  curl -sf --connect-timeout 30 --retry 3 --retry-delay 3 -A "hyprbole-update" \
+    "https://aur.archlinux.org/rpc/?v=5&type=info&arg=base" >/dev/null
+}
+current_pacman_log_lines() {
+  if [[ -f /var/log/pacman.log ]]; then
+    wc -l < /var/log/pacman.log
+  else
+    printf '0\n'
+  fi
+}
+package_cache_size_bytes() {
+  local size=0
+
+  if [[ -d /var/cache/pacman/pkg ]]; then
+    read -r size _ < <(du -sb /var/cache/pacman/pkg 2>/dev/null || printf '0 -\n')
+  fi
+
+  printf '%s\n' "$size"
+}
+format_bytes() {
+  if command -v numfmt >/dev/null 2>&1; then
+    numfmt --to=iec-i --suffix=B "$1"
+  else
+    printf '%s bytes\n' "$1"
+  fi
+}
+cleanup_orphan_packages() {
+  local orphans
+
+  orphans=$(pacman -Qtdq || true)
+  if [[ -n $orphans ]]; then
+    printf '\nRemove orphan system packages\n'
+    for pkg in $orphans; do
+      if sudo pacman -Rs --noconfirm "$pkg"; then
+        ((UPDATE_ORPHANS_REMOVED += 1))
+      fi
+    done
+  fi
+}
+cleanup_package_cache() {
+  local cache_size_before
+  local cache_size_after
+
+  if command -v paccache >/dev/null 2>&1; then
+    printf '\nTrim package cache\n'
+    cache_size_before=$(package_cache_size_bytes)
+    sudo paccache -rk2 || true
+    cache_size_after=$(package_cache_size_bytes)
+
+    if (( cache_size_after < cache_size_before )); then
+      UPDATE_CACHE_RECLAIMED_BYTES=$((cache_size_before - cache_size_after))
+    fi
+  fi
+}
+print_update_summary() {
+  local pacman_log_start_line="$1"
+  local upgraded=0
+  local installed=0
+  local removed=0
+
+  if [[ -f /var/log/pacman.log ]]; then
+    upgraded=$(sed -n "$((pacman_log_start_line + 1)),\$p" /var/log/pacman.log | grep -c '\[ALPM\] upgraded ' || true)
+    installed=$(sed -n "$((pacman_log_start_line + 1)),\$p" /var/log/pacman.log | grep -c '\[ALPM\] installed ' || true)
+    removed=$(sed -n "$((pacman_log_start_line + 1)),\$p" /var/log/pacman.log | grep -c '\[ALPM\] removed ' || true)
+  fi
+
+  printf '\nUpdate summary\n'
+  printf 'Upgraded packages: %s\n' "$upgraded"
+  printf 'Installed packages: %s\n' "$installed"
+  printf 'Removed packages: %s\n' "$removed"
+  printf 'Orphan packages removed: %s\n' "$UPDATE_ORPHANS_REMOVED"
+  printf 'Package cache reclaimed: %s\n' "$(format_bytes "$UPDATE_CACHE_RECLAIMED_BYTES")"
+  printf 'Update log: /tmp/hyprbole-update.log\n'
+}
+update_system_time() {
+  command -v systemctl >/dev/null 2>&1 || return 0
+  systemctl list-unit-files systemd-timesyncd.service >/dev/null 2>&1 || return 0
+
+  printf 'Updating time...\n'
+  sudo systemctl restart systemd-timesyncd.service || true
+}
+update_arch_keyring() {
+  printf '\nUpdate Arch signing keys\n'
+  # This sync is immediately followed by a full system upgrade.
+  sudo pacman -Sy --noconfirm archlinux-keyring >/dev/null 2> >(grep -vE '^warning: archlinux-keyring-[^ ]+ is up to date -- reinstalling$' >&2)
+  printf 'Keys are correct\n'
+}
+update_aur_packages() {
+  pacman -Qem >/dev/null 2>&1 || return 0
+
+  command -v yay >/dev/null 2>&1 || {
+    printf 'missing required command: yay\n' >&2
+    return 1
+  }
+
+  if aur_accessible; then
+    printf '\nUpdate AUR packages\n'
+    yay -Sua --cleanafter --noconfirm --answerclean None --answerdiff None --answeredit None --answerupgrade None
+    printf '\n'
+  else
+    printf '\nAUR is unavailable; skipping AUR package updates\n\n' >&2
+  fi
+}
+analyze_update_log() {
+  local update_log=/tmp/hyprbole-update.log
+
+  [[ -f $update_log ]] || return 0
+
+  if grep -q 'Updating linux initcpios' "$update_log" && ! grep -q 'Initcpio image generation successful' "$update_log"; then
+    printf '\nError: initramfs generation may have failed. Review logs before restart.\n\n' >&2
+  fi
+}
+update_all() {
+  local pacman_log_start_line
+
+  trap 'status=$?; if (( status != 11 )); then printf "\nUpdate failed. Review the output above and retry after fixing the issue.\nLog: /tmp/hyprbole-update.log\n" >&2; fi; return "$status"' ERR
+
+  UPDATE_ORPHANS_REMOVED=0
+  UPDATE_CACHE_RECLAIMED_BYTES=0
+  pacman_log_start_line=$(current_pacman_log_lines)
+
+  # Prevent idle/suspend from interrupting long-running updates.
+  hyprctl dispatch tagwindow +noidle >/dev/null 2>&1 || true
+
+  trap 'hyprctl dispatch tagwindow -- -noidle >/dev/null 2>&1 || true' RETURN
+
+  update_repo
+  sudo_keepalive
+  update_system_time
+
+  if command -v pacman >/dev/null 2>&1; then
+    update_arch_keyring
+  fi
+
+  hyprbole-snapshot create || [[ $? -eq 127 ]]
+  hyprbole-health-check --disk-space-guard
+  sudo pacman -Syyu --noconfirm
+  hyprbole-migrate
+  update_aur_packages
+  cleanup_orphan_packages
+  cleanup_package_cache
+  hyprbole-refresh-all
+  hyprbole-refresh-limine >/dev/null 2>&1 || true
+  analyze_update_log
+  print_update_summary "$pacman_log_start_line"
+  sudo systemctl start hyprbole-health-check.service >/dev/null 2>&1 || true
+}

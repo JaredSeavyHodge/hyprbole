@@ -126,6 +126,7 @@ verify_installation() {
   local active_user_units=("${HYPRBOLE_ACTIVE_USER_UNITS[@]}")
   local graphical_user_units=("${HYPRBOLE_GRAPHICAL_USER_UNITS[@]}")
   local enabled_user_units=("${HYPRBOLE_ENABLED_USER_UNITS[@]}")
+  local user_timer_units=("${HYPRBOLE_USER_TIMER_UNITS[@]}")
 
   if systemctl --user is-active --quiet graphical-session.target; then
     graphical_session_active=1
@@ -228,6 +229,16 @@ verify_installation() {
   for unit in "${enabled_user_units[@]}"; do
     if ! systemctl --user is-enabled "$unit" >/dev/null 2>&1; then
       printf 'user unit is not enabled: %s\n' "$unit" >&2
+      failures=$((failures + 1))
+    fi
+  done
+
+  for unit in "${user_timer_units[@]}"; do
+    if ! systemctl --user is-enabled "$unit" >/dev/null 2>&1; then
+      printf 'user timer is not enabled: %s\n' "$unit" >&2
+      failures=$((failures + 1))
+    elif ! systemctl --user is-active "$unit" >/dev/null 2>&1; then
+      printf 'user timer is not active: %s\n' "$unit" >&2
       failures=$((failures + 1))
     fi
   done
