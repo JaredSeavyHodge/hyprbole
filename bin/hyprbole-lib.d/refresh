@@ -1,0 +1,61 @@
+#!/bin/bash
+
+hyprbole_refresh_config_path() {
+  local relative_path="$1"
+  local backup_existing="${2:-1}"
+  local source_path="$HYPRBOLE_PATH/config/$relative_path"
+  local destination_path="$HOME/.config/$relative_path"
+  local backup_path="${destination_path}.bak.$(date +%Y%m%d%H%M%S)"
+  local backup_keep="$HYPRBOLE_CONFIG_BACKUP_KEEP"
+
+  [[ -f $source_path ]] || {
+    printf 'unknown config path: %s\n' "$relative_path" >&2
+    return 1
+  }
+
+  if [[ ! $backup_keep =~ ^[0-9]+$ ]]; then
+    backup_keep=3
+  fi
+
+  mkdir -p "$(dirname "$destination_path")"
+
+  if [[ -f $destination_path ]] && cmp -s "$source_path" "$destination_path"; then
+    hyprbole_prune_config_backups "$destination_path" "$backup_keep"
+    return 0
+  fi
+
+  if [[ $backup_existing == "1" && -f $destination_path && $backup_keep -gt 0 ]]; then
+    cp "$destination_path" "$backup_path"
+    printf 'backed up to %s\n' "$backup_path"
+  fi
+
+  hyprbole_prune_config_backups "$destination_path" "$backup_keep"
+
+  cp "$source_path" "$destination_path"
+}
+
+hyprbole_prune_config_backups() {
+  local destination_path="$1"
+  local keep="$2"
+  local backups=()
+  local backup_path
+  local index=0
+
+  if (( keep < 0 )); then
+    keep=0
+  fi
+
+  while IFS= read -r backup_path; do
+    [[ -e $backup_path ]] || continue
+    backups+=("$backup_path")
+  done < <(printf '%s\n' "$destination_path".bak.[0-9]* | sort -r)
+
+  [[ ${#backups[@]} -gt 0 ]] || return 0
+
+  for backup_path in "${backups[@]}"; do
+    index=$((index + 1))
+    if (( index > keep )); then
+      rm -f -- "$backup_path"
+    fi
+  done
+}

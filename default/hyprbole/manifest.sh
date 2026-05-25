@@ -329,12 +329,15 @@ HYPRBOLE_CORE_USER_UNITS=(
 )
 
 HYPRBOLE_GRAPHICAL_USER_UNITS=(
-  hyprbole-trash-clean.timer
   swayosd-server.service
   polkit-gnome-agent.service
   elephant.service
   walker.service
   swaync.service
+)
+
+HYPRBOLE_USER_TIMER_UNITS=(
+  hyprbole-trash-clean.timer
 )
 
 HYPRBOLE_FIRST_LOGIN_USER_UNITS=(
@@ -343,12 +346,14 @@ HYPRBOLE_FIRST_LOGIN_USER_UNITS=(
 
 HYPRBOLE_ENABLED_USER_UNITS=(
   gnome-keyring-daemon.socket
+  "${HYPRBOLE_USER_TIMER_UNITS[@]}"
   "${HYPRBOLE_GRAPHICAL_USER_UNITS[@]}"
   "${HYPRBOLE_FIRST_LOGIN_USER_UNITS[@]}"
 )
 
 HYPRBOLE_USER_UNITS=(
   "${HYPRBOLE_CORE_USER_UNITS[@]}"
+  "${HYPRBOLE_USER_TIMER_UNITS[@]}"
   "${HYPRBOLE_GRAPHICAL_USER_UNITS[@]}"
   "${HYPRBOLE_FIRST_LOGIN_USER_UNITS[@]}"
 )
@@ -516,6 +521,11 @@ HYPRBOLE_DIAGNOSTIC_CONFIG_PATHS=(
 )
 
 HYPRBOLE_VERIFY_REQUIRED_PATHS=(
+  "$HYPRBOLE_PATH/bin/hyprbole-lib.d/core"
+  "$HYPRBOLE_PATH/bin/hyprbole-lib.d/mirrors"
+  "$HYPRBOLE_PATH/bin/hyprbole-lib.d/refresh"
+  "$HYPRBOLE_PATH/bin/hyprbole-lib.d/terminal"
+  "$HYPRBOLE_PATH/bin/hyprbole-lib.d/theme"
   "$HYPRBOLE_PATH/bin/hyprbole-health-check"
   "$HYPRBOLE_PATH/bin/hyprbole-health-indicator"
   "$HYPRBOLE_PATH/bin/hyprbole-health-report"

@@ -4,7 +4,8 @@
 
 set -euo pipefail
 
-source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib.d/core"
+hyprbole_load terminal
 
 if command -v fastfetch >/dev/null 2>&1; then
   hyprbole_launch_floating_terminal com.hyprbole.system system bash -lc 'fastfetch; exec bash'

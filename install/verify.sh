@@ -139,7 +139,12 @@ verify_installation() {
   done
 
   for path in "${HYPRBOLE_VERIFY_REQUIRED_PATHS[@]}"; do
-    if [[ ! -e $path ]]; then
+    if [[ $path == */bin/hyprbole-lib.d/* ]]; then
+      if [[ ! -f $path || ! -r $path ]]; then
+        printf 'missing readable helper module: %s\n' "$path" >&2
+        failures=$((failures + 1))
+      fi
+    elif [[ ! -e $path ]]; then
       printf 'missing path: %s\n' "$path" >&2
       failures=$((failures + 1))
     fi
@@ -258,7 +263,13 @@ verify_installation() {
   fi
 
   if ! systemctl is-enabled hyprbole-health-check.timer >/dev/null 2>&1; then
-    printf 'warning: system timer is not enabled: hyprbole-health-check.timer\n' >&2
+    printf 'system timer is not enabled: hyprbole-health-check.timer\n' >&2
+    failures=$((failures + 1))
+  fi
+
+  if command -v limine-snapper-sync >/dev/null 2>&1 && ! systemctl is-enabled limine-snapper-sync.service >/dev/null 2>&1; then
+    printf 'system service is not enabled: limine-snapper-sync.service\n' >&2
+    failures=$((failures + 1))
   fi
 
   failed_units="$(systemctl --user list-units --state=failed --no-legend --plain 2>/dev/null || true)"

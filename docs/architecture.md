@@ -99,6 +99,16 @@ In practice:
 
 This keeps the user experience coherent while reserving leaf scripts for places where a script file adds real integration value.
 
+`bin/hyprbole` sources `bin/hyprbole-lib.d/core` at startup and lazy-loads domain helpers with `hyprbole_load <module>` when a route needs them. The compatibility file `bin/hyprbole-lib` loads the current helper modules for older retained helper scripts that need the historical full helper surface.
+
+Current helper modules:
+
+- `core`: environment, manifest, settings, default apps, browser helpers
+- `terminal`: terminal and floating-terminal launch behavior
+- `theme`: font, theme source, wallpaper, and theme asset behavior
+- `refresh`: user config refresh and backup pruning
+- `mirrors`: mirror ranking workflow
+
 ## Browser Model
 
 Brave Origin Nightly is the default browser package, but Hyprbole owns startup behavior through `bin/hyprbole-launch-brave-origin-nightly`.
@@ -154,6 +164,8 @@ Current examples include:
 - polkit agent
 
 Short-lived tray-style applications can still be launched from Hyprland autostart when they do not need service supervision.
+
+User timers are tracked separately from graphical session services. Timers such as `hyprbole-trash-clean.timer` are enabled and started independently of `graphical-session.target` so install reruns can repair them before the next GUI session.
 
 ## Hyprland Config Model
 

@@ -1,0 +1,715 @@
+#!/bin/bash
+
+hyprbole_default_font() {
+  local role="$1"
+  local font=""
+
+  font="$(hyprbole_setting_value "font_${role}" || true)"
+
+  if [[ -z $font ]]; then
+    case "$role" in
+      ui) font="Inter" ;;
+      mono) font="JetBrains Mono" ;;
+      terminal) font="JetBrainsMono Nerd Font Mono" ;;
+      *) return 1 ;;
+    esac
+  fi
+
+  printf '%s\n' "$font"
+}
+
+hyprbole_set_font() {
+  local role="$1"
+  local font="$2"
+
+  case "$role" in
+    ui|mono|terminal) ;;
+    *)
+      printf 'unknown font role: %s\n' "$role" >&2
+      return 1
+      ;;
+  esac
+
+  [[ -n $font ]] || {
+    printf 'font cannot be empty\n' >&2
+    return 1
+  }
+
+  hyprbole_set_setting "font_${role}" "$font"
+}
+
+hyprbole_sed_pipe_escape() {
+  printf '%s' "$1" | sed 's/[&|\\]/\\&/g'
+}
+
+hyprbole_css_double_escape() {
+  hyprbole_sed_pipe_escape "$1" | sed 's/"/\\"/g'
+}
+
+hyprbole_css_single_escape() {
+  hyprbole_sed_pipe_escape "$1" | sed "s/'/\\\\'/g"
+}
+
+hyprbole_apply_font_settings() {
+  local ui_font
+  local mono_font
+  local terminal_font
+  local waybar_font_stack
+
+  ui_font="$(hyprbole_default_font ui)"
+  mono_font="$(hyprbole_default_font mono)"
+  terminal_font="$(hyprbole_default_font terminal)"
+  waybar_font_stack="\"$(hyprbole_css_double_escape "$mono_font")\", \"JetBrainsMono Nerd Font\", \"Symbols Nerd Font\", \"Font Awesome 7 Free\", \"Font Awesome 6 Free\""
+
+  if [[ -f $HOME/.config/waybar/style.css ]]; then
+    sed -i "/^\* {/,/^}/ s|font-family: .*;|font-family: $waybar_font_stack;|" "$HOME/.config/waybar/style.css"
+  fi
+
+  if [[ -f $HOME/.config/walker/themes/hyprbole/style.css ]]; then
+    sed -i "s|font-family: [^;]*;|font-family: \"$(hyprbole_css_double_escape "$ui_font")\";|" "$HOME/.config/walker/themes/hyprbole/style.css"
+  fi
+
+  if [[ -f $HOME/.config/swayosd/style.css ]]; then
+    sed -i "s|font-family: '[^']*';|font-family: '$(hyprbole_css_single_escape "$mono_font")';|" "$HOME/.config/swayosd/style.css"
+  fi
+
+  if [[ -f $HOME/.config/ghostty/config ]]; then
+    sed -i "s|^font-family = .*|font-family = \"$(hyprbole_css_double_escape "$terminal_font")\"|" "$HOME/.config/ghostty/config"
+  fi
+
+  if [[ -f $HOME/.config/hypr/hyprlock.conf ]]; then
+    sed -i "s|^    font_family = .*|    font_family = $(hyprbole_sed_pipe_escape "$mono_font")|" "$HOME/.config/hypr/hyprlock.conf"
+  fi
+
+  if command -v gsettings >/dev/null 2>&1; then
+    gsettings set org.gnome.desktop.interface font-name "$ui_font 10" >/dev/null 2>&1 || true
+    gsettings set org.gnome.desktop.interface document-font-name "$ui_font 10" >/dev/null 2>&1 || true
+    gsettings set org.gnome.desktop.interface monospace-font-name "$mono_font 10" >/dev/null 2>&1 || true
+  fi
+}
+
+hyprbole_current_theme() {
+  if [[ -f $HYPRBOLE_CONFIG_PATH/current/theme-name ]]; then
+    cat "$HYPRBOLE_CONFIG_PATH/current/theme-name"
+  else
+    printf '%s\n' "$HYPRBOLE_FALLBACK_THEME"
+  fi
+}
+
+hyprbole_expand_path() {
+  local path="$1"
+
+  case "$path" in
+    "~") printf '%s\n' "$HOME" ;;
+    "~/"*) printf '%s/%s\n' "$HOME" "${path:2}" ;;
+    "\$HOME") printf '%s\n' "$HOME" ;;
+    "\$HOME/"*) printf '%s/%s\n' "$HOME" "${path#\$HOME/}" ;;
+    "\$HYPRBOLE_CONFIG_PATH") printf '%s\n' "$HYPRBOLE_CONFIG_PATH" ;;
+    "\$HYPRBOLE_CONFIG_PATH/"*) printf '%s/%s\n' "$HYPRBOLE_CONFIG_PATH" "${path#\$HYPRBOLE_CONFIG_PATH/}" ;;
+    *) printf '%s\n' "$path" ;;
+  esac
+}
+
+hyprbole_ensure_theme_sources() {
+  local default_sources_path="$HYPRBOLE_PATH/default/hyprbole/theme-sources.conf"
+
+  mkdir -p "$HYPRBOLE_CONFIG_PATH"
+
+  if [[ ! -f $HYPRBOLE_THEME_SOURCES_PATH ]]; then
+    if [[ -f $default_sources_path ]]; then
+      cp "$default_sources_path" "$HYPRBOLE_THEME_SOURCES_PATH"
+    else
+      printf '%s\n' '# name repo_url ref repo_theme_path local_theme_path' >"$HYPRBOLE_THEME_SOURCES_PATH"
+    fi
+  fi
+}
+
+hyprbole_theme_source_records() {
+  local name
+  local repo_url
+  local repo_ref
+  local repo_theme_path
+  local local_theme_path
+  local extra
+
+  hyprbole_ensure_theme_sources
+
+  while read -r name repo_url repo_ref repo_theme_path local_theme_path extra; do
+    [[ -n ${name:-} ]] || continue
+    [[ ${name:0:1} != "#" ]] || continue
+    [[ -n ${repo_url:-} && -n ${repo_ref:-} && -n ${repo_theme_path:-} && -n ${local_theme_path:-} ]] || continue
+
+    local_theme_path="$(hyprbole_expand_path "$local_theme_path")"
+    printf '%s\t%s\t%s\t%s\t%s\n' "$name" "$repo_url" "$repo_ref" "$repo_theme_path" "$local_theme_path"
+  done <"$HYPRBOLE_THEME_SOURCES_PATH"
+}
+
+hyprbole_theme_source_names() {
+  local name
+  local repo_url
+  local repo_ref
+  local repo_theme_path
+  local local_theme_path
+
+  while IFS=$'\t' read -r name repo_url repo_ref repo_theme_path local_theme_path; do
+    printf '%s\n' "$name"
+  done < <(hyprbole_theme_source_records)
+}
+
+hyprbole_theme_source_add() {
+  local name="$1"
+  local repo_url="$2"
+  local repo_ref="$3"
+  local repo_theme_path="$4"
+  local local_theme_path="${5:-}"
+
+  [[ $name =~ ^[A-Za-z0-9._-]+$ ]] || {
+    printf 'theme source name must use only letters, numbers, dot, underscore, or dash: %s\n' "$name" >&2
+    return 1
+  }
+
+  [[ -n $repo_url && -n $repo_ref && -n $repo_theme_path ]] || return 1
+
+  if [[ -z $local_theme_path ]]; then
+    local_theme_path="\$HYPRBOLE_CONFIG_PATH/themes/.sources/$name/themes"
+  fi
+
+  hyprbole_ensure_theme_sources
+
+  if awk -v name="$name" '$1 == name { found = 1 } END { exit found ? 0 : 1 }' "$HYPRBOLE_THEME_SOURCES_PATH"; then
+    printf 'theme source already exists: %s\n' "$name" >&2
+    return 1
+  fi
+
+  printf '%s %s %s %s %s\n' "$name" "$repo_url" "$repo_ref" "$repo_theme_path" "$local_theme_path" >>"$HYPRBOLE_THEME_SOURCES_PATH"
+}
+
+hyprbole_theme_source_dirs() {
+  local name
+  local repo_url
+  local repo_ref
+  local repo_theme_path
+  local local_theme_path
+
+  while IFS=$'\t' read -r name repo_url repo_ref repo_theme_path local_theme_path; do
+    [[ -d $local_theme_path ]] || continue
+    printf '%s\n' "$local_theme_path"
+  done < <(hyprbole_theme_source_records)
+}
+
+hyprbole_theme_source_dirs_for_name() {
+  local theme_name="$1"
+  local source_dir
+
+  while IFS= read -r source_dir; do
+    [[ -d $source_dir/$theme_name ]] || continue
+    printf '%s\n' "$source_dir/$theme_name"
+  done < <(hyprbole_theme_source_dirs)
+}
+
+hyprbole_list_themes() {
+  local theme_dir
+  local source_dir
+
+  {
+    for theme_dir in "$HYPRBOLE_PATH"/themes/*; do
+      [[ -d $theme_dir ]] || continue
+      basename "$theme_dir"
+    done
+
+    while IFS= read -r source_dir; do
+      for theme_dir in "$source_dir"/*; do
+        [[ -d $theme_dir ]] || continue
+        basename "$theme_dir"
+      done
+    done < <(hyprbole_theme_source_dirs)
+
+    for theme_dir in "$HYPRBOLE_CONFIG_PATH"/themes/*; do
+      [[ -d $theme_dir ]] || continue
+      basename "$theme_dir"
+    done
+  } | sort -u
+}
+
+hyprbole_theme_exists() {
+  local theme_name="$1"
+  local theme_dir
+
+  [[ -d $HYPRBOLE_PATH/themes/$theme_name ]] && return 0
+  while IFS= read -r theme_dir; do
+    [[ -d $theme_dir ]] && return 0
+  done < <(hyprbole_theme_source_dirs_for_name "$theme_name")
+  [[ -d $HYPRBOLE_CONFIG_PATH/themes/$theme_name ]] && return 0
+
+  return 1
+}
+
+hyprbole_theme_lookup_dirs_for_name() {
+  local theme_name="$1"
+  local source_dirs=()
+  local index
+
+  [[ -d $HYPRBOLE_CONFIG_PATH/themes/$theme_name ]] && printf '%s\n' "$HYPRBOLE_CONFIG_PATH/themes/$theme_name"
+
+  mapfile -t source_dirs < <(hyprbole_theme_source_dirs)
+  for ((index = ${#source_dirs[@]} - 1; index >= 0; index--)); do
+    [[ -d ${source_dirs[$index]}/$theme_name ]] || continue
+    printf '%s\n' "${source_dirs[$index]}/$theme_name"
+  done
+
+  [[ -d $HYPRBOLE_PATH/themes/$theme_name ]] && printf '%s\n' "$HYPRBOLE_PATH/themes/$theme_name"
+}
+
+hyprbole_theme_merge_dirs_for_name() {
+  local theme_name="$1"
+  local source_dir
+
+  [[ -d $HYPRBOLE_PATH/themes/$theme_name ]] && printf '%s\n' "$HYPRBOLE_PATH/themes/$theme_name"
+
+  while IFS= read -r source_dir; do
+    [[ -d $source_dir ]] || continue
+    printf '%s\n' "$source_dir"
+  done < <(hyprbole_theme_source_dirs_for_name "$theme_name")
+
+  [[ -d $HYPRBOLE_CONFIG_PATH/themes/$theme_name ]] && printf '%s\n' "$HYPRBOLE_CONFIG_PATH/themes/$theme_name"
+}
+
+hyprbole_theme_backgrounds_dir() {
+  local theme_name="$1"
+  local theme_dir
+
+  while IFS= read -r theme_dir; do
+    [[ -d $theme_dir/backgrounds ]] || continue
+    printf '%s\n' "$theme_dir/backgrounds"
+    return 0
+  done < <(hyprbole_theme_lookup_dirs_for_name "$theme_name")
+
+  while IFS= read -r theme_dir; do
+    [[ -d $theme_dir ]] || continue
+    printf '%s\n' "$theme_dir"
+    return 0
+  done < <(hyprbole_theme_lookup_dirs_for_name "$theme_name")
+
+  return 1
+}
+
+hyprbole_theme_file_path() {
+  local theme_name="$1"
+  local file_name="$2"
+  local theme_dir
+
+  while IFS= read -r theme_dir; do
+    [[ -f $theme_dir/backgrounds/$file_name ]] && {
+      printf '%s\n' "$theme_dir/backgrounds/$file_name"
+      return 0
+    }
+
+    [[ -f $theme_dir/$file_name ]] && {
+      printf '%s\n' "$theme_dir/$file_name"
+      return 0
+    }
+  done < <(hyprbole_theme_lookup_dirs_for_name "$theme_name")
+
+  return 1
+}
+
+hyprbole_is_background_asset() {
+  local path="$1"
+
+  case "$path" in
+    *.jpg|*.jpeg|*.png|*.webp) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+hyprbole_theme_first_background() {
+  local theme_name="$1"
+  local backgrounds_dir
+  local background_path
+
+  backgrounds_dir="$(hyprbole_theme_backgrounds_dir "$theme_name")"
+
+  for background_path in "$backgrounds_dir"/*; do
+    [[ -f $background_path ]] || continue
+    hyprbole_is_background_asset "$background_path" || continue
+    printf '%s\n' "$background_path"
+    return 0
+  done
+
+  return 1
+}
+
+hyprbole_list_theme_wallpapers() {
+  local theme_name="$1"
+  local backgrounds_dir
+  local background_path
+
+  backgrounds_dir="$(hyprbole_theme_backgrounds_dir "$theme_name")"
+
+  [[ -d $backgrounds_dir ]] || return 0
+
+  for background_path in "$backgrounds_dir"/*; do
+    [[ -f $background_path ]] || continue
+    hyprbole_is_background_asset "$background_path" || continue
+    basename "$background_path"
+  done
+}
+
+hyprbole_current_wallpaper() {
+  local current_background_link="$HYPRBOLE_CONFIG_PATH/current/background"
+
+  if [[ -L $current_background_link ]]; then
+    basename "$(readlink -f "$current_background_link")"
+  fi
+}
+
+hyprbole_current_wallpaper_path() {
+  local current_background_link="$HYPRBOLE_CONFIG_PATH/current/background"
+
+  if [[ -e $current_background_link ]]; then
+    readlink -f "$current_background_link"
+  fi
+}
+
+hyprbole_set_theme_wallpaper() {
+  local theme_name="$1"
+  local wallpaper_name="$2"
+  local current_dir="$HYPRBOLE_CONFIG_PATH/current"
+  local current_theme_dir="$current_dir/theme"
+  local current_background_link="$current_dir/background"
+  local wallpaper_path=""
+
+  wallpaper_path="$(hyprbole_theme_file_path "$theme_name" "$wallpaper_name" || true)"
+
+  [[ -n $wallpaper_path && -f $wallpaper_path ]] || {
+    printf 'unknown wallpaper for %s: %s\n' "$theme_name" "$wallpaper_name" >&2
+    return 1
+  }
+
+  hyprbole_is_background_asset "$wallpaper_path" || {
+    printf 'not a wallpaper asset: %s\n' "$wallpaper_name" >&2
+    return 1
+  }
+
+  if [[ $(hyprbole_current_theme) != "$theme_name" ]]; then
+    hyprbole_sync_theme_assets "$theme_name"
+  fi
+
+  [[ -f $current_theme_dir/backgrounds/$wallpaper_name ]] || {
+    printf 'wallpaper is not available in current theme: %s\n' "$wallpaper_name" >&2
+    return 1
+  }
+
+  mkdir -p "$current_dir"
+  ln -sfn "$current_theme_dir/backgrounds/$wallpaper_name" "$current_background_link"
+  ln -sfn ../background "$current_theme_dir/wallpaper.jpg"
+}
+
+hyprbole_set_custom_wallpaper() {
+  local wallpaper_path="$1"
+  local current_dir="$HYPRBOLE_CONFIG_PATH/current"
+  local current_theme_dir="$current_dir/theme"
+  local current_background_link="$current_dir/background"
+  local wallpaper_name="$(basename "$wallpaper_path")"
+  local current_wallpaper_path="$current_theme_dir/$wallpaper_name"
+
+  [[ -f $wallpaper_path ]] || {
+    printf 'unknown wallpaper: %s\n' "$wallpaper_path" >&2
+    return 1
+  }
+
+  hyprbole_is_background_asset "$wallpaper_path" || {
+    printf 'not a wallpaper asset: %s\n' "$wallpaper_path" >&2
+    return 1
+  }
+
+  mkdir -p "$current_dir" "$current_theme_dir"
+  cp "$wallpaper_path" "$current_wallpaper_path"
+  ln -sfn "$current_wallpaper_path" "$current_background_link"
+}
+
+hyprbole_list_custom_wallpapers() {
+  local wallpaper_dir="$HOME/Pictures/Wallpaper"
+
+  [[ -d $wallpaper_dir ]] || return 0
+
+  find -L "$wallpaper_dir" -type f \
+    \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) \
+    | sort
+}
+
+hyprbole_theme_generate_ghostty() {
+  local source_theme_dir="$1"
+  local destination_path="$2"
+  local colors_path="$source_theme_dir/colors.toml"
+  local key
+  local value
+
+  [[ -f $colors_path ]] || return 1
+
+  declare -A colors=()
+
+  while IFS= read -r line; do
+    [[ $line =~ ^[[:space:]]*# ]] && continue
+    [[ $line == *"="* ]] || continue
+
+    key="${line%%=*}"
+    value="${line#*=}"
+
+    key="$(printf '%s' "$key" | tr -d '[:space:]')"
+    value="$(printf '%s' "$value" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/^"//; s/"$//')"
+
+    case "$key" in
+      foreground|background|cursor|selection_foreground|selection_background|color[0-9]|color1[0-5])
+        colors[$key]="$value"
+        ;;
+    esac
+  done <"$colors_path"
+
+  [[ -n ${colors[background]:-} ]] || return 1
+  [[ -n ${colors[foreground]:-} ]] || return 1
+
+  if [[ -z ${colors[cursor]:-} ]]; then
+    colors[cursor]="${colors[foreground]}"
+  fi
+
+  if [[ -z ${colors[selection_background]:-} ]]; then
+    colors[selection_background]="${colors[color4]:-${colors[foreground]}}"
+  fi
+
+  if [[ -z ${colors[selection_foreground]:-} ]]; then
+    colors[selection_foreground]="${colors[background]}"
+  fi
+
+  cat >"$destination_path" <<EOF
+background = ${colors[background]#\#}
+foreground = ${colors[foreground]#\#}
+selection-background = ${colors[selection_background]#\#}
+selection-foreground = ${colors[selection_foreground]#\#}
+cursor-color = ${colors[cursor]#\#}
+cursor-text = ${colors[background]#\#}
+EOF
+
+  for i in $(seq 0 15); do
+    [[ -n ${colors[color$i]:-} ]] || return 1
+    printf 'palette = %d=%s\n' "$i" "${colors[color$i]}" >>"$destination_path"
+  done
+}
+
+hyprbole_theme_generate_waybar() {
+  local source_theme_dir="$1"
+  local destination_path="$2"
+  local colors_path="$source_theme_dir/colors.toml"
+  local key
+  local value
+
+  [[ -f $colors_path ]] || return 1
+
+  declare -A colors=()
+
+  while IFS= read -r line; do
+    [[ $line =~ ^[[:space:]]*# ]] && continue
+    [[ $line == *"="* ]] || continue
+
+    key="${line%%=*}"
+    value="${line#*=}"
+
+    key="$(printf '%s' "$key" | tr -d '[:space:]')"
+    value="$(printf '%s' "$value" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/^"//; s/"$//')"
+
+    case "$key" in
+      background|foreground|accent|color1|color4|color8|color15)
+        colors[$key]="$value"
+        ;;
+    esac
+  done <"$colors_path"
+
+  [[ -n ${colors[background]:-} ]] || return 1
+  [[ -n ${colors[foreground]:-} ]] || return 1
+
+  if [[ -z ${colors[accent]:-} ]]; then
+    colors[accent]="${colors[color4]:-${colors[foreground]}}"
+  fi
+
+  if [[ -z ${colors[muted]:-} ]]; then
+    colors[muted]="${colors[color8]:-${colors[foreground]}}"
+  fi
+
+  if [[ -z ${colors[danger]:-} ]]; then
+    colors[danger]="${colors[color1]:-${colors[accent]}}"
+  fi
+
+  cat >"$destination_path" <<EOF
+@define-color background ${colors[background]};
+@define-color foreground ${colors[foreground]};
+@define-color accent ${colors[accent]};
+@define-color muted ${colors[muted]};
+@define-color danger ${colors[danger]};
+EOF
+}
+
+hyprbole_theme_generate_hyprlock() {
+  local source_theme_dir="$1"
+  local destination_path="$2"
+  local colors_path="$source_theme_dir/colors.toml"
+  local key
+  local value
+
+  [[ -f $colors_path ]] || return 1
+
+  declare -A colors=()
+
+  while IFS= read -r line; do
+    [[ $line =~ ^[[:space:]]*# ]] && continue
+    [[ $line == *"="* ]] || continue
+
+    key="${line%%=*}"
+    value="${line#*=}"
+
+    key="$(printf '%s' "$key" | tr -d '[:space:]')"
+    value="$(printf '%s' "$value" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/^"//; s/"$//')"
+
+    case "$key" in
+      background|foreground|accent|cursor|color0|color4)
+        colors[$key]="$value"
+        ;;
+    esac
+  done <"$colors_path"
+
+  [[ -n ${colors[background]:-} ]] || return 1
+  [[ -n ${colors[foreground]:-} ]] || return 1
+
+  if [[ -z ${colors[accent]:-} ]]; then
+    colors[accent]="${colors[color4]:-${colors[foreground]}}"
+  fi
+
+  if [[ -z ${colors[inner]:-} ]]; then
+    colors[inner]="${colors[color0]:-${colors[background]}}"
+  fi
+
+  if [[ -z ${colors[cursor]:-} ]]; then
+    colors[cursor]="${colors[accent]}"
+  fi
+
+  cat >"$destination_path" <<EOF
+\$color = rgb(${colors[background]#\#})
+\$inner_color = rgb(${colors[inner]#\#})
+\$outer_color = rgb(${colors[accent]#\#})
+\$font_color = rgb(${colors[foreground]#\#})
+\$check_color = rgb(${colors[cursor]#\#})
+EOF
+}
+
+hyprbole_theme_generate_chromium() {
+  local source_theme_dir="$1"
+  local destination_path="$2"
+  local colors_path="$source_theme_dir/colors.toml"
+  local accent=""
+
+  [[ -f $colors_path ]] || return 1
+
+  accent="$(sed -n 's/^accent[[:space:]]*=[[:space:]]*"\([^"]*\)"/\1/p' "$colors_path")"
+  [[ -n $accent ]] || return 1
+
+  printf '%d,%d,%d\n' "0x${accent:1:2}" "0x${accent:3:2}" "0x${accent:5:2}" >"$destination_path"
+}
+
+hyprbole_sync_theme_assets() {
+  local theme_name="$1"
+  local previous_theme_name
+  local fallback_theme_dir="$HYPRBOLE_PATH/themes/$HYPRBOLE_FALLBACK_THEME"
+  local fallback_source_dir=""
+  local current_config_dir="$HYPRBOLE_CONFIG_PATH/current"
+  local current_config_theme_dir="$HYPRBOLE_CONFIG_PATH/current/theme"
+  local current_config_background_link="$HYPRBOLE_CONFIG_PATH/current/background"
+  local next_config_theme_dir="$HYPRBOLE_CONFIG_PATH/current/next-theme"
+  local selected_background_path=""
+  local selected_background_name=""
+  local first_background_path=""
+  local first_background_name=""
+  local source_backgrounds_dir=""
+  local user_backgrounds_dir=""
+  local asset
+  local theme_dir
+
+  previous_theme_name="$(hyprbole_current_theme)"
+
+  hyprbole_theme_exists "$theme_name" || {
+    printf 'unknown theme: %s\n' "$theme_name" >&2
+    return 1
+  }
+
+  if [[ -L $current_config_background_link || -e $current_config_background_link ]]; then
+    selected_background_path="$(readlink -f "$current_config_background_link" 2>/dev/null || true)"
+    selected_background_name="$(basename "$selected_background_path")"
+  fi
+
+  rm -rf "$next_config_theme_dir"
+  mkdir -p "$next_config_theme_dir"
+
+  while IFS= read -r theme_dir; do
+    cp -a "$theme_dir/." "$next_config_theme_dir/"
+  done < <(hyprbole_theme_merge_dirs_for_name "$theme_name")
+
+  if [[ ! -d $fallback_theme_dir ]]; then
+    fallback_source_dir="$(hyprbole_theme_lookup_dirs_for_name "$HYPRBOLE_FALLBACK_THEME" | head -n 1 || true)"
+    if [[ -n $fallback_source_dir ]]; then
+      fallback_theme_dir="$fallback_source_dir"
+    fi
+  fi
+
+  for asset in waybar.css walker.css ghostty.conf hyprlock.conf swayosd.css chromium.theme btop.theme icons.theme light.mode; do
+    if [[ -f $next_config_theme_dir/$asset ]]; then
+      :
+    elif [[ $asset == "waybar.css" ]] && hyprbole_theme_generate_waybar "$next_config_theme_dir" "$next_config_theme_dir/$asset"; then
+      :
+    elif [[ $asset == "walker.css" ]] && hyprbole_theme_generate_waybar "$next_config_theme_dir" "$next_config_theme_dir/$asset"; then
+      :
+    elif [[ $asset == "ghostty.conf" ]] && hyprbole_theme_generate_ghostty "$next_config_theme_dir" "$next_config_theme_dir/$asset"; then
+      :
+    elif [[ $asset == "hyprlock.conf" ]] && hyprbole_theme_generate_hyprlock "$next_config_theme_dir" "$next_config_theme_dir/$asset"; then
+      :
+    elif [[ $asset == "chromium.theme" ]] && hyprbole_theme_generate_chromium "$next_config_theme_dir" "$next_config_theme_dir/$asset"; then
+      :
+    elif [[ -f $fallback_theme_dir/$asset ]]; then
+      cp "$fallback_theme_dir/$asset" "$next_config_theme_dir/$asset"
+    fi
+  done
+
+  if [[ ! -d $next_config_theme_dir/backgrounds && -f $fallback_theme_dir/wallpaper.jpg ]]; then
+    mkdir -p "$next_config_theme_dir/backgrounds"
+    cp "$fallback_theme_dir/wallpaper.jpg" "$next_config_theme_dir/backgrounds/default.jpg"
+  fi
+
+  if [[ -f $next_config_theme_dir/wallpaper.jpg ]]; then
+    mkdir -p "$next_config_theme_dir/backgrounds"
+    cp "$next_config_theme_dir/wallpaper.jpg" "$next_config_theme_dir/backgrounds/default.jpg"
+  fi
+
+  for first_background_path in "$next_config_theme_dir/backgrounds"/*; do
+    [[ -f $first_background_path ]] || continue
+    hyprbole_is_background_asset "$first_background_path" || continue
+    first_background_name="$(basename "$first_background_path")"
+    break
+  done
+
+  rm -rf "$current_config_theme_dir"
+  mv "$next_config_theme_dir" "$current_config_theme_dir"
+
+  if [[ $previous_theme_name == "$theme_name" && -n $selected_background_name && -f $current_config_theme_dir/backgrounds/$selected_background_name ]]; then
+    rm -f "$current_config_background_link"
+    ln -sfn "$current_config_theme_dir/backgrounds/$selected_background_name" "$current_config_background_link"
+  elif [[ -n $first_background_name && -f $current_config_theme_dir/backgrounds/$first_background_name ]]; then
+    rm -f "$current_config_background_link"
+    ln -sfn "$current_config_theme_dir/backgrounds/$first_background_name" "$current_config_background_link"
+  fi
+
+  if [[ -L $current_config_background_link ]]; then
+    mkdir -p "$current_config_dir"
+    rm -f "$current_config_theme_dir/wallpaper.jpg"
+    ln -sfn ../background "$current_config_theme_dir/wallpaper.jpg"
+  fi
+
+  mkdir -p "$current_config_dir"
+  printf '%s\n' "$theme_name" >"$current_config_dir/theme-name"
+}

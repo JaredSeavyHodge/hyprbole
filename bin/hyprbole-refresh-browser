@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib.d/core"
 
 CHROMIUM_THEME="$HYPRBOLE_CONFIG_PATH/current/theme/chromium.theme"
 USER_BROWSER_POLICY="$HYPRBOLE_CONFIG_PATH/current/browser-policy.json"

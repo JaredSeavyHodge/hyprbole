@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib.d/core"
 
 UPDATE_ORPHANS_REMOVED=0
 UPDATE_CACHE_RECLAIMED_BYTES=0
@@ -225,6 +225,7 @@ theme_source() {
       ;;
     edit)
       hyprbole_ensure_theme_sources
+      hyprbole_load terminal
       hyprbole_launch_terminal_command nvim "$HYPRBOLE_THEME_SOURCES_PATH"
       ;;
     *)
@@ -1354,6 +1355,10 @@ doctor() {
     doctor_check_user_unit "$unit" 1
   done
 
+  for unit in "${HYPRBOLE_USER_TIMER_UNITS[@]}"; do
+    doctor_check_user_unit "$unit" 1
+  done
+
   for unit in "${HYPRBOLE_GRAPHICAL_USER_UNITS[@]}"; do
     doctor_check_user_unit "$unit" "$graphical_session_active"
   done
@@ -2204,6 +2209,7 @@ update_all() {
 main() {
   case "${1:-}" in
     theme)
+      hyprbole_load theme
       case "${2:-}" in
         list)
           list_themes
@@ -2249,6 +2255,7 @@ main() {
       esac
       ;;
     wallpaper)
+      hyprbole_load theme
       case "${2:-}" in
         cycle)
           cycle_custom_wallpaper
@@ -2312,6 +2319,7 @@ main() {
       update_all
       ;;
     mirrors)
+      hyprbole_load mirrors
       rate_mirrors
       ;;
     mount)
@@ -2391,6 +2399,7 @@ main() {
       esac
       ;;
     launch)
+      hyprbole_load terminal
       case "${2:-}" in
         apps)
           launch_apps
@@ -2554,6 +2563,7 @@ main() {
       ;;
     refresh-config)
       [[ -n ${2:-} ]] || usage
+      hyprbole_load refresh
       refresh_config "$2"
       ;;
     refresh-all)

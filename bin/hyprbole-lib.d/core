@@ -1,0 +1,172 @@
+#!/bin/bash
+
+export HYPRBOLE_PATH="${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
+export HYPRBOLE_CONFIG_PATH="${HYPRBOLE_CONFIG_PATH:-$HOME/.config/hyprbole}"
+export HYPRBOLE_THEME_SOURCES_PATH="${HYPRBOLE_THEME_SOURCES_PATH:-$HYPRBOLE_CONFIG_PATH/theme-sources.conf}"
+export HYPRBOLE_CONFIG_BACKUP_KEEP="${HYPRBOLE_CONFIG_BACKUP_KEEP:-3}"
+HYPRBOLE_SETTINGS_PATH="$HYPRBOLE_CONFIG_PATH/settings.toml"
+HYPRBOLE_FALLBACK_THEME="default-theme"
+
+source "$HYPRBOLE_PATH/default/hyprbole/manifest.sh"
+
+case ":$PATH:" in
+  *":$HYPRBOLE_PATH/bin:"*) ;;
+  *) export PATH="$HYPRBOLE_PATH/bin:$PATH" ;;
+esac
+
+hyprbole_load() {
+  local module="$1"
+  local guard="HYPRBOLE_MODULE_${module//[^A-Za-z0-9_]/_}"
+  local module_path="$HYPRBOLE_PATH/bin/hyprbole-lib.d/$module"
+
+  if [[ ${!guard:-0} == 1 ]]; then
+    return 0
+  fi
+
+  [[ -f $module_path ]] || {
+    printf 'unknown Hyprbole module: %s\n' "$module" >&2
+    return 1
+  }
+
+  # shellcheck source=/dev/null
+  source "$module_path"
+  printf -v "$guard" 1
+}
+
+hyprbole_log() {
+  printf '%s\n' "$1"
+}
+
+hyprbole_cmd_present() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+hyprbole_git_checkout() {
+  local path="${1:-}"
+  local path_root
+  local checkout_root
+
+  [[ -n $path && -d $path ]] || return 1
+  path_root=$(cd "$path" && pwd -P) || return 1
+  checkout_root=$(git -C "$path_root" rev-parse --show-toplevel 2>/dev/null) || return 1
+  checkout_root=$(cd "$checkout_root" && pwd -P) || return 1
+
+  [[ $path_root == "$checkout_root" ]]
+}
+
+hyprbole_setting_value() {
+  local key="$1"
+
+  [[ -f $HYPRBOLE_SETTINGS_PATH ]] || return 1
+  sed -n "s/^[[:space:]]*${key}[[:space:]]*=[[:space:]]*\"\([^\"]*\)\".*/\1/p" "$HYPRBOLE_SETTINGS_PATH" | tail -n 1
+}
+
+hyprbole_set_setting() {
+  local key="$1"
+  local value="$2"
+  local escaped_value
+  local tmp_file
+
+  mkdir -p "$HYPRBOLE_CONFIG_PATH"
+  touch "$HYPRBOLE_SETTINGS_PATH"
+
+  escaped_value="$(printf '%s' "$value" | sed 's/[&|\\]/\\&/g; s/"/\\"/g')"
+  tmp_file="$(mktemp)"
+  if grep -Eq "^[[:space:]]*#?[[:space:]]*${key}[[:space:]]*=" "$HYPRBOLE_SETTINGS_PATH"; then
+    sed "s|^[[:space:]]*#\?[[:space:]]*${key}[[:space:]]*=.*|${key} = \"$escaped_value\"|" "$HYPRBOLE_SETTINGS_PATH" >"$tmp_file"
+  else
+    cp "$HYPRBOLE_SETTINGS_PATH" "$tmp_file"
+    printf '%s = "%s"\n' "$key" "${value//\"/\\\"}" >>"$tmp_file"
+  fi
+
+  mv "$tmp_file" "$HYPRBOLE_SETTINGS_PATH"
+}
+
+hyprbole_default_app() {
+  local role="$1"
+  local app=""
+
+  app="$(hyprbole_setting_value "default_${role}" || true)"
+
+  if [[ -z $app ]]; then
+    case "$role" in
+      terminal) app="ghostty" ;;
+      browser) app="brave-origin-nightly" ;;
+      files) app="nautilus" ;;
+      editor|text) app="mousepad" ;;
+      pdf|documents) app="papers" ;;
+      *) return 1 ;;
+    esac
+  fi
+
+  printf '%s\n' "$app"
+}
+
+hyprbole_app_label() {
+  local app="$1"
+
+  case "$app" in
+    brave-origin-nightly) printf 'Brave Origin Nightly\n' ;;
+    apostrophe) printf 'Apostrophe\n' ;;
+    chromium) printf 'Chromium\n' ;;
+    dolphin) printf 'Dolphin\n' ;;
+    ghostty) printf 'Ghostty\n' ;;
+    kitty) printf 'Kitty\n' ;;
+    nautilus) printf 'Nautilus\n' ;;
+    mousepad) printf 'Mousepad\n' ;;
+    neovim|nvim) printf 'Neovim\n' ;;
+    obsidian) printf 'Obsidian\n' ;;
+    papers) printf 'Papers\n' ;;
+    visual-studio-code-bin|vscode|code) printf 'VS Code\n' ;;
+    *) printf '%s\n' "$app" ;;
+  esac
+}
+
+hyprbole_app_command() {
+  local app="$1"
+
+  case "$app" in
+    brave-origin-nightly) printf '%s\n' "$HYPRBOLE_PATH/bin/hyprbole-launch-brave-origin-nightly" ;;
+    apostrophe) printf 'apostrophe\n' ;;
+    chromium) printf 'chromium\n' ;;
+    dolphin) printf 'dolphin\n' ;;
+    ghostty) printf 'ghostty\n' ;;
+    kitty) printf 'kitty\n' ;;
+    nautilus) printf 'nautilus\n' ;;
+    mousepad) printf 'mousepad\n' ;;
+    neovim|nvim) printf 'nvim\n' ;;
+    obsidian) printf 'obsidian\n' ;;
+    papers) printf 'papers\n' ;;
+    visual-studio-code-bin|vscode|code) printf 'code\n' ;;
+    *) printf '%s\n' "$app" ;;
+  esac
+}
+
+hyprbole_command_available() {
+  local command_name="$1"
+
+  [[ -n $command_name ]] || return 1
+
+  case "$command_name" in
+    */*) [[ -x $command_name ]] ;;
+    *) command -v "$command_name" >/dev/null 2>&1 ;;
+  esac
+}
+
+hyprbole_browser_policy_dirs() {
+  local app="$1"
+
+  case "$app" in
+    brave-origin-nightly) printf '%s\n' /etc/brave/policies/managed ;;
+    chromium) printf '%s\n' /etc/chromium/policies/managed ;;
+  esac
+}
+
+hyprbole_browser_processes() {
+  local app="$1"
+
+  case "$app" in
+    brave-origin-nightly) printf '%s\n' brave-origin-nightly brave-origin ;;
+    chromium) printf '%s\n' chromium ;;
+  esac
+}

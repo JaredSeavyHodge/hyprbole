@@ -5,7 +5,9 @@
 
 set -euo pipefail
 
-source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib.d/core"
+hyprbole_load theme
+hyprbole_load refresh
 
 include_user_configs=0
 

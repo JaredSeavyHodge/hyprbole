@@ -4,7 +4,8 @@
 
 set -euo pipefail
 
-source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib.d/core"
+hyprbole_load theme
 
 hyprbole_apply_font_settings
 hyprbole-refresh-gnome >/dev/null 2>&1 || true

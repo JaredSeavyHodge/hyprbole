@@ -35,6 +35,7 @@ hb theme current
 hb theme set default-theme
 hb theme font current
 hb theme font set all "Inter"
+hb theme source list
 hb theme source edit
 hb theme source sync
 ```
@@ -107,6 +108,7 @@ hb launch btop
 hb launch update
 hb launch themes
 hb launch wallpaper-menu
+hb launch my-wallpaper-menu
 hb launch obsidian
 hb launch passwords
 hb launch steam

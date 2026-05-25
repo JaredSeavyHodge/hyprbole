@@ -47,11 +47,13 @@ Examples:
 
 - `hyprbole update`
 - `hyprbole theme set default-theme`
+- `hyprbole theme source list`
 - `hyprbole pkg install`
 - `hyprbole pkg aur-install`
 - `hyprbole launch steam`
 - `hyprbole launch obsidian`
 - `hyprbole apps`
+- `hyprbole launch my-wallpaper-menu`
 - `hyprbole keybinds`
 - `hyprbole menu`
 - `hyprbole lock`

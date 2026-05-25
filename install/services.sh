@@ -1,5 +1,6 @@
 enable_services() {
   local failed=0
+  local timer_user_units=("${HYPRBOLE_USER_TIMER_UNITS[@]}")
   local graphical_user_units=("${HYPRBOLE_GRAPHICAL_USER_UNITS[@]}")
   local first_login_units=("${HYPRBOLE_FIRST_LOGIN_USER_UNITS[@]}")
   local start_graphical_units=0
@@ -16,6 +17,13 @@ enable_services() {
   for unit in "${HYPRBOLE_CORE_USER_UNITS[@]}"; do
     if ! systemctl --user enable --now "$unit"; then
       printf 'failed to enable user service: %s\n' "$unit" >&2
+      failed=$((failed + 1))
+    fi
+  done
+
+  for unit in "${timer_user_units[@]}"; do
+    if ! systemctl --user enable --now "$unit"; then
+      printf 'failed to enable user timer: %s\n' "$unit" >&2
       failed=$((failed + 1))
     fi
   done
@@ -91,8 +99,8 @@ deploy_user_units() {
   while IFS= read -r -d '' unit; do
     local name
     name=$(basename "$unit")
-    if [[ ! -f $unit_dir/$name ]]; then
-      cp "$unit" "$unit_dir/$name"
+    if [[ ! -f $unit_dir/$name ]] || ! cmp -s "$unit" "$unit_dir/$name"; then
+      install -m 644 "$unit" "$unit_dir/$name"
       log_info "deployed user unit: $name"
     fi
   done < <(find "$source_dir" -type f \( -name '*.service' -o -name '*.timer' \) -print0)

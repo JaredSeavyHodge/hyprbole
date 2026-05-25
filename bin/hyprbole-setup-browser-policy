@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib.d/core"
 
 USER_BROWSER_POLICY="$HYPRBOLE_CONFIG_PATH/current/browser-policy.json"
 browser_app="$(hyprbole_default_app browser)"

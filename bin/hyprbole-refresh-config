@@ -5,7 +5,8 @@
 
 set -euo pipefail
 
-source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib.d/core"
+hyprbole_load refresh
 
 relative_path=${1:-}
 [[ -n $relative_path ]] || {

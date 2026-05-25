@@ -1,0 +1,13 @@
+#!/bin/bash
+
+rate_mirrors() {
+  if ! command -v rate-mirrors >/dev/null 2>&1; then
+    printf 'installing rate-mirrors...\n'
+    sudo pacman -S --needed --noconfirm rate-mirrors
+  fi
+
+  printf 'rating mirrors (this may take a minute)...\n'
+  sudo rate-mirrors --allow-root --protocol https arch | sudo tee /etc/pacman.d/mirrorlist >/dev/null
+  sudo pacman -Sy --noconfirm
+  printf 'mirrorlist updated.\n'
+}

@@ -10,6 +10,7 @@ if [[ $# -eq 0 ]]; then
   exit 1
 fi
 
-source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib"
+source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib.d/core"
+hyprbole_load terminal
 
 hyprbole_launch_floating_terminal com.hyprbole.floating-terminal "Hyprbole Terminal" bash -lc '"$@"' -- "$@"

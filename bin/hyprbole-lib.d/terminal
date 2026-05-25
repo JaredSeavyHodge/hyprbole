@@ -1,0 +1,76 @@
+#!/bin/bash
+
+hyprbole_terminal_exec_args() {
+  local app="$1"
+
+  case "$app" in
+    ghostty|kitty) printf '%s\0' -e ;;
+    *) printf '%s\0' -e ;;
+  esac
+}
+
+hyprbole_launch_terminal_command() {
+  local app
+  local command_name
+  local exec_args=()
+
+  app="$(hyprbole_default_app terminal)"
+  command_name="$(hyprbole_app_command "$app")"
+
+  if ! command -v "$command_name" >/dev/null 2>&1; then
+    printf 'missing terminal command for %s: %s\n' "$app" "$command_name" >&2
+    return 1
+  fi
+
+  if (($# == 0)); then
+    exec "$command_name"
+  fi
+
+  if [[ ${1:-} == "-e" || ${1:-} == "--" ]]; then
+    shift
+  fi
+
+  while IFS= read -r -d '' arg; do
+    exec_args+=("$arg")
+  done < <(hyprbole_terminal_exec_args "$app")
+
+  exec "$command_name" "${exec_args[@]}" "$@"
+}
+
+hyprbole_launch_terminal_shell() {
+  local shell_command="$1"
+
+  shift || true
+  hyprbole_launch_terminal_command bash -lc "$shell_command" "$@"
+}
+
+hyprbole_launch_floating_terminal() {
+  local class_name="$1"
+  local title="$2"
+  local app
+  local command_name
+
+  shift 2
+
+  app="$(hyprbole_default_app terminal)"
+  command_name="$(hyprbole_app_command "$app")"
+
+  command -v "$command_name" >/dev/null 2>&1 || {
+    printf 'missing terminal command for %s: %s\n' "$app" "$command_name" >&2
+    return 1
+  }
+
+  case "$app" in
+    ghostty)
+      exec "$command_name" --class="$class_name" --title="$title" -e "$@"
+      ;;
+    kitty)
+      exec "$command_name" --class "$class_name" --title "$title" -e "$@"
+      ;;
+    *)
+      printf 'terminal does not support Hyprbole floating window metadata: %s\n' "$app" >&2
+      printf 'Set default_terminal to ghostty or kitty, or add class/title support before using floating terminal workflows.\n' >&2
+      return 1
+      ;;
+  esac
+}

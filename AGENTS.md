@@ -40,7 +40,8 @@ This repository defines the `hyprbole` desktop layer for Arch Linux. The project
 - Prefer direct `hyprbole ...` routes for Hyprland keybinds, Walker/Elephant menus, Waybar click actions, and file manager actions when quoting is simple
 - Keep `bin/hyprbole-*` leaf scripts only for stable executable integration points, status probes, app wrappers, service jobs, or low-latency keybind helpers that should not pay full CLI route startup cost
 - When a leaf script and `bin/hyprbole` overlap, remove the leaf script unless a concrete external executable-path need exists
-- Shared workflow logic belongs in `bin/hyprbole` or `bin/hyprbole-lib`; leaf scripts should forward args and add integration context, not duplicate route parsing, install fallback policy, terminal launch policy, or persistence logic
+- Shared workflow logic belongs in `bin/hyprbole` or a focused module under `bin/hyprbole-lib.d/`; leaf scripts should forward args and add integration context, not duplicate route parsing, install fallback policy, terminal launch policy, or persistence logic
+- Shared shell helpers are split under `bin/hyprbole-lib.d/`; `bin/hyprbole` should source `core` first and lazy-load route domains with `hyprbole_load <module>` instead of eagerly sourcing the compatibility `bin/hyprbole-lib` loader
 - Do not expose one-off install repair commands on the public `hyprbole` command surface unless they are normal user workflows; prefer `doctor --fix` or internal leaf scripts
 
 ## Design Decisions To Preserve

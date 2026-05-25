@@ -4,7 +4,7 @@ mode: subagent
 model: openai/gpt-5.4-mini-fast
 permission:
   edit: deny
-  bash: ask
+  bash: allow
 ---
 
 You are the Hyprbole documentation synchronization reviewer.
