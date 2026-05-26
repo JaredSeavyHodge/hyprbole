@@ -56,6 +56,14 @@ hb pkg remove
 
 `hb extra install <name>` installs curated Hyprbole integrations such as VS Code, 1Password, and Obsidian. The Hyprbole menu exposes these under `Install`, `Extras`. These are optional preference apps, not required desktop components.
 
+## Browser
+
+```bash
+hb browser setup-theme-policy
+```
+
+`hb browser setup-theme-policy` reapplies the managed Brave theme policy symlink. System Brave desktop launches read `~/.config/brave-origin-nightly-flags.conf`; Hyprbole wrapper launches read `~/.config/hyprbole/brave-origin-nightly-flags.conf`.
+
 ## Wallpaper
 
 ```bash
@@ -136,6 +144,7 @@ hb reboot
 hb poweroff
 hb system lock
 hb system logout
+hb system info
 hb power suspend
 hb power reboot
 hb power off
@@ -151,11 +160,12 @@ hb restart waybar
 hb restart wallpaper
 hb restart swaync
 hb restart swayosd
+hb restart hypridle
 hb restart terminal
 hb restart menus
 ```
 
-`hb restart terminal` restarts the floating-terminal helper state. `hb restart menus` restarts both Walker and Elephant. Use `hb restart walker` or `hb restart elephant` when you only need one side of the menu stack.
+`hb restart hypridle` restarts the idle-lock service. `hb restart terminal` restarts the floating-terminal helper state. `hb restart menus` restarts both Walker and Elephant. Use `hb restart walker` or `hb restart elephant` when you only need one side of the menu stack.
 
 ## Tools
 
@@ -222,4 +232,4 @@ Prefer `hb doctor --fix` for supported repair flows. One-off setup commands are 
 
 Use `hb migrate` to run any pending repository migrations recorded under `~/.local/state/hyprbole/applied-migrations`.
 
-Use `hb verify` when you want a strict pass/fail check. Use `hb doctor --verbose` when you want a readable report with each section shown. See the [Doctor](doctor.md) guide for the exact checks and repair behavior.
+Use `hb verify` when you want a stricter install-oriented check. It fails on missing or incorrect required state and may print warnings when root-owned content cannot be compared without sudo or when pre-login runtime state cannot be fully checked. Use `hb doctor --verbose` when you want a readable report with each section shown. See the [Doctor](doctor.md) guide for the exact checks and repair behavior.

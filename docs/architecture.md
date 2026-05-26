@@ -108,7 +108,7 @@ Current helper modules:
 - `theme`: font, theme source, wallpaper, and theme asset behavior
 - `refresh`: user config refresh and backup pruning
 - `mirrors`: mirror ranking workflow
-- `theme-routes`, `package-routes`, `doctor-routes`, `update-routes`: route-domain functions loaded only by matching dispatcher branches
+- `theme-routes`, `package-routes`, `doctor-routes`, `update-routes`, `launch-routes`, `capture-routes`, `system-routes`, `maintenance-routes`: route-domain functions loaded only by matching dispatcher branches
 
 ## Browser Model
 

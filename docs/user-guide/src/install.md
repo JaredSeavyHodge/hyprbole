@@ -121,7 +121,7 @@ Optional curated app integrations such as VS Code, 1Password, and Obsidian are i
 
 `install.sh` is designed to be safe to run more than once. Rerunning install is a supported repair path for Hyprbole-owned defaults.
 
-Repeat runs should not overwrite existing user-owned config copied from `config/`. They may intentionally reapply Hyprbole-owned state such as browser launchers, service enables, generated theme files, SDDM assets, browser policy links, and Keyring setup.
+Repeat runs should not overwrite existing user-owned config copied from `config/`. They may intentionally reapply Hyprbole-owned state such as browser launchers, service enables, generated theme files, SDDM assets, browser policy links, Limine/Snapper defaults, and Keyring setup.
 
 ## After Install
 
@@ -131,6 +131,8 @@ Run:
 hb doctor
 hb verify
 ```
+
+`hb verify` fails when required install-owned state is missing or drifted, including browser policy links, SDDM files, Limine defaults, and Snapper defaults. Root-owned files that are not readable by your user are compared when passwordless sudo is already available; otherwise verify warns that the content comparison was skipped.
 
 If supported checks fail, run:
 

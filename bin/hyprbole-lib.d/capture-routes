@@ -1,0 +1,14 @@
+#!/bin/bash
+
+capture_region() {
+  exec hyprbole-screenshot region
+}
+capture_screen() {
+  exec hyprbole-screenshot screen
+}
+capture_record_region() {
+  exec hyprbole-record-toggle region
+}
+capture_record_screen() {
+  exec hyprbole-record-toggle screen
+}

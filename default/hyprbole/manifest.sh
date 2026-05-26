@@ -317,6 +317,11 @@ HYPRBOLE_VERIFY_REQUIRED_COMMANDS=(
   limine-update
 )
 
+HYPRBOLE_VERIFY_REQUIRED_PACKAGES=(
+  limine-snapper-sync
+  limine-mkinitcpio-hook
+)
+
 HYPRBOLE_ACTIVE_USER_UNITS=(
   pipewire.service
   pipewire-pulse.service
@@ -521,19 +526,28 @@ HYPRBOLE_DIAGNOSTIC_CONFIG_PATHS=(
 )
 
 HYPRBOLE_VERIFY_REQUIRED_PATHS=(
+  "$HYPRBOLE_PATH/bin/hyprbole-lib.d/capture-routes"
   "$HYPRBOLE_PATH/bin/hyprbole-lib.d/core"
   "$HYPRBOLE_PATH/bin/hyprbole-lib.d/doctor-routes"
+  "$HYPRBOLE_PATH/bin/hyprbole-lib.d/launch-routes"
+  "$HYPRBOLE_PATH/bin/hyprbole-lib.d/maintenance-routes"
   "$HYPRBOLE_PATH/bin/hyprbole-lib.d/mirrors"
   "$HYPRBOLE_PATH/bin/hyprbole-lib.d/package-routes"
   "$HYPRBOLE_PATH/bin/hyprbole-lib.d/refresh"
   "$HYPRBOLE_PATH/bin/hyprbole-lib.d/terminal"
   "$HYPRBOLE_PATH/bin/hyprbole-lib.d/theme"
   "$HYPRBOLE_PATH/bin/hyprbole-lib.d/theme-routes"
+  "$HYPRBOLE_PATH/bin/hyprbole-lib.d/system-routes"
   "$HYPRBOLE_PATH/bin/hyprbole-lib.d/update-routes"
   "$HYPRBOLE_PATH/bin/hyprbole-health-check"
   "$HYPRBOLE_PATH/bin/hyprbole-health-indicator"
   "$HYPRBOLE_PATH/bin/hyprbole-health-report"
   "$HYPRBOLE_PATH/bin/hyprbole-health-updates"
+  "$HYPRBOLE_PATH/bin/hyprbole-record-toggle"
+  "$HYPRBOLE_PATH/bin/hyprbole-setup-browser-policy"
+  "$HYPRBOLE_PATH/bin/hyprbole-setup-secret-service"
+  "$HYPRBOLE_PATH/bin/hyprbole-screenshot"
+  "$HYPRBOLE_PATH/bin/hyprbole-update-confirm"
   "$HYPRBOLE_PATH/bin/hyprbole-update-indicator"
   "$HYPRBOLE_PATH/bin/hyprbole-first-login-guide"
   "$HYPRBOLE_PATH/bin/hyprbole-launch-notifications"
@@ -546,6 +560,9 @@ HYPRBOLE_VERIFY_REQUIRED_PATHS=(
   "$HYPRBOLE_PATH/default/waybar/indicator-notifications.sh"
   "$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.service"
   "$HYPRBOLE_PATH/default/systemd/system/hyprbole-health-check.timer"
+  /boot/limine.conf
+  /etc/default/limine
+  /etc/snapper/configs/root
   /etc/systemd/system/hyprbole-health-check.service
   /etc/systemd/system/hyprbole-health-check.timer
   /etc/sddm.conf.d/hyprbole.conf

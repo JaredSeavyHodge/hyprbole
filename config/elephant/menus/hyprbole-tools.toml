@@ -19,7 +19,7 @@ state = ["sublevel"]
 [[entries]]
 text = "󰋼  System Info"
 subtext = "Open Hyprland system information"
-actions = { activate = "hyprsysteminfo" }
+actions = { activate = "hyprbole system info" }
 state = ["sublevel"]
 
 [[entries]]

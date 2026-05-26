@@ -7,14 +7,6 @@ set -euo pipefail
 
 source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib.d/core"
 
-UPDATE_ORPHANS_REMOVED=0
-UPDATE_CACHE_RECLAIMED_BYTES=0
-HYPRBOLE_SUDO_KEEPALIVE_PID=""
-if [[ ${1:-} == "update" ]] && [[ -z ${HYPRBOLE_UPDATE_LOGGED:-} ]] && command -v script >/dev/null 2>&1; then
-  script_command=$(printf '%q ' "$0" "$@")
-  exec env HYPRBOLE_UPDATE_LOGGED=1 script -qefc "$script_command" "/tmp/hyprbole-update.log"
-fi
-
 usage() {
   cat <<'EOF'
 Hyprbole command center
@@ -113,6 +105,7 @@ Capture:
 System:
   system lock
   system logout
+  system info
   power suspend
   power reboot
   power off
@@ -134,327 +127,6 @@ Maintenance:
   migrate
   default-app <role> [command|label]
 EOF
-}
-
-default_app() {
-  local role="${1:-}"
-  local field="${2:-name}"
-  local app
-
-  [[ -n $role ]] || {
-    usage
-    return 1
-  }
-
-  if ! app="$(hyprbole_default_app "$role")"; then
-    usage
-    return 1
-  fi
-
-  case "$field" in
-    name)
-      printf '%s\n' "$app"
-      ;;
-    command)
-      hyprbole_app_command "$app"
-      ;;
-    label)
-      hyprbole_app_label "$app"
-      ;;
-    *)
-      usage
-      return 1
-      ;;
-  esac
-}
-
-refresh_config() {
-  hyprbole_refresh_config_path "$1"
-}
-
-restart_component() {
-  local target="${1:-}"
-
-  case "$target" in
-    all)
-      hyprbole-restart-all
-      ;;
-    waybar|bar)
-      hyprbole-restart-waybar
-      ;;
-    wallpaper|wallpapers)
-      hyprbole-restart-wallpaper
-      ;;
-    swaync|notifications)
-      systemctl --user restart swaync.service
-      ;;
-    swayosd|osd)
-      hyprbole-restart-swayosd
-      ;;
-    hypridle|idle)
-      hyprbole-restart-hypridle
-      ;;
-    terminal|term)
-      hyprbole-restart-terminal
-      ;;
-    walker|launcher)
-      systemctl --user restart walker.service
-      ;;
-    elephant)
-      systemctl --user restart elephant.service
-      ;;
-    menus|menu)
-      systemctl --user restart elephant.service walker.service
-      ;;
-    *)
-      [[ -n $target ]] && printf 'unknown restart target: %s\n' "$target" >&2
-      usage
-      return 1
-      ;;
-  esac
-}
-
-verify_system() {
-  source "$HYPRBOLE_PATH/install/lib.sh"
-  source "$HYPRBOLE_PATH/install/verify.sh"
-  verify_installation
-}
-
-require_menu_commands() {
-  command -v walker >/dev/null 2>&1 || {
-    printf 'missing required command: walker\n' >&2
-    exit 1
-  }
-
-  command -v elephant >/dev/null 2>&1 || {
-    printf 'missing required command: elephant\n' >&2
-    exit 1
-  }
-}
-
-launch_menu() {
-  local menu_name="${1:-hyprbole}"
-  local placeholder="${2:-Hyprbole menu}"
-
-  require_menu_commands
-
-  exec walker --width 460 --minheight 1 --maxheight 520 --provider "menus:${menu_name}" --placeholder "$placeholder"
-}
-
-launch_apps() {
-  launch_menu "hyprbole-apps" "Apps"
-}
-
-launch_clipboard() {
-  require_menu_commands
-
-  exec walker --width 980 --maxheight 520 --minheight 520 --provider clipboard --placeholder "Clipboard history"
-}
-
-launch_keybinds() {
-  launch_menu "hyprbole-keybinds" "Keybinds"
-}
-
-launch_tools() {
-  launch_menu "hyprbole-tools" "Utilities"
-}
-
-launch_default_app_role() {
-  local role="$1"
-  local app
-  local command_name
-
-  shift
-
-  app="$(hyprbole_default_app "$role")" || {
-    printf 'unknown default app role: %s\n' "$role" >&2
-    return 1
-  }
-  command_name="$(hyprbole_app_command "$app")"
-
-  command -v "$command_name" >/dev/null 2>&1 || {
-    printf 'missing %s command for %s: %s\n' "$role" "$app" "$command_name" >&2
-    return 1
-  }
-
-  exec "$command_name" "$@"
-}
-
-launch_terminal() {
-  hyprbole_launch_terminal_command "$@"
-}
-
-launch_browser() {
-  launch_default_app_role browser "$@"
-}
-
-launch_files() {
-  launch_default_app_role files "$@"
-}
-
-launch_audio() {
-  exec pavucontrol
-}
-
-launch_network() {
-  exec nm-connection-editor
-}
-
-launch_bluetooth() {
-  command -v blueman-manager >/dev/null 2>&1 || {
-    printf 'missing required command: blueman-manager\n' >&2
-    return 1
-  }
-
-  exec blueman-manager
-}
-
-disk_usage() {
-  command -v dua >/dev/null 2>&1 || {
-    printf 'missing required command: dua\n' >&2
-    exit 1
-  }
-
-  exec dua i "$@"
-}
-
-launch_disk_usage() {
-  hyprbole_launch_floating_terminal com.hyprbole.disk-usage "Disk Usage" bash -lc 'if (($# == 0)); then cd "$HOME" || exit; fi; hyprbole disk-usage "$@"; status=$?; if (( status != 0 )); then printf "\nDisk Usage exited with status %d\n" "$status"; printf "\nPress Enter to close..."; read -r _; fi; exit "$status"' hyprbole-disk-usage "$@"
-}
-
-health_report() {
-  case "${1:-}" in
-    "")
-      exec hyprbole-health-report
-      ;;
-    refresh)
-      if ! systemctl start hyprbole-health-check.service; then
-        printf 'failed to start health check service\n' >&2
-        printf 'Try: sudo systemctl start hyprbole-health-check.service\n' >&2
-        return 1
-      fi
-      exec hyprbole-health-report
-      ;;
-    updates)
-      exec hyprbole-health-updates
-      ;;
-    *)
-      usage
-      return 1
-      ;;
-  esac
-}
-
-launch_health() {
-  hyprbole_launch_floating_terminal com.hyprbole.system "System Health" bash -lc 'hyprbole health; status=$?; printf "\nPress Enter to close..."; read -r _; exit "$status"'
-}
-
-launch_launcher() {
-  require_menu_commands
-
-  exec walker --width 980 --maxheight 520 --minheight 520
-}
-
-launch_themes() {
-  require_menu_commands
-
-  exec walker --width 900 --minheight 300 --maxheight 560 --provider menus:hyprbolethemes --placeholder "Select theme"
-}
-
-launch_wallpaper_menu() {
-  require_menu_commands
-
-  exec walker --width 900 --minheight 300 --maxheight 560 --provider menus:hyprbolewallpapers --placeholder "Select wallpaper"
-}
-
-launch_my_wallpaper_menu() {
-  require_menu_commands
-
-  exec walker --width 900 --minheight 300 --maxheight 560 --provider menus:hyprbolemywallpapers --placeholder "Select custom wallpaper"
-}
-
-launch_update() {
-  hyprbole_launch_floating_terminal com.hyprbole.update "Hyprbole Update" bash -lc '
-    if hyprbole-update-confirm; then
-      hyprbole update
-      status=$?
-      if (( status == 0 )); then
-        printf "\nUpdate complete.\n"
-      elif (( status == 11 )); then
-        printf "\nUpdate not started.\n"
-        printf "Hyprbole has local repo changes that would be overwritten or mixed with an update.\n"
-        printf "\nFinish or save your local work first, then run the update again.\n"
-        printf "\nUseful commands:\n"
-        printf "  git -C \"%s\" status --short\n" "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
-        printf "  git -C \"%s\" diff\n" "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
-      else
-        printf "\nUpdate failed.\n"
-        printf "Review the output above and retry after fixing the issue.\n"
-        printf "Log: /tmp/hyprbole-update.log\n"
-      fi
-    else
-      status=0
-      printf "\nUpdate cancelled.\n"
-    fi
-
-    printf "\nPress Enter to close..."
-    read -r _
-    exit "$status"
-  '
-}
-
-capture_region() {
-  exec hyprbole-screenshot region
-}
-
-capture_screen() {
-  exec hyprbole-screenshot screen
-}
-
-capture_record_region() {
-  exec hyprbole-record-toggle region
-}
-
-capture_record_screen() {
-  exec hyprbole-record-toggle screen
-}
-
-system_lock() {
-  if pgrep -x 1password >/dev/null 2>&1; then
-    1password --lock >/dev/null 2>&1 || true
-  fi
-
-  if ! pgrep -x hyprlock >/dev/null 2>&1; then
-    exec hyprlock
-  fi
-}
-
-system_logout() {
-  if command -v uwsm >/dev/null 2>&1; then
-    exec uwsm stop
-  fi
-
-  local session_id="${XDG_SESSION_ID:-}"
-
-  if [[ -n $session_id ]] && command -v loginctl >/dev/null 2>&1; then
-    exec loginctl terminate-session "$session_id"
-  fi
-
-  exec pkill -KILL -u "$USER"
-}
-
-power_suspend() {
-  system_lock || true
-  sleep 1
-  exec systemctl suspend
-}
-
-power_reboot() {
-  exec systemctl reboot
-}
-
-power_off() {
-  exec systemctl poweroff
 }
 
 main() {
@@ -545,6 +217,7 @@ main() {
       esac
       ;;
     themes)
+      hyprbole_load launch-routes
       launch_themes
       ;;
     doctor)
@@ -552,6 +225,7 @@ main() {
       doctor "${@:2}"
       ;;
     verify)
+      hyprbole_load maintenance-routes
       verify_system
       ;;
     docs|guide|help)
@@ -569,6 +243,7 @@ main() {
       ;;
     update)
       hyprbole_load update-routes
+      update_logged_entry "$0" "$@"
       update_all
       ;;
     mirrors)
@@ -579,43 +254,56 @@ main() {
       hyprbole-mount-share
       ;;
     apps)
+      hyprbole_load launch-routes
       launch_apps
       ;;
     tools)
+      hyprbole_load launch-routes
       launch_tools
       ;;
     utilities)
+      hyprbole_load launch-routes
       launch_tools
       ;;
     disk-usage)
       shift
+      hyprbole_load launch-routes
       disk_usage "$@"
       ;;
     health)
+      hyprbole_load launch-routes
       health_report "${2:-}"
       ;;
     clipboard)
+      hyprbole_load launch-routes
       launch_clipboard
       ;;
     keybinds)
+      hyprbole_load launch-routes
       launch_keybinds
       ;;
     lock)
+      hyprbole_load system-routes
       system_lock
       ;;
     logout)
+      hyprbole_load system-routes
       system_logout
       ;;
     menu)
+      hyprbole_load launch-routes
       launch_menu "${2:-hyprbole}" "${3:-Hyprbole menu}"
       ;;
     suspend)
+      hyprbole_load system-routes
       power_suspend
       ;;
     reboot)
+      hyprbole_load system-routes
       power_reboot
       ;;
     poweroff)
+      hyprbole_load system-routes
       power_off
       ;;
     pkg)
@@ -654,7 +342,7 @@ main() {
       esac
       ;;
     launch)
-      hyprbole_load terminal
+      hyprbole_load launch-routes
       case "${2:-}" in
         apps)
           launch_apps
@@ -670,7 +358,7 @@ main() {
           launch_browser "$@"
           ;;
         btop)
-          hyprbole_launch_floating_terminal com.hyprbole.btop btop btop
+          launch_btop
           ;;
         menu)
           launch_menu "${3:-hyprbole}" "${4:-Hyprbole menu}"
@@ -706,7 +394,7 @@ main() {
           ;;
         mount-share)
           shift 2
-          hyprbole_launch_floating_terminal com.hyprbole.mount-share "Mount Share" bash -lc 'hyprbole-mount-share; status=$?; printf "\nPress Enter to close..."; read -r _; exit "$status"'
+          launch_mount_share
           ;;
         themes)
           launch_themes
@@ -771,6 +459,7 @@ main() {
       esac
       ;;
     capture)
+      hyprbole_load capture-routes
       case "${2:-}" in
         region)
           capture_region
@@ -790,6 +479,7 @@ main() {
       esac
       ;;
     power)
+      hyprbole_load system-routes
       case "${2:-}" in
         suspend)
           power_suspend
@@ -806,12 +496,16 @@ main() {
       esac
       ;;
     system)
+      hyprbole_load system-routes
       case "${2:-}" in
         lock)
           system_lock
           ;;
         logout)
           system_logout
+          ;;
+        info)
+          system_info
           ;;
         *)
           usage
@@ -827,7 +521,7 @@ main() {
       ;;
     refresh-config)
       [[ -n ${2:-} ]] || usage
-      hyprbole_load refresh
+      hyprbole_load maintenance-routes
       refresh_config "$2"
       ;;
     refresh-all)
@@ -835,6 +529,7 @@ main() {
       hyprbole-refresh-all "$@"
       ;;
     restart)
+      hyprbole_load maintenance-routes
       restart_component "${2:-}"
       ;;
     refresh-shell)
@@ -844,6 +539,7 @@ main() {
       hyprbole-migrate
       ;;
     default-app)
+      hyprbole_load maintenance-routes
       default_app "${2:-}" "${3:-name}"
       ;;
     ""|--help|-h)

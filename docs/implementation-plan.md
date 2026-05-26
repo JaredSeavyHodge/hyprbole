@@ -29,10 +29,10 @@
 
 ## Phase 4
 
-- Add diagnostics and update helpers. In progress.
-- Add reset/refresh flows. In progress.
-- Add higher-level `hyprbole` command surface. In progress.
-- Keep one-off repair commands behind `hyprbole doctor --fix` rather than public routes. In progress.
+- Add diagnostics and update helpers. Done.
+- Add reset/refresh flows. Done.
+- Add higher-level `hyprbole` command surface. Done.
+- Keep one-off repair commands behind `hyprbole doctor --fix` rather than public routes. Done.
 - Open the local user guide automatically on first login after fresh install. Done.
 - Remove the temporary `hyprbole-mount-share` script. Done.
 - Add troubleshooting guidance for refreshing a single user-owned `.config` file. Done.
@@ -50,12 +50,9 @@
 
 - Add a Walker/Elephant menu for switching runtime default apps such as browser, terminal, and file manager.
 - Add optional Walker/Elephant provider installation from the Hyprbole menu for extras such as package search, provider list, bookmarks, snippets, bluetooth, and window actions.
-- Store selected runtime defaults in `~/.config/hyprbole/settings.toml` and keep install-time package defaults hard-coded for now.
-- Have runtime wrappers and menus honor selected defaults for roles such as browser, terminal, file manager, image viewer, video player, and PDF viewer.
 - Add a MIME/default-app refresh command that applies selected roles through `xdg-mime` and `xdg-settings` for web links, directories, images, video/audio files, PDFs, text/code files, and archives.
 - Let the default-app menu install missing supported alternatives, update `settings.toml`, refresh MIME associations, and restart or reload affected runtime components.
 - Add a CLI cleanup pass before broadening the public `hyprbole` command surface.
-- Consider an opt-in browser scaling helper that writes Chromium fractional-scaling flags to `~/.config/hyprbole/brave-origin-nightly-flags.conf`.
 - Discuss whether a deeply integrated optional agentic OS layer, similar to Hermes, is viable with efficient access to Hyprland, Hyprbole, and Linux while preserving security and avoiding excessive tool calls or token use.
 - Add optional `xournalpp` or `okular` install workflows for PDF signing/annotation.
 - Consider a `glow`-backed Markdown viewer role or launcher for read-only Markdown viewing; keep `text/markdown` editable in Mousepad unless users explicitly choose a viewer workflow.

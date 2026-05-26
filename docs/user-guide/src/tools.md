@@ -77,6 +77,20 @@ SwayNC owns desktop notifications. Waybar shows a notification bell on the right
 
 When notifications are silenced, Waybar shows the muted notification icon. If there are pending notifications while silenced, the count still appears.
 
+## Settings Controls
+
+Open the Settings submenu from `System`, `Settings`.
+
+| Entry | Behavior |
+| --- | --- |
+| Audio | Opens `pavucontrol` through `hb launch audio` |
+| Network | Opens NetworkManager connection editing through `hb launch network` |
+| Bluetooth | Opens Blueman through `hb launch bluetooth` |
+| Notifications | Toggles SwayNC notification silence |
+| Idle Lock | Toggles `hypridle` idle locking |
+
+Waybar also exposes the notification and idle controls. Click the idle indicator to toggle idle locking. Use the notification bell clicks described above for notification controls.
+
 To inspect a specific path, pass it to Hyprbole:
 
 ```bash

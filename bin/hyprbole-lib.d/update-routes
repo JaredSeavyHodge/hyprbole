@@ -1,5 +1,17 @@
 #!/bin/bash
 
+UPDATE_ORPHANS_REMOVED=0
+UPDATE_CACHE_RECLAIMED_BYTES=0
+
+update_logged_entry() {
+  local script_command
+
+  if [[ -z ${HYPRBOLE_UPDATE_LOGGED:-} ]] && command -v script >/dev/null 2>&1; then
+    script_command=$(printf '%q ' "$@")
+    exec env HYPRBOLE_UPDATE_LOGGED=1 script -qefc "$script_command" "/tmp/hyprbole-update.log"
+  fi
+}
+
 update_repo() {
   hyprbole_git_checkout "$HYPRBOLE_PATH" || {
     printf 'HYPRBOLE_PATH is not a git checkout root: %s\n' "$HYPRBOLE_PATH" >&2

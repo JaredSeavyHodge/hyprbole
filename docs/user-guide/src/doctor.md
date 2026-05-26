@@ -90,7 +90,7 @@ hb refresh-all --include-user-configs
 
 Use `hb doctor` for a human-readable health report and supported repair flow.
 
-Use `hb verify` for a stricter install-oriented pass/fail check. `verify` exits with failure when required install state is missing or incorrect.
+Use `hb verify` for a stricter install-oriented check. It exits with failure when required install state is missing or incorrect, and it may print warnings when root-owned content cannot be compared without sudo or when pre-login runtime state cannot be fully checked.
 
 Use `hb health` for cached disk, filesystem, systemd, and update-freshness alerts that feed the Waybar health heart.
 

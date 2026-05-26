@@ -115,11 +115,142 @@ verify_secret_service() {
   return "$failures"
 }
 
+verify_file_current() {
+  local source="$1"
+  local target="$2"
+  local label="$3"
+
+  if [[ ! -r $source || ! -e $target ]]; then
+    printf 'missing %s file: %s\n' "$label" "$target" >&2
+    return 1
+  fi
+
+  if [[ ! -r $target ]]; then
+    if sudo -n true >/dev/null 2>&1; then
+      if ! sudo cmp -s "$source" "$target"; then
+        printf '%s differs from Hyprbole default: %s\n' "$label" "$target" >&2
+        return 1
+      fi
+    else
+      printf 'warning: cannot compare unreadable %s file without sudo: %s\n' "$label" "$target" >&2
+    fi
+    return 0
+  fi
+
+  if ! cmp -s "$source" "$target"; then
+    printf '%s differs from Hyprbole default: %s\n' "$label" "$target" >&2
+    return 1
+  fi
+}
+
+verify_default_limine_config() {
+  local source="$HYPRBOLE_PATH/default/limine/default.conf"
+  local target="/etc/default/limine"
+  local cmdline
+  local expected
+  local tmp_file
+
+  [[ -r $source && -e $target ]] || {
+    printf 'missing Limine default config: %s\n' "$target" >&2
+    return 1
+  }
+
+  if [[ -f /etc/kernel/cmdline ]]; then
+    cmdline=$(</etc/kernel/cmdline)
+  else
+    cmdline=$(</proc/cmdline)
+    cmdline=${cmdline#BOOT_IMAGE=* }
+  fi
+
+  expected=$(<"$source")
+  expected=${expected//@@CMDLINE@@/$cmdline}
+  tmp_file=$(mktemp)
+  printf '%s\n' "$expected" >"$tmp_file"
+
+  if [[ ! -r $target ]]; then
+    if sudo -n true >/dev/null 2>&1; then
+      if ! sudo cmp -s "$tmp_file" "$target"; then
+        rm -f "$tmp_file"
+        printf 'Limine default config differs from Hyprbole default: %s\n' "$target" >&2
+        return 1
+      fi
+    else
+      printf 'warning: cannot compare unreadable Limine default config without sudo: %s\n' "$target" >&2
+    fi
+    rm -f "$tmp_file"
+    return 0
+  fi
+
+  if ! cmp -s "$tmp_file" "$target"; then
+    rm -f "$tmp_file"
+    printf 'Limine default config differs from Hyprbole default: %s\n' "$target" >&2
+    return 1
+  fi
+
+  rm -f "$tmp_file"
+}
+
+verify_limine_menu_defaults() {
+  local config="/boot/limine.conf"
+  local actual
+  local default_count
+  local expected_lines=(
+    'timeout: 3'
+    'default_entry: 2'
+    'remember_last_entry: no'
+    'interface_branding_color: 9bb1ff'
+  )
+  local i
+  local line
+  local use_sudo=0
+
+  [[ -e $config ]] || {
+    printf 'missing Limine menu config: %s\n' "$config" >&2
+    return 1
+  }
+
+  if [[ ! -r $config ]]; then
+    if sudo -n true >/dev/null 2>&1; then
+      use_sudo=1
+    else
+      printf 'warning: cannot compare unreadable Limine menu config without sudo: %s\n' "$config" >&2
+      return 0
+    fi
+  fi
+
+  for i in "${!expected_lines[@]}"; do
+    line="${expected_lines[$i]}"
+    if (( use_sudo == 1 )); then
+      actual="$(sudo awk -v line_number="$((i + 1))" 'NR == line_number { print; exit }' "$config")"
+    else
+      actual="$(awk -v line_number="$((i + 1))" 'NR == line_number { print; exit }' "$config")"
+    fi
+
+    if [[ $actual != "$line" ]]; then
+      printf 'Limine menu config differs from Hyprbole default at line %s: %s\n' "$((i + 1))" "$config" >&2
+      return 1
+    fi
+  done
+
+  if (( use_sudo == 1 )); then
+    default_count="$(sudo grep -Ec '^(timeout|default_entry|remember_last_entry|interface_branding_color):' "$config" || printf '0')"
+  else
+    default_count="$(grep -Ec '^(timeout|default_entry|remember_last_entry|interface_branding_color):' "$config" || printf '0')"
+  fi
+
+  if [[ $default_count != 4 ]]; then
+    printf 'Limine menu config has duplicate or missing Hyprbole defaults: %s\n' "$config" >&2
+    return 1
+  fi
+}
+
 verify_installation() {
   local failures=0
   local binary
   local failed_units
   local graphical_session_active=0
+  local package
+  local policy_target
   local process_label
   local secret_service_failures=0
   local unit
@@ -135,6 +266,13 @@ verify_installation() {
   for binary in "${HYPRBOLE_VERIFY_REQUIRED_COMMANDS[@]}"; do
     if ! cmd_present "$binary"; then
       printf 'missing command: %s\n' "$binary" >&2
+      failures=$((failures + 1))
+    fi
+  done
+
+  for package in "${HYPRBOLE_VERIFY_REQUIRED_PACKAGES[@]}"; do
+    if ! pacman -Q "$package" >/dev/null 2>&1; then
+      printf 'missing package: %s\n' "$package" >&2
       failures=$((failures + 1))
     fi
   done
@@ -182,11 +320,27 @@ verify_installation() {
   fi
 
   for path in "${HYPRBOLE_BROWSER_POLICY_SYMLINK_PATHS[@]}"; do
-    if [[ -e $path && ! -L $path ]]; then
+    policy_target=""
+
+    if [[ ! -L $path ]]; then
       printf 'browser policy should be a symlink: %s\n' "$path" >&2
+      failures=$((failures + 1))
+    else
+      policy_target="$(readlink -f "$path" 2>/dev/null || true)"
+    fi
+
+    if [[ -L $path && ! -f $HYPRBOLE_CONFIG_PATH/current/browser-policy.json ]]; then
+      printf 'browser policy target is missing: %s\n' "$HYPRBOLE_CONFIG_PATH/current/browser-policy.json" >&2
+      failures=$((failures + 1))
+    elif [[ -L $path && $policy_target != "$HYPRBOLE_CONFIG_PATH/current/browser-policy.json" ]]; then
+      printf 'browser policy symlink should target Hyprbole policy state: %s\n' "$path" >&2
       failures=$((failures + 1))
     fi
   done
+
+  verify_file_current "$HYPRBOLE_PATH/default/snapper/root" /etc/snapper/configs/root "Snapper root config" || failures=$((failures + 1))
+  verify_default_limine_config || failures=$((failures + 1))
+  verify_limine_menu_defaults || failures=$((failures + 1))
 
   if command -v code >/dev/null 2>&1 && ! grep -Fxq -- '--password-store=gnome-libsecret' "$HOME/.config/code-flags.conf"; then
     printf 'VS Code should use gnome-libsecret password store: %s\n' "$HOME/.config/code-flags.conf" >&2

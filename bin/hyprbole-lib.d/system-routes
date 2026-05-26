@@ -1,0 +1,43 @@
+#!/bin/bash
+
+system_lock() {
+  if pgrep -x 1password >/dev/null 2>&1; then
+    1password --lock >/dev/null 2>&1 || true
+  fi
+
+  if ! pgrep -x hyprlock >/dev/null 2>&1; then
+    exec hyprlock
+  fi
+}
+system_logout() {
+  if command -v uwsm >/dev/null 2>&1; then
+    exec uwsm stop
+  fi
+
+  local session_id="${XDG_SESSION_ID:-}"
+
+  if [[ -n $session_id ]] && command -v loginctl >/dev/null 2>&1; then
+    exec loginctl terminate-session "$session_id"
+  fi
+
+  exec pkill -KILL -u "$USER"
+}
+system_info() {
+  command -v hyprsysteminfo >/dev/null 2>&1 || {
+    printf 'missing required command: hyprsysteminfo\n' >&2
+    return 1
+  }
+
+  exec hyprsysteminfo
+}
+power_suspend() {
+  system_lock || true
+  sleep 1
+  exec systemctl suspend
+}
+power_reboot() {
+  exec systemctl reboot
+}
+power_off() {
+  exec systemctl poweroff
+}

@@ -10,7 +10,7 @@
   "custom/hyprbole": {
     "format": "HB",
     "tooltip-format": "Hyprbole",
-    "on-click": "hyprsysteminfo"
+    "on-click": "$HYPRBOLE_PATH/bin/hyprbole system info"
   },
   "custom/update": {
     "exec": "$HYPRBOLE_PATH/bin/hyprbole-update-indicator",

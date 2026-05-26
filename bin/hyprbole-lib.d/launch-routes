@@ -1,0 +1,171 @@
+#!/bin/bash
+
+hyprbole_load terminal
+
+require_menu_commands() {
+  command -v walker >/dev/null 2>&1 || {
+    printf 'missing required command: walker\n' >&2
+    exit 1
+  }
+
+  command -v elephant >/dev/null 2>&1 || {
+    printf 'missing required command: elephant\n' >&2
+    exit 1
+  }
+}
+launch_menu() {
+  local menu_name="${1:-hyprbole}"
+  local placeholder="${2:-Hyprbole menu}"
+
+  require_menu_commands
+
+  exec walker --width 460 --minheight 1 --maxheight 520 --provider "menus:${menu_name}" --placeholder "$placeholder"
+}
+launch_apps() {
+  launch_menu "hyprbole-apps" "Apps"
+}
+launch_clipboard() {
+  require_menu_commands
+
+  exec walker --width 980 --maxheight 520 --minheight 520 --provider clipboard --placeholder "Clipboard history"
+}
+launch_keybinds() {
+  launch_menu "hyprbole-keybinds" "Keybinds"
+}
+launch_tools() {
+  launch_menu "hyprbole-tools" "Utilities"
+}
+launch_default_app_role() {
+  local role="$1"
+  local app
+  local command_name
+
+  shift
+
+  app="$(hyprbole_default_app "$role")" || {
+    printf 'unknown default app role: %s\n' "$role" >&2
+    return 1
+  }
+  command_name="$(hyprbole_app_command "$app")"
+
+  command -v "$command_name" >/dev/null 2>&1 || {
+    printf 'missing %s command for %s: %s\n' "$role" "$app" "$command_name" >&2
+    return 1
+  }
+
+  exec "$command_name" "$@"
+}
+launch_terminal() {
+  hyprbole_launch_terminal_command "$@"
+}
+launch_browser() {
+  launch_default_app_role browser "$@"
+}
+launch_files() {
+  launch_default_app_role files "$@"
+}
+launch_audio() {
+  exec pavucontrol
+}
+launch_network() {
+  exec nm-connection-editor
+}
+launch_bluetooth() {
+  command -v blueman-manager >/dev/null 2>&1 || {
+    printf 'missing required command: blueman-manager\n' >&2
+    return 1
+  }
+
+  exec blueman-manager
+}
+launch_btop() {
+  hyprbole_launch_floating_terminal com.hyprbole.btop btop btop
+}
+disk_usage() {
+  command -v dua >/dev/null 2>&1 || {
+    printf 'missing required command: dua\n' >&2
+    exit 1
+  }
+
+  exec dua i "$@"
+}
+launch_disk_usage() {
+  hyprbole_launch_floating_terminal com.hyprbole.disk-usage "Disk Usage" bash -lc 'if (($# == 0)); then cd "$HOME" || exit; fi; hyprbole disk-usage "$@"; status=$?; if (( status != 0 )); then printf "\nDisk Usage exited with status %d\n" "$status"; printf "\nPress Enter to close..."; read -r _; fi; exit "$status"' hyprbole-disk-usage "$@"
+}
+health_report() {
+  case "${1:-}" in
+    "")
+      exec hyprbole-health-report
+      ;;
+    refresh)
+      if ! systemctl start hyprbole-health-check.service; then
+        printf 'failed to start health check service\n' >&2
+        printf 'Try: sudo systemctl start hyprbole-health-check.service\n' >&2
+        return 1
+      fi
+      exec hyprbole-health-report
+      ;;
+    updates)
+      exec hyprbole-health-updates
+      ;;
+    *)
+      usage
+      return 1
+      ;;
+  esac
+}
+launch_health() {
+  hyprbole_launch_floating_terminal com.hyprbole.system "System Health" bash -lc 'hyprbole health; status=$?; printf "\nPress Enter to close..."; read -r _; exit "$status"'
+}
+launch_mount_share() {
+  hyprbole_launch_floating_terminal com.hyprbole.mount-share "Mount Share" bash -lc 'hyprbole-mount-share; status=$?; printf "\nPress Enter to close..."; read -r _; exit "$status"'
+}
+launch_launcher() {
+  require_menu_commands
+
+  exec walker --width 980 --maxheight 520 --minheight 520
+}
+launch_themes() {
+  require_menu_commands
+
+  exec walker --width 900 --minheight 300 --maxheight 560 --provider menus:hyprbolethemes --placeholder "Select theme"
+}
+launch_wallpaper_menu() {
+  require_menu_commands
+
+  exec walker --width 900 --minheight 300 --maxheight 560 --provider menus:hyprbolewallpapers --placeholder "Select wallpaper"
+}
+launch_my_wallpaper_menu() {
+  require_menu_commands
+
+  exec walker --width 900 --minheight 300 --maxheight 560 --provider menus:hyprbolemywallpapers --placeholder "Select custom wallpaper"
+}
+launch_update() {
+  hyprbole_launch_floating_terminal com.hyprbole.update "Hyprbole Update" bash -lc '
+    if hyprbole-update-confirm; then
+      hyprbole update
+      status=$?
+      if (( status == 0 )); then
+        printf "\nUpdate complete.\n"
+      elif (( status == 11 )); then
+        printf "\nUpdate not started.\n"
+        printf "Hyprbole has local repo changes that would be overwritten or mixed with an update.\n"
+        printf "\nFinish or save your local work first, then run the update again.\n"
+        printf "\nUseful commands:\n"
+        printf "  git -C \"%s\" status --short\n" "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
+        printf "  git -C \"%s\" diff\n" "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}"
+      else
+        printf "\nUpdate failed.\n"
+        printf "Review the output above and retry after fixing the issue.\n"
+        printf "Log: /tmp/hyprbole-update.log\n"
+      fi
+    else
+      status=0
+      printf "\nUpdate cancelled.\n"
+    fi
+
+    printf "\nPress Enter to close..."
+    read -r _
+    exit "$status"
+  '
+}

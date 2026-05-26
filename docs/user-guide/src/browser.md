@@ -40,6 +40,8 @@ The managed Brave policy is linked at:
 /etc/brave/policies/managed/color.json
 ```
 
+`hb verify` fails if that managed policy path is missing or is not a symlink to Hyprbole-owned policy state.
+
 To reapply it:
 
 ```bash

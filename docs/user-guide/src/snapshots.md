@@ -86,6 +86,8 @@ Hyprbole installs `limine`, `limine-snapper-sync`, and `limine-mkinitcpio-hook` 
 
 Install enables `limine-snapper-sync.service` when the command exists, runs `limine-snapper-sync`, and enables `snapper-cleanup.timer`. Hyprbole also writes Limine defaults with `MAX_SNAPSHOT_ENTRIES=5`.
 
+`hb verify` checks that `limine-snapper-sync` and `limine-mkinitcpio-hook` are installed, that `/etc/default/limine` matches Hyprbole's generated defaults, and that `/boot/limine.conf` keeps Hyprbole's menu defaults. It also checks `/etc/snapper/configs/root` against Hyprbole's Snapper defaults when the file is readable or passwordless sudo is already available.
+
 Refresh Limine and snapshot boot entries with:
 
 ```bash
