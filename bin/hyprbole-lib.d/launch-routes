@@ -53,10 +53,10 @@ launch_default_app_role() {
     return 1
   }
 
-  exec "$command_name" "$@"
+  hyprbole_spawn_detached "$command_name" "$@"
 }
 launch_terminal() {
-  hyprbole_launch_terminal_command "$@"
+  hyprbole_launch_terminal_command --background "$@"
 }
 launch_browser() {
   launch_default_app_role browser "$@"
@@ -65,10 +65,20 @@ launch_files() {
   launch_default_app_role files "$@"
 }
 launch_audio() {
-  exec pavucontrol
+  command -v pavucontrol >/dev/null 2>&1 || {
+    printf 'missing required command: pavucontrol\n' >&2
+    return 1
+  }
+
+  hyprbole_spawn_detached pavucontrol
 }
 launch_network() {
-  exec nm-connection-editor
+  command -v nm-connection-editor >/dev/null 2>&1 || {
+    printf 'missing required command: nm-connection-editor\n' >&2
+    return 1
+  }
+
+  hyprbole_spawn_detached nm-connection-editor
 }
 launch_bluetooth() {
   command -v blueman-manager >/dev/null 2>&1 || {
@@ -76,10 +86,10 @@ launch_bluetooth() {
     return 1
   }
 
-  exec blueman-manager
+  hyprbole_spawn_detached blueman-manager
 }
 launch_btop() {
-  hyprbole_launch_floating_terminal com.hyprbole.btop btop btop
+  hyprbole_spawn_floating_terminal com.hyprbole.btop btop btop
 }
 disk_usage() {
   command -v dua >/dev/null 2>&1 || {
@@ -90,7 +100,7 @@ disk_usage() {
   exec dua i "$@"
 }
 launch_disk_usage() {
-  hyprbole_launch_floating_terminal com.hyprbole.disk-usage "Disk Usage" bash -lc 'if (($# == 0)); then cd "$HOME" || exit; fi; hyprbole disk-usage "$@"; status=$?; if (( status != 0 )); then printf "\nDisk Usage exited with status %d\n" "$status"; printf "\nPress Enter to close..."; read -r _; fi; exit "$status"' hyprbole-disk-usage "$@"
+  hyprbole_spawn_floating_terminal com.hyprbole.disk-usage "Disk Usage" bash -lc 'if (($# == 0)); then cd "$HOME" || exit; fi; hyprbole disk-usage "$@"; status=$?; if (( status != 0 )); then printf "\nDisk Usage exited with status %d\n" "$status"; printf "\nPress Enter to close..."; read -r _; fi; exit "$status"' hyprbole-disk-usage "$@"
 }
 health_report() {
   case "${1:-}" in
@@ -115,10 +125,10 @@ health_report() {
   esac
 }
 launch_health() {
-  hyprbole_launch_floating_terminal com.hyprbole.system "System Health" bash -lc 'hyprbole health; status=$?; printf "\nPress Enter to close..."; read -r _; exit "$status"'
+  hyprbole_spawn_floating_terminal com.hyprbole.system "System Health" bash -lc 'hyprbole health; status=$?; printf "\nPress Enter to close..."; read -r _; exit "$status"'
 }
 launch_mount_share() {
-  hyprbole_launch_floating_terminal com.hyprbole.mount-share "Mount Share" bash -lc 'hyprbole-mount-share; status=$?; printf "\nPress Enter to close..."; read -r _; exit "$status"'
+  hyprbole_spawn_floating_terminal com.hyprbole.mount-share "Mount Share" bash -lc 'hyprbole-mount-share; status=$?; printf "\nPress Enter to close..."; read -r _; exit "$status"'
 }
 launch_launcher() {
   require_menu_commands
@@ -141,7 +151,7 @@ launch_my_wallpaper_menu() {
   exec walker --width 900 --minheight 300 --maxheight 560 --provider menus:hyprbolemywallpapers --placeholder "Select custom wallpaper"
 }
 launch_update() {
-  hyprbole_launch_floating_terminal com.hyprbole.update "Hyprbole Update" bash -lc '
+  hyprbole_spawn_floating_terminal com.hyprbole.update "Hyprbole Update" bash -lc '
     if hyprbole-update-confirm; then
       hyprbole update
       status=$?

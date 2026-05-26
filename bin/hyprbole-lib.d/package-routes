@@ -111,13 +111,13 @@ extra_install() {
   printf '%s extra installed.\n' "$label"
 }
 launch_pkg_installed() {
-  hyprbole_launch_floating_terminal com.hyprbole.pkg-installed "Installed Packages" hyprbole pkg installed
+  hyprbole_spawn_floating_terminal com.hyprbole.pkg-installed "Installed Packages" hyprbole pkg installed
 }
 launch_pkg_install() {
-  hyprbole_launch_floating_terminal com.hyprbole.pkg-install "Install Packages" hyprbole pkg install
+  hyprbole_spawn_floating_terminal com.hyprbole.pkg-install "Install Packages" hyprbole pkg install
 }
 launch_pkg_aur_install() {
-  hyprbole_launch_floating_terminal com.hyprbole.pkg-aur-install "Install AUR Packages" hyprbole pkg aur-install
+  hyprbole_spawn_floating_terminal com.hyprbole.pkg-aur-install "Install AUR Packages" hyprbole pkg aur-install
 }
 launch_extra_install() {
   local extra_id="$1"
@@ -127,42 +127,51 @@ launch_extra_install() {
     return 1
   }
 
-  hyprbole_launch_floating_terminal com.hyprbole.extra-install "Install Extra" bash -lc 'hyprbole extra install "$1"; status=$?; if (( status != 0 )); then printf "\nExtra install failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _; exit "$status"' hyprbole-extra-install "$extra_id"
+  hyprbole_spawn_floating_terminal com.hyprbole.extra-install "Install Extra" bash -lc 'hyprbole extra install "$1"; status=$?; if (( status != 0 )); then printf "\nExtra install failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _; exit "$status"' hyprbole-extra-install "$extra_id"
 }
 launch_pkg_remove() {
-  hyprbole_launch_floating_terminal com.hyprbole.pkg-remove "Remove Packages" bash -lc 'hyprbole pkg remove; status=$?; if (( status != 0 )); then printf "\nPackage removal failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _; exit "$status"'
+  hyprbole_spawn_floating_terminal com.hyprbole.pkg-remove "Remove Packages" bash -lc 'hyprbole pkg remove; status=$?; if (( status != 0 )); then printf "\nPackage removal failed with status %d\n" "$status"; fi; printf "\nPress Enter to close..."; read -r _; exit "$status"'
+}
+launch_missing_extra_install() {
+  # Launch commands are fire-and-forget; install failures are shown in the floating installer terminal.
+  launch_extra_install "$1"
 }
 launch_steam() {
   if ! command -v steam >/dev/null 2>&1; then
-    launch_extra_install steam
+    launch_missing_extra_install steam
+    return
   fi
 
-  exec steam "$@"
+  hyprbole_spawn_detached steam "$@"
 }
 launch_steam_gaming_mode() {
   if ! command -v steam >/dev/null 2>&1; then
-    launch_extra_install steam
+    launch_missing_extra_install steam
+    return
   fi
 
   if ! command -v gamescope >/dev/null 2>&1; then
-    launch_extra_install steam
+    launch_missing_extra_install steam
+    return
   fi
 
-  exec gamescope -e -f --adaptive-sync -- steam -steamdeck -steamos3 "$@"
+  hyprbole_spawn_detached gamescope -e -f --adaptive-sync -- steam -steamdeck -steamos3 "$@"
 }
 launch_obsidian() {
   if ! command -v obsidian >/dev/null 2>&1; then
-    launch_extra_install obsidian
+    launch_missing_extra_install obsidian
+    return
   fi
 
-  exec uwsm-app -- obsidian "$@"
+  hyprbole_spawn_detached uwsm-app -- obsidian "$@"
 }
 launch_passwords() {
   if ! command -v 1password >/dev/null 2>&1; then
-    launch_extra_install onepassword
+    launch_missing_extra_install onepassword
+    return
   fi
 
-  exec uwsm-app -- 1password "$@"
+  hyprbole_spawn_detached uwsm-app -- 1password "$@"
 }
 pkg_install() {
   command -v fzf >/dev/null 2>&1 || {

@@ -10,9 +10,15 @@ hyprbole_terminal_exec_args() {
 }
 
 hyprbole_launch_terminal_command() {
+  local background=0
   local app
   local command_name
   local exec_args=()
+
+  if [[ ${1:-} == "--background" ]]; then
+    background=1
+    shift
+  fi
 
   app="$(hyprbole_default_app terminal)"
   command_name="$(hyprbole_app_command "$app")"
@@ -23,6 +29,11 @@ hyprbole_launch_terminal_command() {
   fi
 
   if (($# == 0)); then
+    if (( background == 1 )); then
+      hyprbole_spawn_detached "$command_name"
+      return 0
+    fi
+
     exec "$command_name"
   fi
 
@@ -33,6 +44,11 @@ hyprbole_launch_terminal_command() {
   while IFS= read -r -d '' arg; do
     exec_args+=("$arg")
   done < <(hyprbole_terminal_exec_args "$app")
+
+  if (( background == 1 )); then
+    hyprbole_spawn_detached "$command_name" "${exec_args[@]}" "$@"
+    return 0
+  fi
 
   exec "$command_name" "${exec_args[@]}" "$@"
 }
@@ -45,10 +61,19 @@ hyprbole_launch_terminal_shell() {
 }
 
 hyprbole_launch_floating_terminal() {
+  local background=0
   local class_name="$1"
   local title="$2"
   local app
   local command_name
+  local terminal_args=()
+
+  if [[ ${1:-} == "--background" ]]; then
+    background=1
+    shift
+    class_name="$1"
+    title="$2"
+  fi
 
   shift 2
 
@@ -62,10 +87,10 @@ hyprbole_launch_floating_terminal() {
 
   case "$app" in
     ghostty)
-      exec "$command_name" --class="$class_name" --title="$title" -e "$@"
+      terminal_args=("$command_name" --class="$class_name" --title="$title" -e "$@")
       ;;
     kitty)
-      exec "$command_name" --class "$class_name" --title "$title" -e "$@"
+      terminal_args=("$command_name" --class "$class_name" --title "$title" -e "$@")
       ;;
     *)
       printf 'terminal does not support Hyprbole floating window metadata: %s\n' "$app" >&2
@@ -73,4 +98,15 @@ hyprbole_launch_floating_terminal() {
       return 1
       ;;
   esac
+
+  if (( background == 1 )); then
+    hyprbole_spawn_detached "${terminal_args[@]}"
+    return 0
+  fi
+
+  exec "${terminal_args[@]}"
+}
+
+hyprbole_spawn_floating_terminal() {
+  hyprbole_launch_floating_terminal --background "$@"
 }

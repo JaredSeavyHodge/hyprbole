@@ -41,6 +41,11 @@ hyprbole_cmd_present() {
   command -v "$1" >/dev/null 2>&1
 }
 
+hyprbole_spawn_detached() {
+  "$@" >/dev/null 2>&1 &
+  disown || true
+}
+
 hyprbole_git_checkout() {
   local path="${1:-}"
   local path_root

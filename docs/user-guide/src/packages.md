@@ -43,6 +43,8 @@ hb extra install steam
 
 The Gaming menu links to the same Extras submenu for Steam, Discord, and related optional app installs so there is one canonical curated install location.
 
+Launcher commands for optional apps, such as `hb launch steam`, `hb launch obsidian`, and `hb launch passwords`, return after opening the app. If the app is missing, they open the related floating installer workflow and return after that installer terminal is spawned; install success or failure is shown inside that terminal.
+
 Current extras:
 
 | Extra | What it adds |
