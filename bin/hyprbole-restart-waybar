@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Restart Waybar
-
-set -euo pipefail
-
-exec hyprbole-waybar-restart

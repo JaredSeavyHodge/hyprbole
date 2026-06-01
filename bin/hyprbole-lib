@@ -1,9 +1,0 @@
-#!/bin/bash
-
-set -euo pipefail
-
-source "${HYPRBOLE_PATH:-$HOME/.local/share/hyprbole}/bin/hyprbole-lib.d/core"
-hyprbole_load terminal
-hyprbole_load theme
-hyprbole_load refresh
-hyprbole_load mirrors

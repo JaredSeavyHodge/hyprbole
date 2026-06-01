@@ -1,8 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Lower brightness
-
-set -euo pipefail
-
-brightnessctl -e4 -n2 set 5%-
-swayosd-client --brightness lower >/dev/null 2>&1 || true

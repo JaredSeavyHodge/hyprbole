@@ -1,8 +1,0 @@
-[Unit]
-Description=Hyprbole lightweight system health check
-After=local-fs.target
-
-[Service]
-Type=oneshot
-Environment=HYPRBOLE_PATH=@HYPRBOLE_PATH@
-ExecStart=/usr/bin/env bash -lc 'exec "$HYPRBOLE_PATH/bin/hyprbole-health-check"'

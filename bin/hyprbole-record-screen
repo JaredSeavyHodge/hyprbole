@@ -1,8 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Start a one-shot recording command
-# hyprbole:args=<region|screen>
-
-set -euo pipefail
-
-exec hyprbole-record-toggle "$@"

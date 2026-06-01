@@ -1,65 +1,86 @@
 # Implementation Plan
 
-## Phase 1
+## Done In This Branch
 
-- Create repository structure. Done.
-- Add install scaffolding. Done.
-- Define package manifests. Done.
-- Define session ownership matrix. Done.
-- Define Hyprland Lua entrypoint layout. Done.
-- Define Waybar baseline config. Done.
+- Removed legacy Bash/config/install/theme surfaces from the experiment branch.
+- Added Rust workspace.
+- Added `hyprbole-core` with a direct Hyprland IPC client for early action experiments.
+- Added `hyprbole-daemon` with a minimal Unix socket request loop.
+- Added `hyprbole-ui` visible prototype window.
+- Added background refresh/action workers so the UI remains responsive.
+- Added request sequencing so stale worker replies cannot overwrite newer state.
+- Added `hbctl ui` as the Rust launcher/control entrypoint.
+- Added `hbctl daemon`, `hbctl ping`, `hbctl bind-mouse-ipc`, and `hbctl shutdown` as early daemon/client test commands.
+- Added typed JSON daemon requests/responses for state, actions, settings, and reconciliation.
+- Added per-subsystem ownership settings with `respect_user_config`, `runtime_owned`, and `persisted_owned` modes.
+- Added daemon startup/reload/reconnect reconciliation for runtime-owned keybindings.
+- Added `hbctl state`, `hbctl settings`, `hbctl settings set`, and `hbctl reconcile`.
+- Added `hbctl status` for daemon PID, uptime, socket/settings paths, event buffer state, structured reconcile status, structured last-action metadata, and compatibility save/action status strings.
+- Added runtime log paths and `hbctl logs` for daemon/UI/control/quick/bar/OSD background launches, including log listing, paths, and follow mode.
+- Added `hbctl binds`, `hbctl events`, and `hbctl events --follow` for keybinding and daemon event inspection.
+- Added `hbctl bar` as the layer-shell bar prototype launcher.
+- Added `hbctl ownership` as shorthand for per-subsystem ownership settings.
+- Added `hbctl control` as a daemon-backed control center launcher.
+- Added `hbctl quick` as a compact daemon-backed quick settings launcher.
+- Added `hbctl osd` as a daemon-backed layer-shell OSD launcher.
+- Added a layer-shell quick settings popup as the default `hbctl quick` surface, with `hbctl quick --dev` preserving the older egui development window.
+- Added quick settings single-instance guarding via runtime identity file; `hbctl quick --toggle` opens quick settings when absent and requests dismissal of the running quick settings process when present.
+- Added daemon-backed ownership controls and daemon/event status to the control center.
+- Added daemon status details and structured reconcile severity to the control center.
+- Added protocol/build status, recent events, and scoped reconcile controls to the control center.
+- Added structured audio and brightness snapshots while keeping display summaries.
+- Added typed notification/DND state, persisted DND settings, bounded in-memory notification history, and `hbctl notifications` inspection/action commands.
+- Added typed theme mode/tokens, persisted theme settings, `hbctl theme` inspection/action commands, and a control-center Appearance pane.
+- Added ownership capability metadata and `hbctl ownership capabilities`.
+- Added reserved ownership warnings for subsystems without runtime reconcilers.
+- Added observe-only monitor/workspace reconciliation reporting.
+- Added bitmap text rendering to the layer-shell bar prototype for workspace, active-window, audio, brightness, current layout, action status, and daemon/reconcile severity status.
+- Added daemon-backed bar interactions for workspace focus/scroll, audio mute, brightness scroll, and quick settings launch.
+- Added explicit bar hit-region routing and tests for workspace, window, status, and system regions.
+- Added bar action throttling for rapid workspace scroll, brightness scroll, mute, and quick toggle events.
+- Added persisted `ui.bar` shell settings for bar enablement, edge, height, margin, padding, monitor selector, and widget visibility/order.
+- Added `hbctl ui-settings` for daemon-backed shell UI settings inspection, bar field updates, and bar reset.
+- Added a control-center Bar pane for editing persisted bar enablement, edge, height, and widget visibility.
+- Updated the layer-shell bar to render and expose hit regions from persisted bar settings instead of hardcoded widget visibility.
+- Expanded the control-center Bar pane with monitor, margin, padding, widget order controls, and widget reset.
+- Updated the layer-shell bar to apply configured margin/padding, ordered system widgets, and more daemon-provided theme colors.
+- Added bar monitor targeting resolution for focused, primary, and named monitors by matching daemon monitor names to Wayland output names, with safe fallback logging.
+- Added daemon event classification helpers so surfaces can distinguish snapshot refreshes from status refreshes.
+- Added a native layer-shell OSD surface for recent daemon action feedback plus audio/brightness summaries, with background daemon refresh and idle auto-hide.
+- Added `hyprbole-core::hyprland_state` as the daemon's Hyprland snapshot adapter.
+- Gated UI action fallbacks behind `--debug-direct-fallback`.
+- Added structured daemon logs and slow shell-command profiling for prototype adapters.
+- Added daemon cached snapshots with monitor, brightness, reconcile status, and recent event state.
+- Added settings load/save tests and corrupt settings safe fallback coverage.
+- Added `FileSettingsStore` as the atomic structured-file settings boundary, with tests for store round-trips and write-failure preservation of existing settings.
+- Added daemon ownership persistence tests for save success/failure behavior.
+- Added daemon status, structured reconcile, and observe-only reconciliation regression tests.
+- Added a mock-backed daemon runtime test harness for handler-level state, settings, UI settings, bar persistence, action/event, and keybinding request coverage without live Hyprland.
+- Added `hbctl ui-settings` parser tests so command request construction is covered without a live daemon.
+- Added a minimal `wlr-layer-shell` smoke surface via `hbctl layer-spike`.
+- Scoped opencode reviewers to shell runtime and shell docs.
 
-## Phase 2
+## Current Prototype
 
-- Implement post-install bootstrap script. Done.
-- Install official packages. Done.
-- Install `yay`. Done.
-- Install curated AUR packages. Done.
-- Configure git from user prompts. Done.
-- Deploy vendor defaults and user config. Done.
-- Configure Secret Service for GNOME Keyring/libsecret. Done.
-- Generate Hyprbole-owned Brave launcher and default-browser association. Done.
+Run:
 
-## Phase 3
+```bash
+cargo run -p hbctl -- ui
+```
 
-- Implement theme data model. Done.
-- Ship the first default theme as `default-theme`. Done.
-- Apply theme to Hyprland, Waybar, Ghostty, and `swaync`. Done.
-- Add external theme source registry and explicit sync workflow. Done.
+The visible UI can show Hyprland state, focus workspaces, adjust output volume, toggle output mute, adjust brightness, toggle notification DND, switch runtime layout/monitor mode through daemon IPC, refresh state, request a session lock, open a daemon-backed control center, open compact layer-shell quick settings, and open a layer-shell OSD. The control center can edit persisted bar settings, widget order, and theme mode. The layer-shell bar can focus/scroll workspaces, show configured active-window/audio/brightness/notifications/layout/action/status/clock widgets, mute audio, adjust brightness by scroll, apply margin/padding and daemon-provided theme color tokens, and toggle the single-instance quick settings popup from its configured status region. The layer-shell quick popup and OSD also consume daemon-provided color tokens for core background/text colors. The OSD follows daemon events, refreshes daemon state asynchronously, auto-hides when idle, and renders recent action status plus current audio/brightness summaries.
 
-## Phase 4
+## Next Milestones
 
-- Add diagnostics and update helpers. Done.
-- Add reset/refresh flows. Done.
-- Add higher-level `hyprbole` command surface. Done.
-- Keep one-off repair commands behind `hyprbole doctor --fix` rather than public routes. Done.
-- Open the local user guide automatically on first login after fresh install. Done.
-- Remove the temporary `hyprbole-mount-share` script. Done.
-- Add troubleshooting guidance for refreshing a single user-owned `.config` file. Done.
-- Do a focused user-guide cleanup before the next fresh install test. Done.
-- Add high-value `hb restart` routes for common UI workflows. Done.
-- Change the Waybar health indicator from a bell to a heart. Done.
-- Add a lightweight Waybar notification bell for SwayNC with right-click dismissal. Done.
-- Evaluate lightweight, nicely themable text/PDF default app candidates. Done.
-- Use `mousepad` and `papers` as default text/PDF apps. Done.
-- Evaluate clean, free, lightweight Markdown viewer candidates. Done.
-- Add a simple TUI for mounting NAS NFS or SMB shares with proper permissions. Done.
-- Add a main Walker `Gaming` submenu with Steam launch, a shared Extras install link, and Steam gaming mode. Done.
+1. Extend the mock daemon harness to cover future monitor/workspace runtime reconcilers before enabling mutation.
+2. Continue hardening layer-shell lifecycle behavior across output hotplug and compositor reconnects.
+3. Expand theme tokens cautiously only where shell surfaces consume them; `hbctl theme reset` currently returns to default dark mode, and external app projection remains later work.
+4. Add monitor/workspace runtime reconcilers only after observe-only behavior and mock-backed tests are proven safe.
+5. Replace egui only after widget/state contracts are proven.
 
-## Future Features
+## Guardrails
 
-- Add a Walker/Elephant menu for switching runtime default apps such as browser, terminal, and file manager.
-- Add optional Walker/Elephant provider installation from the Hyprbole menu for extras such as package search, provider list, bookmarks, snippets, bluetooth, and window actions.
-- Add a MIME/default-app refresh command that applies selected roles through `xdg-mime` and `xdg-settings` for web links, directories, images, video/audio files, PDFs, text/code files, and archives.
-- Let the default-app menu install missing supported alternatives, update `settings.toml`, refresh MIME associations, and restart or reload affected runtime components.
-- Add a CLI cleanup pass before broadening the public `hyprbole` command surface.
-- Discuss whether a deeply integrated optional agentic OS layer, similar to Hermes, is viable with efficient access to Hyprland, Hyprbole, and Linux while preserving security and avoiding excessive tool calls or token use.
-- Add optional `xournalpp` or `okular` install workflows for PDF signing/annotation.
-- Consider a `glow`-backed Markdown viewer role or launcher for read-only Markdown viewing; keep `text/markdown` editable in Mousepad unless users explicitly choose a viewer workflow.
-- Add a Walker `Install` submenu for office suites, including LibreOffice and any better alternatives, with an option to consider a Brave-powered Microsoft Office web app.
-
-## Current Open Questions
-
-- Whether to keep SDDM as the v1 display-manager default long term.
-- Exact GTK/Qt theming package set and application flow beyond current baseline.
-- How much of the current `hyprbole` command tree should remain public after CLI cleanup.
+- Do not reintroduce the legacy `bin/`, `config/`, `default/`, `install/`, `themes/`, or migration trees in this branch.
+- Do not add REST as the product API.
+- Do not add a plugin system yet.
+- Do not treat egui as the final shell runtime.

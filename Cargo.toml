@@ -1,0 +1,14 @@
+[workspace]
+resolver = "3"
+members = [
+  "crates/hyprbole-core",
+  "crates/hyprbole-daemon",
+  "crates/hyprbole-ui",
+  "crates/hbctl",
+]
+default-members = [
+  "crates/hyprbole-core",
+  "crates/hyprbole-daemon",
+  "crates/hyprbole-ui",
+  "crates/hbctl",
+]

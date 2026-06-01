@@ -2,25 +2,15 @@
   "$schema": "https://opencode.ai/config.json",
   "small_model": "openai/gpt-5.4-mini-fast",
   "command": {
-    "review-install": {
-      "description": "Review install, package, service, doctor, and idempotency changes",
-      "agent": "install-reviewer",
-      "template": "Review the current Hyprbole install/package/service changes. Focus on install.sh, install/*, default/hyprbole/manifest.sh, default/systemd/*, install/verify.sh, and doctor behavior. Return prioritized findings with file/line references and concrete recommendations. Do not edit files."
-    },
     "review-runtime": {
-      "description": "Review CLI/menu/launcher/floating-terminal runtime workflows",
+      "description": "Review Rust shell runtime workflows",
       "agent": "runtime-flow-reviewer",
-      "template": "Review the current Hyprbole runtime workflow changes. Focus on bin/hyprbole, bin/hyprbole-*, config/elephant/menus/*, default/hypr/core/rules.lua, terminal launch behavior, and user workflow consistency. Return prioritized findings with file/line references and concrete recommendations. Do not edit files."
+      "template": "Review the current Hyprbole Rust shell runtime changes. Inspect only changed files and directly referenced helpers/configs needed to validate behavior. Focus on crates/hyprbole-shell-*, shell IPC/action/state behavior, UI launch behavior, and shell architecture consistency. Return prioritized findings with file/line references; if none, say so briefly. Do not edit files."
     },
     "review-docs": {
-      "description": "Review docs for drift against implemented workflows",
+      "description": "Review shell docs for drift",
       "agent": "docs-sync-reviewer",
-      "template": "Review Hyprbole documentation for drift against current implementation. Focus on README.md, docs/user-guide/src/*.md, docs/architecture.md, and docs/implementation-plan.md. Return prioritized findings with file/line references and concrete update recommendations. Do not edit files."
-    },
-    "review-theme": {
-      "description": "Review theme engine and theme docs consistency",
-      "agent": "theme-reviewer",
-      "template": "Review Hyprbole theme behavior and docs. Focus on themes/*, theme source sync, refresh scripts, GTK/icon/browser/Waybar/Ghostty behavior, and theme documentation. Return prioritized findings with file/line references and concrete recommendations. Do not edit files."
+      "template": "Review Hyprbole Shell documentation for drift against current implementation. Inspect only changed docs and directly related implementation/docs needed to verify drift. Focus on README.md, docs/architecture.md, docs/shell-architecture.md, docs/implementation-plan.md, and AGENTS.md when relevant. Return prioritized findings with file/line references; if none, say so briefly. Do not edit files."
     }
   },
   "agent": {

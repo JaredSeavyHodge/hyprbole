@@ -1,8 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Restart SwayNC
-
-set -euo pipefail
-
-pkill -x swaync >/dev/null 2>&1 || true
-exec swaync

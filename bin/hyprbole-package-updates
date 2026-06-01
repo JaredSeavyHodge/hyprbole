@@ -1,9 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Print cached package update indicator for Waybar
-
-set -euo pipefail
-
-if hyprbole-update-indicator --has-updates; then
-  printf '󰚰\n'
-fi

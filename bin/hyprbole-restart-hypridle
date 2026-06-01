@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# hyprbole:summary=Restart Hypridle user service
-
-set -euo pipefail
-
-systemctl --user restart hypridle.service
