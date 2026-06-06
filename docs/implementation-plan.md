@@ -16,15 +16,17 @@
 - Added daemon startup/reload/reconnect reconciliation for runtime-owned keybindings.
 - Added `hbctl state`, `hbctl settings`, `hbctl settings set`, and `hbctl reconcile`.
 - Added `hbctl status` for daemon PID, uptime, socket/settings paths, event buffer state, structured reconcile status, structured last-action metadata, and compatibility save/action status strings.
-- Added runtime log paths and `hbctl logs` for daemon/UI/control/quick/bar/OSD background launches, including log listing, paths, and follow mode.
+- Added runtime log paths and `hbctl logs` for daemon/UI/control/quick/bar/OSD/launcher background launches, including log listing, paths, and follow mode.
+- Added `hbctl surfaces` for local runtime status and lifecycle control of quick, bar, OSD, and layer launcher instance identities, pidfile/log health, and logs, with per-surface filtering, plain table output, start/stop/restart delegation, read-only doctor diagnostics with severity/recommendations/unhealthy-or-severity filtering plus pre-filter issue/warning/error/actionable, selected/healthy counts, displayed names/labels, command counts, active filter metadata, zero-ok metadata, command-only output, and plain summary output, immediate read-only checks and read-only waits over shared predicates with optional JSON reports, safe parseable-stale-pidfile cleanup, and cleanup dry-run preview.
 - Added `hbctl binds`, `hbctl events`, and `hbctl events --follow` for keybinding and daemon event inspection.
-- Added `hbctl bar` as the layer-shell bar prototype launcher.
+- Added `hbctl bar` as the layer-shell bar prototype launcher, with single-instance guard, toggle, and restart controls.
 - Added `hbctl ownership` as shorthand for per-subsystem ownership settings.
 - Added `hbctl control` as a daemon-backed control center launcher.
+- Added `hbctl launcher` as the GTK4 plus gtk4-layer-shell app launcher backed by standard `.desktop` entries for CSS-level theming evaluation, plus a `--layer` custom Rust layer-shell launcher and `--dev` egui launcher window. App-provider launchers focus search on open and hide app rows until typing starts. The custom layer-shell launcher supports `--prompt`, `--placeholder`, and `--lines` in both app-provider and stdin modes, supports `--toggle`/`--restart` for non-stdin use, and supports explicit dmenu-style stdin lists with `--layer --stdin --foreground`, returning the selected line on stdout.
 - Added `hbctl quick` as a compact daemon-backed quick settings launcher.
-- Added `hbctl osd` as a daemon-backed layer-shell OSD launcher.
+- Added `hbctl osd` as a daemon-backed layer-shell OSD launcher, with single-instance guard, toggle, and restart controls.
 - Added a layer-shell quick settings popup as the default `hbctl quick` surface, with `hbctl quick --dev` preserving the older egui development window.
-- Added quick settings single-instance guarding via runtime identity file; `hbctl quick --toggle` opens quick settings when absent and requests dismissal of the running quick settings process when present.
+- Added quick settings single-instance guarding via runtime identity file plus `/proc` recovery for pidfile-less prototype processes; `hbctl quick --toggle` opens quick settings when absent and requests dismissal of the running quick settings process when present, and `hbctl quick --restart` replaces the running quick settings process after identity-verified dismissal.
 - Added daemon-backed ownership controls and daemon/event status to the control center.
 - Added daemon status details and structured reconcile severity to the control center.
 - Added protocol/build status, recent events, and scoped reconcile controls to the control center.
@@ -38,15 +40,18 @@
 - Added daemon-backed bar interactions for workspace focus/scroll, audio mute, brightness scroll, and quick settings launch.
 - Added explicit bar hit-region routing and tests for workspace, window, status, and system regions.
 - Added bar action throttling for rapid workspace scroll, brightness scroll, mute, and quick toggle events.
-- Added persisted `ui.bar` shell settings for bar enablement, edge, height, margin, padding, monitor selector, and widget visibility/order.
-- Added `hbctl ui-settings` for daemon-backed shell UI settings inspection, bar field updates, and bar reset.
+- Added persisted `ui.bar` shell settings for bar enablement, edge, height, margin, padding, font size, radius, opacity, monitor selector, and widget visibility/order.
+- Added persisted `ui.osd` shell settings for OSD enablement, edge, width, height, margin, visible timeout, font size, radius, and opacity.
+- Added `hbctl ui-settings` for daemon-backed shell UI settings inspection, bar/OSD field updates, and bar/OSD reset.
 - Added a control-center Bar pane for editing persisted bar enablement, edge, height, and widget visibility.
+- Added a control-center OSD pane for editing persisted OSD enablement, edge, size, margin, timeout, and reset.
 - Updated the layer-shell bar to render and expose hit regions from persisted bar settings instead of hardcoded widget visibility.
 - Expanded the control-center Bar pane with monitor, margin, padding, widget order controls, and widget reset.
 - Updated the layer-shell bar to apply configured margin/padding, ordered system widgets, and more daemon-provided theme colors.
+- Updated the layer-shell bar and OSD to apply persisted font-size, radius, and opacity style settings.
 - Added bar monitor targeting resolution for focused, primary, and named monitors by matching daemon monitor names to Wayland output names, with safe fallback logging.
 - Added daemon event classification helpers so surfaces can distinguish snapshot refreshes from status refreshes.
-- Added a native layer-shell OSD surface for recent daemon action feedback plus audio/brightness summaries, with background daemon refresh and idle auto-hide.
+- Added a native layer-shell OSD surface for recent daemon action feedback plus audio/brightness summaries, with background daemon refresh, persisted surface settings, and idle auto-hide.
 - Added `hyprbole-core::hyprland_state` as the daemon's Hyprland snapshot adapter.
 - Gated UI action fallbacks behind `--debug-direct-fallback`.
 - Added structured daemon logs and slow shell-command profiling for prototype adapters.
@@ -68,7 +73,7 @@ Run:
 cargo run -p hbctl -- ui
 ```
 
-The visible UI can show Hyprland state, focus workspaces, adjust output volume, toggle output mute, adjust brightness, toggle notification DND, switch runtime layout/monitor mode through daemon IPC, refresh state, request a session lock, open a daemon-backed control center, open compact layer-shell quick settings, and open a layer-shell OSD. The control center can edit persisted bar settings, widget order, and theme mode. The layer-shell bar can focus/scroll workspaces, show configured active-window/audio/brightness/notifications/layout/action/status/clock widgets, mute audio, adjust brightness by scroll, apply margin/padding and daemon-provided theme color tokens, and toggle the single-instance quick settings popup from its configured status region. The layer-shell quick popup and OSD also consume daemon-provided color tokens for core background/text colors. The OSD follows daemon events, refreshes daemon state asynchronously, auto-hides when idle, and renders recent action status plus current audio/brightness summaries.
+The visible UI can show Hyprland state, focus workspaces, adjust output volume, toggle output mute, adjust brightness, toggle notification DND, switch runtime layout/monitor mode through daemon IPC, refresh state, request a session lock, open a daemon-backed control center, open an app launcher, open compact layer-shell quick settings, and open a layer-shell OSD. The control center can edit persisted bar settings, OSD settings, widget order, style settings, and theme mode. The layer-shell bar can focus/scroll workspaces, show configured active-window/audio/brightness/notifications/layout/action/status/clock widgets, mute audio, adjust brightness by scroll, apply margin/padding/font-size/radius/opacity and daemon-provided theme color tokens, and toggle the single-instance quick settings popup from its configured status region. The layer-shell quick popup and OSD also consume daemon-provided color tokens for core background/text colors. The OSD follows daemon events, refreshes daemon state asynchronously, defers action display until daemon `ui.osd` settings load, applies persisted `ui.osd` surface/style settings, auto-hides when idle, and renders recent action status plus current audio/brightness summaries.
 
 ## Next Milestones
 

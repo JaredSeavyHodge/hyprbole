@@ -562,6 +562,12 @@ fn compositor_action_name(action: &hyprbole_core::compositor::CompositorAction) 
         }
         hyprbole_core::compositor::CompositorAction::SetLayout { .. } => "set_layout",
         hyprbole_core::compositor::CompositorAction::SetMonitorMode { .. } => "set_monitor_mode",
+        hyprbole_core::compositor::CompositorAction::RegisterRuntimeKeybindings => {
+            "register_runtime_keybindings"
+        }
+        hyprbole_core::compositor::CompositorAction::UnregisterRuntimeKeybindings => {
+            "unregister_runtime_keybindings"
+        }
         hyprbole_core::compositor::CompositorAction::RegisterMouseWindowControls => {
             "register_mouse_window_controls"
         }
@@ -1418,7 +1424,7 @@ fn persist_ownership_settings(
 
 fn unregister_runtime_keybindings(state: &Arc<Mutex<DaemonState>>) -> ShellResponse {
     let response = dispatch_action(ShellAction::Compositor {
-        action: hyprbole_core::compositor::CompositorAction::UnregisterMouseWindowControls,
+        action: hyprbole_core::compositor::CompositorAction::UnregisterRuntimeKeybindings,
     });
     let message = runtime_keybinding_release_message(&response);
     record_keybinding_release_status(state, message, response.is_ok());
@@ -1577,7 +1583,7 @@ fn reconcile_keybindings(state: &Arc<Mutex<DaemonState>>, record: bool) -> Shell
     }
 
     let response = dispatch_action(ShellAction::Compositor {
-        action: hyprbole_core::compositor::CompositorAction::RegisterMouseWindowControls,
+        action: hyprbole_core::compositor::CompositorAction::RegisterRuntimeKeybindings,
     });
     let message = match &response {
         ShellResponse::Ok { message } => format!("runtime keybindings reconciled: {message}"),
@@ -1724,6 +1730,8 @@ struct HyprBind {
     release: bool,
     #[serde(default)]
     dispatcher: String,
+    #[serde(default)]
+    arg: String,
 }
 
 fn load_keybinding_state(settings: ShellSettings) -> Vec<KeybindingSnapshot> {
@@ -1731,21 +1739,47 @@ fn load_keybinding_state(settings: ShellSettings) -> Vec<KeybindingSnapshot> {
         .and_then(|output| serde_json::from_str(&output).ok())
         .unwrap_or_default();
     [
-        ("mouse_drag", "Super + left mouse drag", "mouse:272"),
-        ("mouse_resize", "Super + right mouse resize", "mouse:273"),
+        RuntimeBindExpectation {
+            id: "mouse_drag",
+            description: "Super + left mouse drag",
+            expected: "SUPER + mouse:272",
+            key: "mouse:272",
+            modmask: 64,
+            dispatcher: "__lua",
+            arg: None,
+        },
+        RuntimeBindExpectation {
+            id: "mouse_resize",
+            description: "Super + right mouse resize",
+            expected: "SUPER + mouse:273",
+            key: "mouse:273",
+            modmask: 64,
+            dispatcher: "__lua",
+            arg: None,
+        },
+        RuntimeBindExpectation {
+            id: "launcher",
+            description: "Super + Alt + Space launcher",
+            expected: "SUPER + ALT + SPACE",
+            key: "SPACE",
+            modmask: 72,
+            dispatcher: "__lua",
+            arg: None,
+        },
     ]
     .into_iter()
-    .map(|(id, description, key)| {
+    .map(|expected| {
         let active = binds.iter().any(|bind| {
-            bind.key == key
-                && bind.modmask & 64 == 64
+            bind.key.eq_ignore_ascii_case(expected.key)
+                && bind.modmask & expected.modmask == expected.modmask
                 && !bind.release
-                && bind.dispatcher == "__lua"
+                && bind.dispatcher == expected.dispatcher
+                && expected.arg.is_none_or(|arg| bind.arg == arg)
         });
         KeybindingSnapshot {
-            id: id.to_string(),
-            description: description.to_string(),
-            expected: format!("SUPER + {key}"),
+            id: expected.id.to_string(),
+            description: expected.description.to_string(),
+            expected: expected.expected.to_string(),
             active,
             source: if active {
                 if settings
@@ -1762,6 +1796,16 @@ fn load_keybinding_state(settings: ShellSettings) -> Vec<KeybindingSnapshot> {
         }
     })
     .collect()
+}
+
+struct RuntimeBindExpectation {
+    id: &'static str,
+    description: &'static str,
+    expected: &'static str,
+    key: &'static str,
+    modmask: i64,
+    dispatcher: &'static str,
+    arg: Option<&'static str>,
 }
 
 fn command_output(command: &str, args: &[&str]) -> Option<String> {

@@ -2,10 +2,13 @@ use std::process::{Command, Stdio};
 use std::{
     num::NonZeroU32,
     sync::mpsc::{self, Receiver, Sender},
+    sync::{Arc, Mutex},
     thread,
     time::{Duration, Instant},
 };
 
+use gtk4::gdk;
+use gtk4::prelude::*;
 use rustix::event::{PollFd, PollFlags, Timespec, poll};
 use smithay_client_toolkit::{
     compositor::{CompositorHandler, CompositorState},
@@ -107,6 +110,551 @@ pub fn run() -> Result<(), String> {
     Ok(())
 }
 
+pub fn run_gtk() -> Result<(), String> {
+    let app = gtk4::Application::builder()
+        .application_id("dev.hyprbole.bar")
+        .build();
+    app.connect_activate(build_gtk_bar);
+    app.run_with_args(&[] as &[&str]);
+    Ok(())
+}
+
+fn build_gtk_bar(app: &gtk4::Application) {
+    install_gtk_bar_css();
+    let bar_width = gtk_bar_monitor_width();
+
+    let window = gtk4::ApplicationWindow::builder()
+        .application(app)
+        .title("Hyprbole GTK Bar")
+        .default_width(bar_width)
+        .default_height(HEIGHT as i32)
+        .resizable(false)
+        .decorated(false)
+        .build();
+    window.set_size_request(bar_width, HEIGHT as i32);
+
+    gtk4_layer_shell::LayerShell::init_layer_shell(&window);
+    gtk4_layer_shell::LayerShell::set_layer(&window, gtk4_layer_shell::Layer::Top);
+    gtk4_layer_shell::LayerShell::set_anchor(&window, gtk4_layer_shell::Edge::Top, true);
+    gtk4_layer_shell::LayerShell::set_anchor(&window, gtk4_layer_shell::Edge::Left, true);
+    gtk4_layer_shell::LayerShell::set_anchor(&window, gtk4_layer_shell::Edge::Right, true);
+    gtk4_layer_shell::LayerShell::set_keyboard_mode(&window, gtk4_layer_shell::KeyboardMode::None);
+    gtk4_layer_shell::LayerShell::set_exclusive_zone(&window, HEIGHT as i32);
+
+    let root = gtk4::Overlay::new();
+    root.add_css_class("gtk-bar-root");
+
+    let center_fill = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+    root.set_child(Some(&center_fill));
+
+    let workspaces = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+    workspaces.add_css_class("gtk-bar-workspaces");
+    workspaces.set_halign(gtk4::Align::Start);
+    workspaces.set_valign(gtk4::Align::Center);
+    workspaces.set_margin_start(12);
+    let workspace_slots = gtk_workspace_slot_labels();
+    let workspace_targets = Arc::new(Mutex::new(vec![None; 10]));
+    for slot in &workspace_slots {
+        workspaces.append(slot);
+    }
+
+    let clock = gtk4::Label::new(Some(&gtk_bar_clock_text()));
+    clock.add_css_class("gtk-bar-clock");
+    clock.set_halign(gtk4::Align::Center);
+    clock.set_valign(gtk4::Align::Center);
+
+    let right = gtk4::Box::new(gtk4::Orientation::Horizontal, 10);
+    right.add_css_class("gtk-bar-right");
+    right.set_halign(gtk4::Align::End);
+    right.set_valign(gtk4::Align::Center);
+    right.set_margin_end(12);
+    let audio = gtk_bar_icon("", "Audio");
+    let brightness = gtk_bar_icon("󰃠", "Brightness");
+    let network = gtk_bar_icon("󰤨", "Network");
+    let notifications = gtk_bar_icon("", "Notifications");
+    let layout = gtk_bar_icon("󰕰", "Layout");
+    right.append(&audio);
+    right.append(&brightness);
+    right.append(&network);
+    right.append(&notifications);
+    right.append(&layout);
+
+    let action_tx = spawn_action_worker();
+    wire_workspace_slots(&workspace_slots, &workspace_targets, &action_tx);
+    wire_workspace_scroll(&workspaces, &action_tx);
+    wire_audio_icon(&audio, &action_tx);
+    wire_brightness_icon(&brightness, &action_tx);
+    wire_click_action(&brightness, &action_tx, BarAction::OpenDisplaySettings);
+    wire_click_action(&network, &action_tx, BarAction::OpenNetworkManager);
+    wire_click_action(&notifications, &action_tx, BarAction::ToggleDnd);
+    wire_click_action(&layout, &action_tx, BarAction::OpenQuickSettings);
+
+    root.add_overlay(&workspaces);
+    root.add_overlay(&clock);
+    root.add_overlay(&right);
+    window.set_child(Some(&root));
+
+    let latest = spawn_gtk_bar_worker();
+    gtk4::glib::timeout_add_local(Duration::from_millis(50), move || {
+        if let Some(state) = latest.lock().ok().and_then(|mut latest| latest.take()) {
+            apply_gtk_bar_state(
+                &workspaces,
+                &workspace_slots,
+                &workspace_targets,
+                &audio,
+                &brightness,
+                &network,
+                &notifications,
+                &layout,
+                state,
+            );
+        }
+        gtk4::glib::ControlFlow::Continue
+    });
+    gtk4::glib::timeout_add_seconds_local(1, move || {
+        clock.set_text(&gtk_bar_clock_text());
+        gtk4::glib::ControlFlow::Continue
+    });
+
+    window.present();
+}
+
+fn gtk_bar_monitor_width() -> i32 {
+    gdk::Display::default()
+        .and_then(|display| display.monitors().item(0))
+        .and_then(|monitor| monitor.downcast::<gdk::Monitor>().ok())
+        .map(|monitor| monitor.geometry().width())
+        .filter(|width| *width > 0)
+        .unwrap_or(1920)
+}
+
+fn gtk_bar_icon(icon: &str, tooltip: &str) -> gtk4::Label {
+    let label = gtk4::Label::new(Some(icon));
+    label.add_css_class("gtk-bar-icon");
+    label.set_tooltip_text(Some(tooltip));
+    label
+}
+
+fn wire_workspace_slots(
+    slots: &[gtk4::Label],
+    targets: &Arc<Mutex<Vec<Option<String>>>>,
+    action_tx: &Sender<BarAction>,
+) {
+    for (index, slot) in slots.iter().enumerate() {
+        let click_tx = action_tx.clone();
+        let click_targets = targets.clone();
+        let click = gtk4::GestureClick::new();
+        click.set_button(1);
+        click.connect_pressed(move |_gesture, _presses, _x, _y| {
+            let workspace = click_targets
+                .lock()
+                .ok()
+                .and_then(|targets| targets.get(index).cloned().flatten())
+                .unwrap_or_else(|| (index + 1).to_string());
+            let _ = click_tx.send(BarAction::FocusWorkspace(workspace));
+        });
+        slot.add_controller(click);
+    }
+}
+
+fn wire_workspace_scroll(workspaces: &gtk4::Box, action_tx: &Sender<BarAction>) {
+    let scroll_tx = action_tx.clone();
+    let scroll = gtk4::EventControllerScroll::new(gtk4::EventControllerScrollFlags::VERTICAL);
+    scroll.connect_scroll(move |_controller, _dx, dy| {
+        if dy < 0.0 {
+            let _ = scroll_tx.send(BarAction::FocusRelativeWorkspace(
+                WorkspaceScrollDirection::Previous,
+            ));
+        } else if dy > 0.0 {
+            let _ = scroll_tx.send(BarAction::FocusRelativeWorkspace(
+                WorkspaceScrollDirection::Next,
+            ));
+        }
+        gtk4::glib::Propagation::Stop
+    });
+    workspaces.add_controller(scroll);
+}
+
+fn wire_audio_icon(audio: &gtk4::Label, action_tx: &Sender<BarAction>) {
+    let click_tx = action_tx.clone();
+    let click = gtk4::GestureClick::new();
+    click.set_button(1);
+    click.connect_pressed(move |_gesture, _presses, _x, _y| {
+        let _ = click_tx.send(BarAction::OpenAudioManager);
+    });
+    audio.add_controller(click);
+
+    let scroll_tx = action_tx.clone();
+    let scroll = gtk4::EventControllerScroll::new(gtk4::EventControllerScrollFlags::VERTICAL);
+    scroll.connect_scroll(move |_controller, _dx, dy| {
+        if dy < 0.0 {
+            let _ = scroll_tx.send(BarAction::Volume(VolumeDirection::Increase));
+        } else if dy > 0.0 {
+            let _ = scroll_tx.send(BarAction::Volume(VolumeDirection::Decrease));
+        }
+        gtk4::glib::Propagation::Stop
+    });
+    audio.add_controller(scroll);
+}
+
+fn wire_brightness_icon(brightness: &gtk4::Label, action_tx: &Sender<BarAction>) {
+    let scroll_tx = action_tx.clone();
+    let scroll = gtk4::EventControllerScroll::new(gtk4::EventControllerScrollFlags::VERTICAL);
+    scroll.connect_scroll(move |_controller, _dx, dy| {
+        if dy < 0.0 {
+            let _ = scroll_tx.send(BarAction::Brightness(BrightnessDirection::Increase));
+        } else if dy > 0.0 {
+            let _ = scroll_tx.send(BarAction::Brightness(BrightnessDirection::Decrease));
+        }
+        gtk4::glib::Propagation::Stop
+    });
+    brightness.add_controller(scroll);
+}
+
+fn wire_click_action(widget: &gtk4::Label, action_tx: &Sender<BarAction>, action: BarAction) {
+    let click_tx = action_tx.clone();
+    let click = gtk4::GestureClick::new();
+    click.set_button(1);
+    click.connect_pressed(move |_gesture, _presses, _x, _y| {
+        let _ = click_tx.send(action.clone());
+    });
+    widget.add_controller(click);
+}
+
+fn gtk_bar_clock_text() -> String {
+    gtk4::glib::DateTime::now_local()
+        .and_then(|now| now.format("%a %b %-d  %-I:%M %p"))
+        .map(|text| text.to_string())
+        .unwrap_or_else(|_| "--".to_string())
+}
+
+fn gtk_workspace_slot_labels() -> Vec<gtk4::Label> {
+    (0..10)
+        .map(|_| {
+            let label = gtk4::Label::new(None);
+            label.add_css_class("gtk-bar-workspace-slot");
+            label.set_width_chars(2);
+            label.set_size_request(28, 20);
+            label.set_xalign(0.5);
+            label
+        })
+        .collect()
+}
+
+#[derive(Clone, Debug)]
+struct GtkBarState {
+    workspaces: Vec<GtkWorkspaceSlot>,
+    workspace_count: usize,
+    audio_icon: String,
+    audio_tooltip: String,
+    brightness_icon: String,
+    brightness_tooltip: String,
+    network_icon: String,
+    notifications_icon: String,
+    notifications_tooltip: String,
+    layout_icon: String,
+    layout_tooltip: String,
+}
+
+#[derive(Clone, Debug)]
+struct GtkWorkspaceSlot {
+    label: String,
+    target: String,
+    focused: bool,
+    occupied: bool,
+}
+
+impl GtkBarState {
+    fn unavailable() -> Self {
+        Self {
+            workspaces: gtk_empty_workspace_icons(),
+            workspace_count: 5,
+            audio_icon: "".to_string(),
+            audio_tooltip: "Audio unavailable".to_string(),
+            brightness_icon: "󰃠".to_string(),
+            brightness_tooltip: "Brightness unavailable".to_string(),
+            network_icon: "󰤮".to_string(),
+            notifications_icon: "".to_string(),
+            notifications_tooltip: "Daemon unavailable".to_string(),
+            layout_icon: "󰕰".to_string(),
+            layout_tooltip: "Daemon unavailable".to_string(),
+        }
+    }
+}
+
+fn apply_gtk_bar_state(
+    workspaces: &gtk4::Box,
+    workspace_slots: &[gtk4::Label],
+    workspace_targets: &Arc<Mutex<Vec<Option<String>>>>,
+    audio: &gtk4::Label,
+    brightness: &gtk4::Label,
+    network: &gtk4::Label,
+    notifications: &gtk4::Label,
+    layout: &gtk4::Label,
+    state: GtkBarState,
+) {
+    workspaces.set_visible(state.workspace_count > 0);
+    if let Ok(mut targets) = workspace_targets.lock() {
+        targets.clear();
+        targets.extend(
+            state
+                .workspaces
+                .iter()
+                .map(|workspace| Some(workspace.target.clone())),
+        );
+        targets.resize(10, None);
+    }
+    for (index, slot) in workspace_slots.iter().enumerate() {
+        let visible = index < state.workspace_count;
+        slot.set_visible(visible);
+        if visible && let Some(workspace) = state.workspaces.get(index) {
+            slot.set_text(&workspace.label);
+            set_css_class(slot, "is-focused", workspace.focused);
+            set_css_class(
+                slot,
+                "is-occupied",
+                workspace.occupied && !workspace.focused,
+            );
+            set_css_class(slot, "is-empty", !workspace.occupied && !workspace.focused);
+        }
+    }
+    audio.set_text(&state.audio_icon);
+    audio.set_tooltip_text(Some(&state.audio_tooltip));
+    brightness.set_text(&state.brightness_icon);
+    brightness.set_tooltip_text(Some(&state.brightness_tooltip));
+    network.set_text(&state.network_icon);
+    notifications.set_text(&state.notifications_icon);
+    notifications.set_tooltip_text(Some(&state.notifications_tooltip));
+    layout.set_text(&state.layout_icon);
+    layout.set_tooltip_text(Some(&state.layout_tooltip));
+}
+
+fn spawn_gtk_bar_worker() -> Arc<Mutex<Option<GtkBarState>>> {
+    let latest = Arc::new(Mutex::new(None));
+    let worker_latest = latest.clone();
+    thread::spawn(move || {
+        loop {
+            let Ok(client) = hyprbole_core::daemon::DaemonClient::from_env() else {
+                store_gtk_bar_state(&worker_latest, GtkBarState::unavailable());
+                thread::sleep(Duration::from_secs(1));
+                continue;
+            };
+            let Ok(events) = client.follow_events(None) else {
+                store_gtk_bar_state(&worker_latest, GtkBarState::unavailable());
+                thread::sleep(Duration::from_millis(250));
+                continue;
+            };
+            store_gtk_bar_state(&worker_latest, load_gtk_bar_state(&client));
+            for event in events {
+                let Ok(event) = event else {
+                    break;
+                };
+                if event.event.refreshes_snapshot() || event.event.refreshes_status() {
+                    store_gtk_bar_state(&worker_latest, load_gtk_bar_state(&client));
+                }
+            }
+            store_gtk_bar_state(&worker_latest, GtkBarState::unavailable());
+            thread::sleep(Duration::from_millis(250));
+        }
+    });
+    latest
+}
+
+fn store_gtk_bar_state(latest: &Arc<Mutex<Option<GtkBarState>>>, state: GtkBarState) {
+    if let Ok(mut latest) = latest.lock() {
+        *latest = Some(state);
+    }
+}
+
+fn set_css_class(widget: &impl IsA<gtk4::Widget>, class: &str, active: bool) {
+    if active {
+        widget.add_css_class(class);
+    } else {
+        widget.remove_css_class(class);
+    }
+}
+
+fn load_gtk_bar_state(client: &hyprbole_core::daemon::DaemonClient) -> GtkBarState {
+    let Ok(hyprbole_core::daemon::ShellResponse::State { snapshot }) =
+        client.send_shell(&hyprbole_core::daemon::ShellRequest::StateGet)
+    else {
+        return GtkBarState::unavailable();
+    };
+
+    let (workspaces, workspace_count) = gtk_workspace_icons(&snapshot.workspaces);
+    let layout = snapshot.current_layout.unwrap_or_default();
+    let notifications = if snapshot.notifications.dnd_enabled {
+        ("", "Notifications muted".to_string())
+    } else if snapshot.notifications.unread_count > 0 {
+        (
+            "",
+            format!(
+                "{} unread notifications",
+                snapshot.notifications.unread_count
+            ),
+        )
+    } else {
+        ("", "No unread notifications".to_string())
+    };
+    GtkBarState {
+        workspaces,
+        workspace_count,
+        audio_icon: audio_icon(&snapshot.audio),
+        audio_tooltip: audio_tooltip(&snapshot.audio),
+        brightness_icon: brightness_icon(&snapshot.brightness),
+        brightness_tooltip: brightness_tooltip(&snapshot.brightness),
+        network_icon: "󰤨".to_string(),
+        notifications_icon: notifications.0.to_string(),
+        notifications_tooltip: notifications.1,
+        layout_icon: "󰕰".to_string(),
+        layout_tooltip: if layout.is_empty() {
+            "Layout unavailable".to_string()
+        } else {
+            format!("Layout: {layout}")
+        },
+    }
+}
+
+fn gtk_workspace_icons(
+    workspaces: &[hyprbole_core::daemon::WorkspaceSnapshot],
+) -> (Vec<GtkWorkspaceSlot>, usize) {
+    let max_workspace = gtk_workspace_count(workspaces);
+    let icons = (1..=max_workspace)
+        .map(|id| {
+            workspaces
+                .iter()
+                .find(|workspace| workspace.id == id)
+                .map(|workspace| {
+                    if workspace.focused {
+                        gtk_workspace_slot(id, workspace.name.clone(), true, workspace.occupied)
+                    } else {
+                        gtk_workspace_slot(id, workspace.name.clone(), false, workspace.occupied)
+                    }
+                })
+                .unwrap_or_else(|| gtk_workspace_slot(id, id.to_string(), false, false))
+        })
+        .collect::<Vec<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    (icons, max_workspace as usize)
+}
+
+fn gtk_empty_workspace_icons() -> Vec<GtkWorkspaceSlot> {
+    (1..=5)
+        .map(|id| gtk_workspace_slot(id, id.to_string(), false, false))
+        .collect::<Vec<_>>()
+}
+
+fn gtk_workspace_count(workspaces: &[hyprbole_core::daemon::WorkspaceSnapshot]) -> i64 {
+    workspaces
+        .iter()
+        .filter(|workspace| workspace.focused || workspace.active || workspace.occupied)
+        .map(|workspace| workspace.id)
+        .max()
+        .unwrap_or(5)
+        .clamp(5, 10)
+}
+
+fn gtk_workspace_slot(id: i64, target: String, focused: bool, occupied: bool) -> GtkWorkspaceSlot {
+    GtkWorkspaceSlot {
+        label: id.to_string(),
+        target,
+        focused,
+        occupied,
+    }
+}
+
+fn audio_icon(audio: &hyprbole_core::audio::AudioSnapshot) -> String {
+    if !audio.available || audio.muted {
+        "".to_string()
+    } else if audio.volume_percent.unwrap_or_default() >= 50 {
+        "".to_string()
+    } else {
+        "".to_string()
+    }
+}
+
+fn audio_tooltip(audio: &hyprbole_core::audio::AudioSnapshot) -> String {
+    if !audio.available {
+        return "Audio unavailable".to_string();
+    }
+    match (audio.volume_percent, audio.muted) {
+        (_, true) => "Audio muted".to_string(),
+        (Some(percent), false) => format!("Audio {percent}%"),
+        (None, false) => "Audio available".to_string(),
+    }
+}
+
+fn brightness_icon(brightness: &hyprbole_core::brightness::BrightnessSnapshot) -> String {
+    match brightness.percent {
+        Some(percent) if percent >= 67 => "󰃠".to_string(),
+        Some(percent) if percent >= 34 => "󰃟".to_string(),
+        Some(_) => "󰃞".to_string(),
+        None => "󰃠".to_string(),
+    }
+}
+
+fn brightness_tooltip(brightness: &hyprbole_core::brightness::BrightnessSnapshot) -> String {
+    match brightness.percent {
+        Some(percent) => format!("Brightness {percent}%"),
+        None => "Brightness unavailable".to_string(),
+    }
+}
+
+fn install_gtk_bar_css() {
+    let Some(display) = gdk::Display::default() else {
+        return;
+    };
+    let provider = gtk4::CssProvider::new();
+    provider.load_from_data(
+        r#"
+        window { background: #111318; }
+        .gtk-bar-root {
+            min-height: 36px;
+            padding: 0;
+            background: #111318;
+            color: #f1f3f6;
+            font-size: 13px;
+        }
+        .gtk-bar-workspaces {
+            color: #a7afbd;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .gtk-bar-workspace-slot {
+            min-width: 28px;
+            min-height: 20px;
+            color: #4a5363;
+            font-family: monospace;
+        }
+        .gtk-bar-workspace-slot.is-occupied { color: #a7afbd; }
+        .gtk-bar-workspace-slot.is-empty { color: #4a5363; }
+        .gtk-bar-workspace-slot.is-focused {
+            min-width: 28px;
+            color: #8fb4ff;
+            border-bottom: 2px solid #8fb4ff;
+        }
+        .gtk-bar-clock {
+            color: #f1f3f6;
+            font-weight: 700;
+        }
+        .gtk-bar-right { color: #a7afbd; }
+        .gtk-bar-icon {
+            min-width: 20px;
+            color: #a7afbd;
+            font-family: "Symbols Nerd Font", "Font Awesome 6 Free", "Font Awesome 5 Free", "Font Awesome", sans-serif;
+            font-size: 16px;
+        }
+        .gtk-bar-icon:hover { color: #8fb4ff; }
+        "#,
+    );
+    gtk4::style_context_add_provider_for_display(
+        &display,
+        &provider,
+        gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION,
+    );
+}
+
 fn dispatch_wayland(
     event_queue: &mut wayland_client::EventQueue<Bar>,
     app: &mut Bar,
@@ -190,6 +738,18 @@ fn spawn_action_worker() -> Sender<BarAction> {
                         action: hyprbole_core::audio::AudioAction::ToggleMute,
                     })
                 }
+                BarAction::Volume(direction) => {
+                    dispatch_shell_action(hyprbole_core::daemon::ShellAction::Audio {
+                        action: match direction {
+                            VolumeDirection::Increase => {
+                                hyprbole_core::audio::AudioAction::VolumeUp
+                            }
+                            VolumeDirection::Decrease => {
+                                hyprbole_core::audio::AudioAction::VolumeDown
+                            }
+                        },
+                    })
+                }
                 BarAction::Brightness(direction) => {
                     dispatch_shell_action(hyprbole_core::daemon::ShellAction::Brightness {
                         action: match direction {
@@ -203,6 +763,14 @@ fn spawn_action_worker() -> Sender<BarAction> {
                     })
                 }
                 BarAction::OpenQuickSettings => toggle_quick_settings(),
+                BarAction::OpenAudioManager => open_audio_manager(),
+                BarAction::OpenNetworkManager => open_network_manager(),
+                BarAction::OpenDisplaySettings => open_display_settings(),
+                BarAction::ToggleDnd => {
+                    dispatch_shell_action(hyprbole_core::daemon::ShellAction::Notifications {
+                        action: hyprbole_core::notifications::NotificationAction::ToggleDnd,
+                    })
+                }
             };
             if let Err(err) = result {
                 eprintln!("bar action failed: {err}");
@@ -435,6 +1003,9 @@ impl Bar {
     }
 
     fn draw(&mut self, qh: &QueueHandle<Self>) -> Result<(), String> {
+        if !bar_surface_ready(self.first_configure) {
+            return Ok(());
+        }
         self.update_daemon_state();
         if self.recreate_layer_if_output_changed(qh) {
             return Ok(());
@@ -471,26 +1042,39 @@ impl Bar {
             )
             .map_err(|err| format!("create buffer: {err}"))?;
 
-        for (index, pixel) in canvas.chunks_exact_mut(4).enumerate() {
-            let x = index as u32 % self.width;
-            let layout = BarLayout::new_with_settings(self.width, self.height, &self.settings);
-            let workspace_band = if self.settings.widget_enabled(BarWidget::Workspaces) {
-                layout.workspace.width
-            } else {
-                0
-            };
-            let color = if !self.daemon_connected {
-                self.colors.error
-            } else if x >= layout.workspace.x
-                && x < layout.workspace.x.saturating_add(workspace_band)
-            {
-                self.colors.accent
-            } else if x >= layout.system.x {
-                self.colors.surface_muted
-            } else {
-                self.colors.surface
-            };
-            pixel.copy_from_slice(&color.to_le_bytes());
+        let layout = BarLayout::new_with_settings(self.width, self.height, &self.settings);
+        for pixel in canvas.chunks_exact_mut(4) {
+            pixel.copy_from_slice(
+                &with_opacity(self.colors.surface, self.settings.opacity).to_le_bytes(),
+            );
+        }
+        let radius = self.settings.radius.min(self.height / 2);
+        if self.settings.widget_enabled(BarWidget::Workspaces) && layout.workspace.width > 0 {
+            fill_rounded_rect(
+                canvas,
+                self.width,
+                inset_rect(layout.workspace, 4, 4),
+                radius,
+                self.colors.accent,
+            );
+        }
+        if !self.daemon_connected {
+            fill_rounded_rect(
+                canvas,
+                self.width,
+                inset_rect(layout.status, 4, 4),
+                radius,
+                self.colors.error,
+            );
+        }
+        if layout.system.width > 0 {
+            fill_rounded_rect(
+                canvas,
+                self.width,
+                inset_rect(layout.system, 4, 4),
+                radius,
+                self.colors.surface_muted,
+            );
         }
 
         let workspace_text = if !self.settings.widget_enabled(BarWidget::Workspaces) {
@@ -499,7 +1083,7 @@ impl Bar {
             "WS --".to_string()
         } else {
             format!(
-                "WS {}",
+                "{}",
                 self.workspaces
                     .iter()
                     .map(|workspace| workspace.label.as_str())
@@ -511,14 +1095,14 @@ impl Bar {
         let window_text = if !self.settings.widget_enabled(BarWidget::FocusedWindow) {
             String::new()
         } else if self.active_window.is_empty() {
-            "WIN --".to_string()
+            "--".to_string()
         } else {
-            format!("WIN {}", truncate_text(&self.active_window, 22))
+            truncate_text(&self.active_window, 28)
         };
         let status_text = if !self.settings.widget_enabled(BarWidget::DaemonStatus) {
             String::new()
         } else if !self.daemon_connected {
-            "DAEMON --".to_string()
+            "DAEMON OFF".to_string()
         } else if self.reconcile_status.is_empty() {
             "DAEMON OK".to_string()
         } else {
@@ -546,57 +1130,50 @@ impl Bar {
             status_text
         };
 
-        draw_vertical_rule(
-            canvas,
-            self.width,
-            layout.window.x.saturating_sub(12),
-            self.colors.border,
-        );
-        draw_vertical_rule(
-            canvas,
-            self.width,
-            layout.system.x.saturating_sub(12),
-            self.colors.border,
-        );
-        let text_y = self.height.saturating_sub(16) / 2;
+        let scale = font_scale(self.settings.font_size);
+        let text_y = self.height.saturating_sub(7 * scale) / 2;
         if !workspace_text.is_empty() {
-            draw_text(
+            draw_text_scaled(
                 canvas,
                 self.width,
                 layout.workspace_text_x(),
                 text_y,
                 &workspace_text,
                 self.colors.accent_text,
+                scale,
             );
         }
         if !window_text.is_empty() {
-            draw_text(
+            draw_text_scaled(
                 canvas,
                 self.width,
                 layout.window.x,
                 text_y,
                 &window_text,
                 self.colors.text,
+                scale,
             );
         }
         if !status_text.is_empty() {
-            draw_text(
+            draw_text_scaled(
                 canvas,
                 self.width,
                 layout.status.x,
                 text_y,
                 &status_text,
                 self.colors.reconcile(&self.reconcile_severity),
+                scale,
             );
         }
         if !right_text.is_empty() {
-            draw_text(
+            draw_text_scaled(
                 canvas,
                 self.width,
                 layout.system.x,
                 text_y,
                 &right_text,
                 self.colors.text,
+                scale,
             );
         }
 
@@ -823,14 +1400,31 @@ impl Bar {
     }
 }
 
+fn bar_surface_ready(first_configure: bool) -> bool {
+    !first_configure
+}
+
+#[derive(Clone)]
 enum BarAction {
     FocusWorkspace(String),
     FocusRelativeWorkspace(WorkspaceScrollDirection),
     ToggleMute,
+    Volume(VolumeDirection),
     Brightness(BrightnessDirection),
     OpenQuickSettings,
+    OpenAudioManager,
+    OpenNetworkManager,
+    OpenDisplaySettings,
+    ToggleDnd,
 }
 
+#[derive(Clone)]
+enum VolumeDirection {
+    Increase,
+    Decrease,
+}
+
+#[derive(Clone)]
 enum BrightnessDirection {
     Increase,
     Decrease,
@@ -840,8 +1434,13 @@ enum BrightnessDirection {
 struct ActionThrottle {
     workspace_scroll: Option<Instant>,
     brightness: Option<Instant>,
+    volume: Option<Instant>,
     mute: Option<Instant>,
     quick: Option<Instant>,
+    audio_manager: Option<Instant>,
+    network_manager: Option<Instant>,
+    display_settings: Option<Instant>,
+    dnd: Option<Instant>,
 }
 
 impl ActionThrottle {
@@ -851,8 +1450,17 @@ impl ActionThrottle {
                 (&mut self.workspace_scroll, Duration::from_millis(180))
             }
             BarAction::Brightness(_) => (&mut self.brightness, Duration::from_millis(160)),
+            BarAction::Volume(_) => (&mut self.volume, Duration::from_millis(160)),
             BarAction::ToggleMute => (&mut self.mute, Duration::from_millis(250)),
             BarAction::OpenQuickSettings => (&mut self.quick, Duration::from_millis(350)),
+            BarAction::OpenAudioManager => (&mut self.audio_manager, Duration::from_millis(700)),
+            BarAction::OpenNetworkManager => {
+                (&mut self.network_manager, Duration::from_millis(700))
+            }
+            BarAction::OpenDisplaySettings => {
+                (&mut self.display_settings, Duration::from_millis(700))
+            }
+            BarAction::ToggleDnd => (&mut self.dnd, Duration::from_millis(350)),
             BarAction::FocusWorkspace(_) => return true,
         };
         if slot.is_some_and(|last| now.duration_since(last) < interval) {
@@ -1083,6 +1691,62 @@ fn toggle_quick_settings() -> Result<(), String> {
         .map_err(|err| err.to_string())
 }
 
+fn open_audio_manager() -> Result<(), String> {
+    spawn_first_available(&[
+        ("pavucontrol", &[] as &[&str]),
+        ("pwvucontrol", &[]),
+        ("gnome-control-center", &["sound"]),
+        ("kcmshell6", &["kcm_pulseaudio"]),
+    ])
+    .map_err(|err| format!("open audio manager: {err}"))
+}
+
+fn open_network_manager() -> Result<(), String> {
+    spawn_first_available(&[
+        ("nm-connection-editor", &[] as &[&str]),
+        ("gnome-control-center", &["wifi"]),
+        ("gnome-control-center", &["network"]),
+        ("kcmshell6", &["kcm_networkmanagement"]),
+    ])
+    .map_err(|err| format!("open network manager: {err}"))
+}
+
+fn open_display_settings() -> Result<(), String> {
+    spawn_first_available(&[
+        ("gnome-control-center", &["display"]),
+        ("kcmshell6", &["kcm_kscreen"]),
+        ("wdisplays", &[] as &[&str]),
+        ("nwg-displays", &[]),
+    ])
+    .map_err(|err| format!("open display settings: {err}"))
+}
+
+fn spawn_first_available(commands: &[(&str, &[&str])]) -> Result<(), String> {
+    let mut tried = Vec::new();
+    for (command, args) in commands {
+        tried.push(if args.is_empty() {
+            command.to_string()
+        } else {
+            format!("{} {}", command, args.join(" "))
+        });
+        match Command::new(command)
+            .args(*args)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+        {
+            Ok(_) => return Ok(()),
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(err) => return Err(err.to_string()),
+        }
+    }
+    Err(format!(
+        "no supported command found; tried {}",
+        tried.join(", ")
+    ))
+}
+
 fn quick_settings_instance() -> Option<(u32, String)> {
     let Ok(path) = hyprbole_core::runtime::ensure_runtime_dir().map(|dir| dir.join("quick.pid"))
     else {
@@ -1250,6 +1914,10 @@ fn system_text(
     parts.join("  ")
 }
 
+fn font_scale(font_size: u32) -> u32 {
+    if font_size >= 14 { 2 } else { 1 }
+}
+
 fn clock_text() -> String {
     let Ok(output) = Command::new("date").arg("+%H:%M").output() else {
         return "TIME --".to_string();
@@ -1285,41 +1953,114 @@ pub(super) fn truncate_text(value: &str, max_chars: usize) -> String {
     output
 }
 
-fn draw_vertical_rule(canvas: &mut [u8], width: u32, x: u32, color: u32) {
-    for y in 8..28 {
-        let index = ((y * width + x) * 4) as usize;
-        if index + 4 <= canvas.len() {
-            canvas[index..index + 4].copy_from_slice(&color.to_le_bytes());
-        }
-    }
+pub(super) fn draw_text(canvas: &mut [u8], width: u32, x: u32, y: u32, text: &str, color: u32) {
+    draw_text_scaled(canvas, width, x, y, text, color, 1);
 }
 
-pub(super) fn draw_text(canvas: &mut [u8], width: u32, x: u32, y: u32, text: &str, color: u32) {
+pub(super) fn draw_text_scaled(
+    canvas: &mut [u8],
+    width: u32,
+    x: u32,
+    y: u32,
+    text: &str,
+    color: u32,
+    scale: u32,
+) {
     let mut cursor = x;
+    let advance = 6 * scale.max(1);
     for ch in text.to_ascii_uppercase().chars() {
-        draw_char(canvas, width, cursor, y, ch, color);
-        cursor += 6;
-        if cursor + 6 >= width {
+        draw_char_scaled(canvas, width, cursor, y, ch, color, scale.max(1));
+        cursor += advance;
+        if cursor + advance >= width {
             break;
         }
     }
 }
 
-fn draw_char(canvas: &mut [u8], width: u32, x: u32, y: u32, ch: char, color: u32) {
+fn draw_char_scaled(
+    canvas: &mut [u8],
+    width: u32,
+    x: u32,
+    y: u32,
+    ch: char,
+    color: u32,
+    scale: u32,
+) {
     let glyph = glyph(ch);
     for (row, bits) in glyph.iter().enumerate() {
         for col in 0..5 {
             if bits & (1 << (4 - col)) == 0 {
                 continue;
             }
-            let px = x + col;
-            let py = y + row as u32;
-            let index = ((py * width + px) * 4) as usize;
-            if index + 4 <= canvas.len() {
-                canvas[index..index + 4].copy_from_slice(&color.to_le_bytes());
+            for dy in 0..scale {
+                for dx in 0..scale {
+                    let px = x + col * scale + dx;
+                    let py = y + row as u32 * scale + dy;
+                    let index = ((py * width + px) * 4) as usize;
+                    if index + 4 <= canvas.len() {
+                        canvas[index..index + 4].copy_from_slice(&color.to_le_bytes());
+                    }
+                }
             }
         }
     }
+}
+
+fn with_opacity(color: u32, opacity: u32) -> u32 {
+    let alpha = (opacity.min(100) * 255 / 100) << 24;
+    alpha | (color & 0x00ff_ffff)
+}
+
+fn inset_rect(rect: HitRect, x: u32, y: u32) -> HitRect {
+    HitRect {
+        x: rect.x.saturating_add(x),
+        y: rect.y.saturating_add(y),
+        width: rect.width.saturating_sub(x * 2),
+        height: rect.height.saturating_sub(y * 2),
+    }
+}
+
+fn fill_rounded_rect(canvas: &mut [u8], width: u32, rect: HitRect, radius: u32, color: u32) {
+    let radius = radius.min(rect.width / 2).min(rect.height / 2);
+    let right = rect.x.saturating_add(rect.width);
+    let bottom = rect.y.saturating_add(rect.height);
+    for y in rect.y..bottom {
+        for x in rect.x..right {
+            if rounded_rect_contains(x, y, rect, radius) {
+                let index = ((y * width + x) * 4) as usize;
+                if index + 4 <= canvas.len() {
+                    canvas[index..index + 4].copy_from_slice(&color.to_le_bytes());
+                }
+            }
+        }
+    }
+}
+
+fn rounded_rect_contains(x: u32, y: u32, rect: HitRect, radius: u32) -> bool {
+    if radius == 0 {
+        return true;
+    }
+    let left = rect.x;
+    let top = rect.y;
+    let right = rect.x + rect.width - 1;
+    let bottom = rect.y + rect.height - 1;
+    let cx = if x < left + radius {
+        left + radius
+    } else if x > right.saturating_sub(radius) {
+        right.saturating_sub(radius)
+    } else {
+        x
+    };
+    let cy = if y < top + radius {
+        top + radius
+    } else if y > bottom.saturating_sub(radius) {
+        bottom.saturating_sub(radius)
+    } else {
+        y
+    };
+    let dx = x.abs_diff(cx);
+    let dy = y.abs_diff(cy);
+    dx * dx + dy * dy <= radius * radius
 }
 
 fn glyph(ch: char) -> [u8; 7] {
@@ -1753,6 +2494,12 @@ mod tests {
         assert!(layout.system.contains(520.0, 20.0));
         assert!(!layout.workspace.contains(190.0, 20.0));
         assert_eq!(layout.workspace_text_x(), 24);
+    }
+
+    #[test]
+    fn bar_surface_is_not_ready_before_configure() {
+        assert!(!bar_surface_ready(true));
+        assert!(bar_surface_ready(false));
     }
 
     #[test]

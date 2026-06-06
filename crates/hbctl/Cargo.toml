@@ -6,5 +6,6 @@ publish = false
 
 [dependencies]
 hyprbole-core = { path = "../hyprbole-core" }
+libc = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

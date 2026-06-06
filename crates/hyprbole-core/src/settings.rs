@@ -134,6 +134,9 @@ pub struct OsdSettings {
     pub height: u32,
     pub margin: u32,
     pub timeout_ms: u32,
+    pub font_size: u32,
+    pub radius: u32,
+    pub opacity: u32,
 }
 
 impl Default for OsdSettings {
@@ -145,6 +148,9 @@ impl Default for OsdSettings {
             height: 96,
             margin: 64,
             timeout_ms: 1800,
+            font_size: 12,
+            radius: 14,
+            opacity: 94,
         }
     }
 }
@@ -157,6 +163,11 @@ impl OsdSettings {
     pub const MAX_MARGIN: u32 = 160;
     pub const MIN_TIMEOUT_MS: u32 = 500;
     pub const MAX_TIMEOUT_MS: u32 = 10_000;
+    pub const MIN_FONT_SIZE: u32 = 8;
+    pub const MAX_FONT_SIZE: u32 = 20;
+    pub const MAX_RADIUS: u32 = 40;
+    pub const MIN_OPACITY: u32 = 40;
+    pub const MAX_OPACITY: u32 = 100;
 
     pub fn validate(&self) -> Result<(), SettingsError> {
         if !(Self::MIN_WIDTH..=Self::MAX_WIDTH).contains(&self.width) {
@@ -186,6 +197,26 @@ impl OsdSettings {
                 Self::MAX_TIMEOUT_MS
             )));
         }
+        if !(Self::MIN_FONT_SIZE..=Self::MAX_FONT_SIZE).contains(&self.font_size) {
+            return Err(SettingsError::InvalidUiSetting(format!(
+                "osd.font_size must be {}..={}",
+                Self::MIN_FONT_SIZE,
+                Self::MAX_FONT_SIZE
+            )));
+        }
+        if self.radius > Self::MAX_RADIUS {
+            return Err(SettingsError::InvalidUiSetting(format!(
+                "osd.radius must be <= {}",
+                Self::MAX_RADIUS
+            )));
+        }
+        if !(Self::MIN_OPACITY..=Self::MAX_OPACITY).contains(&self.opacity) {
+            return Err(SettingsError::InvalidUiSetting(format!(
+                "osd.opacity must be {}..={}",
+                Self::MIN_OPACITY,
+                Self::MAX_OPACITY
+            )));
+        }
         Ok(())
     }
 
@@ -199,6 +230,11 @@ impl OsdSettings {
             "osd.timeout_ms" | "timeout_ms" | "timeout" => {
                 self.timeout_ms = parse_u32_field("osd.timeout_ms", value)?
             }
+            "osd.font_size" | "font_size" => {
+                self.font_size = parse_u32_field("osd.font_size", value)?
+            }
+            "osd.radius" | "radius" => self.radius = parse_u32_field("osd.radius", value)?,
+            "osd.opacity" | "opacity" => self.opacity = parse_u32_field("osd.opacity", value)?,
             other => {
                 return Err(SettingsError::InvalidUiSetting(format!(
                     "unknown OSD setting `{other}`"
@@ -218,6 +254,9 @@ pub struct BarSettings {
     pub height: u32,
     pub margin: u32,
     pub padding: u32,
+    pub font_size: u32,
+    pub radius: u32,
+    pub opacity: u32,
     pub widgets: Vec<BarWidget>,
 }
 
@@ -230,6 +269,9 @@ impl Default for BarSettings {
             height: 36,
             margin: 0,
             padding: 12,
+            font_size: 11,
+            radius: 10,
+            opacity: 96,
             widgets: BarSettings::DEFAULT_WIDGETS.to_vec(),
         }
     }
@@ -240,6 +282,11 @@ impl BarSettings {
     pub const MAX_HEIGHT: u32 = 96;
     pub const MAX_MARGIN: u32 = 64;
     pub const MAX_PADDING: u32 = 48;
+    pub const MIN_FONT_SIZE: u32 = 8;
+    pub const MAX_FONT_SIZE: u32 = 18;
+    pub const MAX_RADIUS: u32 = 32;
+    pub const MIN_OPACITY: u32 = 40;
+    pub const MAX_OPACITY: u32 = 100;
     pub const DEFAULT_WIDGETS: &'static [BarWidget] = &[
         BarWidget::Workspaces,
         BarWidget::FocusedWindow,
@@ -268,6 +315,26 @@ impl BarSettings {
             return Err(SettingsError::InvalidUiSetting(format!(
                 "bar.padding must be <= {}",
                 Self::MAX_PADDING
+            )));
+        }
+        if !(Self::MIN_FONT_SIZE..=Self::MAX_FONT_SIZE).contains(&self.font_size) {
+            return Err(SettingsError::InvalidUiSetting(format!(
+                "bar.font_size must be {}..={}",
+                Self::MIN_FONT_SIZE,
+                Self::MAX_FONT_SIZE
+            )));
+        }
+        if self.radius > Self::MAX_RADIUS {
+            return Err(SettingsError::InvalidUiSetting(format!(
+                "bar.radius must be <= {}",
+                Self::MAX_RADIUS
+            )));
+        }
+        if !(Self::MIN_OPACITY..=Self::MAX_OPACITY).contains(&self.opacity) {
+            return Err(SettingsError::InvalidUiSetting(format!(
+                "bar.opacity must be {}..={}",
+                Self::MIN_OPACITY,
+                Self::MAX_OPACITY
             )));
         }
         if let BarMonitor::Named(name) = &self.monitor
@@ -302,6 +369,11 @@ impl BarSettings {
             "bar.height" | "height" => self.height = parse_u32_field("bar.height", value)?,
             "bar.margin" | "margin" => self.margin = parse_u32_field("bar.margin", value)?,
             "bar.padding" | "padding" => self.padding = parse_u32_field("bar.padding", value)?,
+            "bar.font_size" | "font_size" => {
+                self.font_size = parse_u32_field("bar.font_size", value)?
+            }
+            "bar.radius" | "radius" => self.radius = parse_u32_field("bar.radius", value)?,
+            "bar.opacity" | "opacity" => self.opacity = parse_u32_field("bar.opacity", value)?,
             "bar.widgets" | "widgets" => self.widgets = parse_bar_widgets(value)?,
             other => {
                 return Err(SettingsError::InvalidUiSetting(format!(
@@ -825,6 +897,12 @@ mod tests {
         bar.height = BarSettings::MIN_HEIGHT - 1;
         assert!(bar.validate().is_err());
         bar.height = BarSettings::MIN_HEIGHT;
+        bar.font_size = BarSettings::MAX_FONT_SIZE + 1;
+        assert!(bar.validate().is_err());
+        bar.font_size = BarSettings::MIN_FONT_SIZE;
+        bar.opacity = BarSettings::MIN_OPACITY - 1;
+        assert!(bar.validate().is_err());
+        bar.opacity = BarSettings::MAX_OPACITY;
         bar.widgets = vec![BarWidget::Audio, BarWidget::Audio];
         assert!(bar.validate().is_err());
         bar.widgets.clear();
@@ -843,6 +921,9 @@ mod tests {
         bar.set_field("bar.padding", "16").unwrap();
         bar.set_field("bar.edge", "bottom").unwrap();
         bar.set_field("bar.height", "40").unwrap();
+        bar.set_field("bar.font_size", "12").unwrap();
+        bar.set_field("bar.radius", "8").unwrap();
+        bar.set_field("bar.opacity", "90").unwrap();
         bar.set_field("bar.widgets", "workspaces,audio,clock")
             .unwrap();
         assert!(!bar.enabled);
@@ -851,6 +932,9 @@ mod tests {
         assert_eq!(bar.padding, 16);
         assert_eq!(bar.edge, BarEdge::Bottom);
         assert_eq!(bar.height, 40);
+        assert_eq!(bar.font_size, 12);
+        assert_eq!(bar.radius, 8);
+        assert_eq!(bar.opacity, 90);
         assert_eq!(
             bar.widgets,
             vec![BarWidget::Workspaces, BarWidget::Audio, BarWidget::Clock]
@@ -887,6 +971,12 @@ mod tests {
         osd.margin = 0;
         osd.timeout_ms = OsdSettings::MIN_TIMEOUT_MS - 1;
         assert!(osd.validate().is_err());
+        osd.timeout_ms = OsdSettings::MIN_TIMEOUT_MS;
+        osd.font_size = OsdSettings::MAX_FONT_SIZE + 1;
+        assert!(osd.validate().is_err());
+        osd.font_size = OsdSettings::MIN_FONT_SIZE;
+        osd.opacity = OsdSettings::MIN_OPACITY - 1;
+        assert!(osd.validate().is_err());
     }
 
     #[test]
@@ -898,12 +988,18 @@ mod tests {
         osd.set_field("osd.height", "120").unwrap();
         osd.set_field("osd.margin", "24").unwrap();
         osd.set_field("osd.timeout_ms", "2500").unwrap();
+        osd.set_field("osd.font_size", "13").unwrap();
+        osd.set_field("osd.radius", "18").unwrap();
+        osd.set_field("osd.opacity", "88").unwrap();
         assert!(!osd.enabled);
         assert_eq!(osd.edge, BarEdge::Bottom);
         assert_eq!(osd.width, 480);
         assert_eq!(osd.height, 120);
         assert_eq!(osd.margin, 24);
         assert_eq!(osd.timeout_ms, 2500);
+        assert_eq!(osd.font_size, 13);
+        assert_eq!(osd.radius, 18);
+        assert_eq!(osd.opacity, 88);
     }
 
     #[test]

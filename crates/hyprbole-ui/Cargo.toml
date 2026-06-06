@@ -7,6 +7,8 @@ publish = false
 [dependencies]
 eframe = { version = "0.33", default-features = false, features = ["accesskit", "default_fonts", "glow", "wayland", "x11"] }
 egui = "0.33"
+gtk4 = "0.11"
+gtk4-layer-shell = "0.8"
 hyprbole-core = { path = "../hyprbole-core" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

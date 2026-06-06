@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{env, fmt, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 
@@ -39,6 +39,8 @@ pub enum CompositorAction {
         position: String,
         scale: f32,
     },
+    RegisterRuntimeKeybindings,
+    UnregisterRuntimeKeybindings,
     RegisterMouseWindowControls,
     UnregisterMouseWindowControls,
 }
@@ -127,26 +129,71 @@ impl CompositorBackend for HyprlandIpcBackend {
                     .eval_ok(&set_monitor_mode_eval(&monitor, &mode, &position, scale))?;
             }
             CompositorAction::RegisterMouseWindowControls => {
-                for lua in [
-                    r#"hl.unbind("SUPER + mouse:272")"#,
-                    r#"hl.bind("SUPER + mouse:272", hl.dsp.window.drag(), { mouse = true })"#,
-                    r#"hl.unbind("SUPER + mouse:273")"#,
-                    r#"hl.bind("SUPER + mouse:273", hl.dsp.window.resize(), { mouse = true })"#,
-                ] {
-                    self.ipc.eval_ok(lua)?;
-                }
+                register_mouse_window_controls(&self.ipc)?;
+            }
+            CompositorAction::RegisterRuntimeKeybindings => {
+                register_mouse_window_controls(&self.ipc)?;
+                register_launcher_keybinding(&self.ipc)?;
             }
             CompositorAction::UnregisterMouseWindowControls => {
-                for lua in [
-                    r#"hl.unbind("SUPER + mouse:272")"#,
-                    r#"hl.unbind("SUPER + mouse:273")"#,
-                ] {
-                    self.ipc.eval_ok(lua)?;
-                }
+                unregister_mouse_window_controls(&self.ipc)?;
+            }
+            CompositorAction::UnregisterRuntimeKeybindings => {
+                unregister_mouse_window_controls(&self.ipc)?;
+                unregister_launcher_keybinding(&self.ipc)?;
             }
         }
         Ok(())
     }
+}
+
+fn register_mouse_window_controls(ipc: &HyprlandIpc) -> Result<(), HyprlandIpcError> {
+    for lua in [
+        r#"hl.unbind("SUPER + mouse:272")"#,
+        r#"hl.bind("SUPER + mouse:272", hl.dsp.window.drag(), { mouse = true })"#,
+        r#"hl.unbind("SUPER + mouse:273")"#,
+        r#"hl.bind("SUPER + mouse:273", hl.dsp.window.resize(), { mouse = true })"#,
+    ] {
+        ipc.eval_ok(lua)?;
+    }
+    Ok(())
+}
+
+fn unregister_mouse_window_controls(ipc: &HyprlandIpc) -> Result<(), HyprlandIpcError> {
+    for lua in [
+        r#"hl.unbind("SUPER + mouse:272")"#,
+        r#"hl.unbind("SUPER + mouse:273")"#,
+    ] {
+        ipc.eval_ok(lua)?;
+    }
+    Ok(())
+}
+
+fn register_launcher_keybinding(ipc: &HyprlandIpc) -> Result<(), HyprlandIpcError> {
+    unregister_launcher_keybinding(ipc)?;
+    let command = lua_string(&format!("{} launcher &", launcher_command()));
+    ipc.eval_ok(&format!(
+        r#"hl.bind("SUPER + ALT + SPACE", function() os.execute({command}) end)"#
+    ))
+}
+
+fn unregister_launcher_keybinding(ipc: &HyprlandIpc) -> Result<(), HyprlandIpcError> {
+    ipc.eval_ok(r#"hl.unbind("SUPER + ALT + SPACE")"#)
+}
+
+fn launcher_command() -> String {
+    let local = env::var_os("HOME")
+        .map(PathBuf::from)
+        .map(|home| home.join(".local/bin/hbctl"));
+    if let Some(path) = local.filter(|path| path.exists()) {
+        return path.display().to_string();
+    }
+    "hbctl".to_string()
+}
+
+fn lua_string(value: &str) -> String {
+    let escaped = value.replace('\\', "\\\\").replace('"', "\\\"");
+    format!("\"{escaped}\"")
 }
 
 fn safe_keyword_value(value: &str) -> bool {
@@ -205,6 +252,14 @@ mod tests {
         assert_eq!(
             set_layout_eval("dwindle"),
             "hl.config({ general = { layout = \"dwindle\" } })"
+        );
+    }
+
+    #[test]
+    fn lua_string_escapes_launcher_command() {
+        assert_eq!(
+            lua_string(r#"/tmp/a\"b/hbctl launcher &"#),
+            "\"/tmp/a\\\\\\\"b/hbctl launcher &\""
         );
     }
 

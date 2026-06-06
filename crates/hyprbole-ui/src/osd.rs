@@ -29,7 +29,7 @@ use wayland_client::{
     protocol::{wl_output, wl_seat, wl_shm, wl_surface},
 };
 
-use crate::bar::{draw_text, truncate_text};
+use crate::bar::{draw_text_scaled, truncate_text};
 use hyprbole_core::settings::{BarEdge, OsdSettings};
 
 const WIDTH: u32 = 420;
@@ -78,6 +78,8 @@ pub fn run() -> Result<(), String> {
         brightness: String::new(),
         colors: OsdColors::default(),
         settings: OsdSettings::default(),
+        settings_loaded: false,
+        pending_action_show: false,
         event_rx: spawn_event_listener(),
         refresh_tx,
         refresh_rx,
@@ -242,6 +244,8 @@ struct OsdSurface {
     brightness: String,
     colors: OsdColors,
     settings: OsdSettings,
+    settings_loaded: bool,
+    pending_action_show: bool,
     event_rx: Receiver<OsdSignal>,
     refresh_tx: Sender<u64>,
     refresh_rx: Receiver<OsdRefresh>,
@@ -302,7 +306,15 @@ impl OsdSurface {
         }
         if let Some(settings) = update.settings {
             self.settings = settings;
+            self.settings_loaded = true;
             self.apply_settings();
+            if self.pending_action_show {
+                self.pending_action_show = false;
+                self.show_for_action();
+            }
+            if !self.settings.enabled {
+                self.visible_until = None;
+            }
         }
         true
     }
@@ -338,8 +350,12 @@ impl OsdSurface {
     }
 
     fn show_for_action(&mut self) {
-        if self.settings.enabled {
-            self.visible_until = Some(Instant::now() + self.visible_duration());
+        match action_show_decision(self.settings_loaded, self.settings.enabled) {
+            ActionShowDecision::Defer => self.pending_action_show = true,
+            ActionShowDecision::Show => {
+                self.visible_until = Some(Instant::now() + self.visible_duration())
+            }
+            ActionShowDecision::Ignore => {}
         }
     }
 
@@ -387,40 +403,57 @@ impl OsdSurface {
             pixel.copy_from_slice(&background.to_le_bytes());
         }
         if visible {
-            fill_rect(
+            fill_rounded_rect(
                 canvas,
                 self.width,
                 Rect {
                     x: 0,
                     y: 0,
-                    width: 8,
+                    width: self.width,
                     height: self.height,
                 },
-                status_color,
+                self.settings.radius.min(self.height / 2),
+                with_opacity(self.colors.surface, self.settings.opacity),
             );
-            draw_text(
+            fill_rounded_rect(
                 canvas,
                 self.width,
-                18,
+                Rect {
+                    x: 10,
+                    y: 12,
+                    width: 8,
+                    height: self.height.saturating_sub(24),
+                },
+                4,
+                status_color,
+            );
+            let scale = if self.settings.font_size >= 14 { 2 } else { 1 };
+            draw_text_scaled(
+                canvas,
+                self.width,
+                28,
                 14,
                 &truncate_text(&self.message, 46),
                 self.colors.text,
+                scale,
             );
-            draw_text(
+            draw_text_scaled(
                 canvas,
                 self.width,
-                18,
-                34,
+                28,
+                38,
                 &truncate_text(&self.detail, 56),
                 self.colors.muted,
+                1,
             );
-            draw_text(
+            draw_text_scaled(
                 canvas,
                 self.width,
-                18,
-                62,
+                28,
+                self.height.saturating_sub(24),
                 &truncate_text(&format!("AUD {}  BRI {}", self.audio, self.brightness), 62),
                 self.colors.muted,
+                1,
             );
         }
 
@@ -587,6 +620,23 @@ fn event_shows_osd(event: &hyprbole_core::daemon::ShellEvent) -> bool {
     matches!(event, hyprbole_core::daemon::ShellEvent::Action { .. })
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ActionShowDecision {
+    Defer,
+    Show,
+    Ignore,
+}
+
+fn action_show_decision(settings_loaded: bool, enabled: bool) -> ActionShowDecision {
+    if !settings_loaded {
+        ActionShowDecision::Defer
+    } else if enabled {
+        ActionShowDecision::Show
+    } else {
+        ActionShowDecision::Ignore
+    }
+}
+
 #[derive(Clone, Copy)]
 struct Rect {
     x: u32,
@@ -595,15 +645,50 @@ struct Rect {
     height: u32,
 }
 
-fn fill_rect(canvas: &mut [u8], width: u32, rect: Rect, color: u32) {
-    for y in rect.y..rect.y.saturating_add(rect.height) {
-        for x in rect.x..rect.x.saturating_add(rect.width) {
-            let index = ((y * width + x) * 4) as usize;
-            if index + 4 <= canvas.len() {
-                canvas[index..index + 4].copy_from_slice(&color.to_le_bytes());
+fn with_opacity(color: u32, opacity: u32) -> u32 {
+    let alpha = (opacity.min(100) * 255 / 100) << 24;
+    alpha | (color & 0x00ff_ffff)
+}
+
+fn fill_rounded_rect(canvas: &mut [u8], width: u32, rect: Rect, radius: u32, color: u32) {
+    let radius = radius.min(rect.width / 2).min(rect.height / 2);
+    let right = rect.x.saturating_add(rect.width);
+    let bottom = rect.y.saturating_add(rect.height);
+    for y in rect.y..bottom {
+        for x in rect.x..right {
+            if rounded_rect_contains(x, y, rect, radius) {
+                let index = ((y * width + x) * 4) as usize;
+                if index + 4 <= canvas.len() {
+                    canvas[index..index + 4].copy_from_slice(&color.to_le_bytes());
+                }
             }
         }
     }
+}
+
+fn rounded_rect_contains(x: u32, y: u32, rect: Rect, radius: u32) -> bool {
+    if radius == 0 {
+        return true;
+    }
+    let right = rect.x + rect.width - 1;
+    let bottom = rect.y + rect.height - 1;
+    let cx = if x < rect.x + radius {
+        rect.x + radius
+    } else if x > right.saturating_sub(radius) {
+        right.saturating_sub(radius)
+    } else {
+        x
+    };
+    let cy = if y < rect.y + radius {
+        rect.y + radius
+    } else if y > bottom.saturating_sub(radius) {
+        bottom.saturating_sub(radius)
+    } else {
+        y
+    };
+    let dx = x.abs_diff(cx);
+    let dy = y.abs_diff(cy);
+    dx * dx + dy * dy <= radius * radius
 }
 
 impl CompositorHandler for OsdSurface {
@@ -810,11 +895,22 @@ mod tests {
         assert!(refresh.audio.is_none());
         assert!(refresh.brightness.is_none());
         assert!(refresh.colors.is_none());
+        assert!(refresh.settings.is_none());
     }
 
     #[test]
     fn initial_event_cursor_starts_after_retained_history() {
         assert_eq!(cursor_before_next_event(42), 41);
         assert_eq!(cursor_before_next_event(0), 0);
+    }
+
+    #[test]
+    fn action_show_waits_for_daemon_settings() {
+        assert_eq!(action_show_decision(false, true), ActionShowDecision::Defer);
+        assert_eq!(action_show_decision(true, true), ActionShowDecision::Show);
+        assert_eq!(
+            action_show_decision(true, false),
+            ActionShowDecision::Ignore
+        );
     }
 }

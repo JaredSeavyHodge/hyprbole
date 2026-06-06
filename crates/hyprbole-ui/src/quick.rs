@@ -315,7 +315,7 @@ impl QuickPopup {
             pixel.copy_from_slice(&self.colors.background.to_le_bytes());
         }
         for region in &self.regions {
-            draw_rect(canvas, self.width, region.rect, region.color());
+            draw_rect(canvas, self.width, region.rect, region.color(self.colors));
         }
         draw_text(
             canvas,
@@ -475,11 +475,11 @@ impl QuickRegion {
         self.action.label()
     }
 
-    fn color(self) -> u32 {
+    fn color(self, colors: QuickColors) -> u32 {
         match self.action {
-            QuickAction::Close => 0xffff7b72,
-            QuickAction::Lock => 0xfff6ca6c,
-            _ => 0xff7ee787,
+            QuickAction::Close => colors.error,
+            QuickAction::Lock => colors.warning,
+            _ => colors.success,
         }
     }
 }

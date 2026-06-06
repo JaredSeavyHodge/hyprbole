@@ -7,12 +7,14 @@ use std::{fs::OpenOptions, io::Write};
 
 use eframe::egui::{self, Color32, CornerRadius, FontId, Margin, RichText, Stroke, Vec2};
 use hyprbole_core::settings::{
-    BarMonitor, BarSettings, BarWidget, OwnershipMode, ShellSettings, ShellSubsystem, WidgetMove,
+    BarMonitor, BarSettings, BarWidget, OsdSettings, OwnershipMode, ShellSettings, ShellSubsystem,
+    WidgetMove,
 };
 use hyprbole_core::theme::ThemeMode;
 use serde::Deserialize;
 
 mod bar;
+mod launcher;
 mod osd;
 mod quick;
 
@@ -26,7 +28,24 @@ const COMPOSITOR_CONFIG_APPLY_SUPPORTED: bool = true;
 const CONTROL_LAYOUT_GUTTER: f32 = 60.0;
 
 fn main() -> eframe::Result {
+    if let Err(err) = reject_conflicting_surface_modes() {
+        eprintln!("{err}");
+        std::process::exit(2);
+    }
+    if std::env::args().any(|arg| arg == "--bar-gtk") {
+        let Some(_guard) = BarInstanceGuard::acquire() else {
+            return Ok(());
+        };
+        if let Err(err) = bar::run_gtk() {
+            eprintln!("gtk bar failed: {err}");
+            std::process::exit(1);
+        }
+        return Ok(());
+    }
     if std::env::args().any(|arg| arg == "--bar" || arg == "--layer-spike") {
+        let Some(_guard) = BarInstanceGuard::acquire() else {
+            return Ok(());
+        };
         if let Err(err) = bar::run() {
             eprintln!("bar failed: {err}");
             std::process::exit(1);
@@ -34,8 +53,36 @@ fn main() -> eframe::Result {
         return Ok(());
     }
     if std::env::args().any(|arg| arg == "--osd") {
+        let Some(_guard) = OsdInstanceGuard::acquire() else {
+            return Ok(());
+        };
         if let Err(err) = osd::run() {
             eprintln!("osd failed: {err}");
+            std::process::exit(1);
+        }
+        return Ok(());
+    }
+    if std::env::args().any(|arg| arg == "--launcher-layer") {
+        let args = std::env::args().collect::<Vec<_>>();
+        let options = match launcher_layer_options(&args) {
+            Ok(options) => options,
+            Err(err) => {
+                eprintln!("layer launcher failed: {err}");
+                std::process::exit(1);
+            }
+        };
+        if let Err(err) = launcher::run_layer(options) {
+            eprintln!("layer launcher failed: {err}");
+            std::process::exit(1);
+        }
+        return Ok(());
+    }
+    if std::env::args().any(|arg| arg == "--launcher") {
+        return launcher::run();
+    }
+    if std::env::args().any(|arg| arg == "--launcher-gtk") {
+        if let Err(err) = launcher::run_gtk() {
+            eprintln!("gtk launcher failed: {err}");
             std::process::exit(1);
         }
         return Ok(());
@@ -114,14 +161,89 @@ fn main() -> eframe::Result {
     )
 }
 
+fn reject_conflicting_surface_modes() -> Result<(), &'static str> {
+    let args = std::env::args().collect::<Vec<_>>();
+    reject_conflicting_surface_modes_from_args(&args)
+}
+
+fn reject_conflicting_surface_modes_from_args(args: &[String]) -> Result<(), &'static str> {
+    let modes = [
+        args.iter()
+            .any(|arg| arg == "--bar" || arg == "--layer-spike" || arg == "--bar-gtk"),
+        args.iter().any(|arg| arg == "--osd"),
+        args.iter().any(|arg| arg == "--launcher-layer"),
+        args.iter().any(|arg| arg == "--launcher"),
+        args.iter().any(|arg| arg == "--launcher-gtk"),
+        args.iter().any(|arg| arg == "--control"),
+        args.iter().any(|arg| arg == "--quick"),
+    ];
+    if modes.into_iter().filter(|active| *active).count() > 1 {
+        return Err("hyprbole-ui accepts only one surface mode flag at a time");
+    }
+    Ok(())
+}
+
+fn launcher_layer_options(args: &[String]) -> Result<launcher::LayerLauncherOptions, String> {
+    let mut options = launcher::LayerLauncherOptions::default();
+    let mut index = 0;
+    while index < args.len() {
+        match args[index].as_str() {
+            "--stdin" => options.stdin = true,
+            "--prompt" => {
+                let Some(value) = args.get(index + 1).filter(|value| !value.starts_with("--"))
+                else {
+                    return Err("--prompt requires a value".to_string());
+                };
+                options.prompt = value.clone();
+                index += 1;
+            }
+            "--placeholder" => {
+                let Some(value) = args.get(index + 1).filter(|value| !value.starts_with("--"))
+                else {
+                    return Err("--placeholder requires a value".to_string());
+                };
+                options.placeholder = value.clone();
+                index += 1;
+            }
+            "--lines" => {
+                let Some(value) = args.get(index + 1).filter(|value| !value.starts_with("--"))
+                else {
+                    return Err("--lines requires a value".to_string());
+                };
+                options.lines = value
+                    .parse()
+                    .map_err(|_| "--lines requires a positive integer".to_string())?;
+                if options.lines == 0 {
+                    return Err("--lines requires a positive integer".to_string());
+                }
+                index += 1;
+            }
+            _ => {}
+        }
+        index += 1;
+    }
+    Ok(options)
+}
+
 struct QuickInstanceGuard {
     path: PathBuf,
 }
 
-impl QuickInstanceGuard {
+struct BarInstanceGuard {
+    path: PathBuf,
+}
+
+struct OsdInstanceGuard {
+    path: PathBuf,
+}
+
+impl BarInstanceGuard {
     fn acquire() -> Option<Self> {
-        let path = quick_instance_path()?;
+        let path = bar_instance_path()?;
         loop {
+            if running_bar_instance_excluding(std::process::id()).is_some() {
+                return None;
+            }
             match OpenOptions::new().write(true).create_new(true).open(&path) {
                 Ok(mut file) => {
                     let identity = quick_process_identity(std::process::id())?;
@@ -132,10 +254,112 @@ impl QuickInstanceGuard {
                     return None;
                 }
                 Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => {
-                    let Some(identity) = std::fs::read_to_string(&path)
-                        .ok()
-                        .and_then(|value| parse_quick_identity(&value))
-                    else {
+                    let Some(identity) = read_instance_identity_with_retry(&path) else {
+                        if !unparseable_instance_file_is_stale(&path) {
+                            return None;
+                        }
+                        if std::fs::remove_file(&path).is_err() {
+                            return None;
+                        }
+                        continue;
+                    };
+                    if bar_process_alive(identity.0)
+                        && quick_process_identity(identity.0).as_deref() == Some(&identity.1)
+                    {
+                        return None;
+                    }
+                    if std::fs::remove_file(&path).is_err() {
+                        return None;
+                    }
+                }
+                Err(_) => return None,
+            }
+        }
+    }
+}
+
+impl Drop for BarInstanceGuard {
+    fn drop(&mut self) {
+        if let Ok(pid) = std::fs::read_to_string(&self.path) {
+            if quick_process_identity(std::process::id()).as_deref() == Some(pid.trim()) {
+                let _ = std::fs::remove_file(&self.path);
+            }
+        }
+    }
+}
+
+impl OsdInstanceGuard {
+    fn acquire() -> Option<Self> {
+        let path = osd_instance_path()?;
+        loop {
+            if running_osd_instance_excluding(std::process::id()).is_some() {
+                return None;
+            }
+            match OpenOptions::new().write(true).create_new(true).open(&path) {
+                Ok(mut file) => {
+                    let identity = quick_process_identity(std::process::id())?;
+                    if file.write_all(identity.as_bytes()).is_ok() {
+                        return Some(Self { path });
+                    }
+                    let _ = std::fs::remove_file(&path);
+                    return None;
+                }
+                Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => {
+                    let Some(identity) = read_instance_identity_with_retry(&path) else {
+                        if !unparseable_instance_file_is_stale(&path) {
+                            return None;
+                        }
+                        if std::fs::remove_file(&path).is_err() {
+                            return None;
+                        }
+                        continue;
+                    };
+                    if osd_process_alive(identity.0)
+                        && quick_process_identity(identity.0).as_deref() == Some(&identity.1)
+                    {
+                        return None;
+                    }
+                    if std::fs::remove_file(&path).is_err() {
+                        return None;
+                    }
+                }
+                Err(_) => return None,
+            }
+        }
+    }
+}
+
+impl Drop for OsdInstanceGuard {
+    fn drop(&mut self) {
+        if let Ok(pid) = std::fs::read_to_string(&self.path) {
+            if quick_process_identity(std::process::id()).as_deref() == Some(pid.trim()) {
+                let _ = std::fs::remove_file(&self.path);
+            }
+        }
+    }
+}
+
+impl QuickInstanceGuard {
+    fn acquire() -> Option<Self> {
+        let path = quick_instance_path()?;
+        loop {
+            if running_quick_instance_excluding(std::process::id()).is_some() {
+                return None;
+            }
+            match OpenOptions::new().write(true).create_new(true).open(&path) {
+                Ok(mut file) => {
+                    let identity = quick_process_identity(std::process::id())?;
+                    if file.write_all(identity.as_bytes()).is_ok() {
+                        return Some(Self { path });
+                    }
+                    let _ = std::fs::remove_file(&path);
+                    return None;
+                }
+                Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => {
+                    let Some(identity) = read_instance_identity_with_retry(&path) else {
+                        if !unparseable_instance_file_is_stale(&path) {
+                            return None;
+                        }
                         if std::fs::remove_file(&path).is_err() {
                             return None;
                         }
@@ -171,9 +395,40 @@ fn quick_instance_path() -> Option<PathBuf> {
     Some(runtime.join("quick.pid"))
 }
 
+fn bar_instance_path() -> Option<PathBuf> {
+    let runtime = hyprbole_core::runtime::ensure_runtime_dir().ok()?;
+    Some(runtime.join("bar.pid"))
+}
+
+fn osd_instance_path() -> Option<PathBuf> {
+    let runtime = hyprbole_core::runtime::ensure_runtime_dir().ok()?;
+    Some(runtime.join("osd.pid"))
+}
+
 fn quick_dismiss_path() -> Option<PathBuf> {
     let runtime = hyprbole_core::runtime::ensure_runtime_dir().ok()?;
     Some(runtime.join("quick.dismiss"))
+}
+
+fn read_instance_identity_with_retry(path: &std::path::Path) -> Option<(u32, String)> {
+    for _ in 0..5 {
+        if let Some(identity) = std::fs::read_to_string(path)
+            .ok()
+            .and_then(|value| parse_quick_identity(&value))
+        {
+            return Some(identity);
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
+    None
+}
+
+fn unparseable_instance_file_is_stale(path: &std::path::Path) -> bool {
+    std::fs::metadata(path)
+        .and_then(|metadata| metadata.modified())
+        .ok()
+        .and_then(|modified| modified.elapsed().ok())
+        .is_some_and(|age| age >= Duration::from_secs(1))
 }
 
 fn process_alive(pid: u32) -> bool {
@@ -201,12 +456,109 @@ fn quick_process_alive(pid: u32) -> bool {
             .unwrap_or(false)
 }
 
+fn running_quick_instance_excluding(excluded_pid: u32) -> Option<(u32, String)> {
+    let entries = std::fs::read_dir("/proc").ok()?;
+    for entry in entries.flatten() {
+        let Some(pid) = entry
+            .file_name()
+            .to_str()
+            .and_then(|name| name.parse::<u32>().ok())
+        else {
+            continue;
+        };
+        if pid == excluded_pid {
+            continue;
+        }
+        if quick_process_alive(pid) {
+            if let Some(identity) = quick_process_identity(pid) {
+                return Some((pid, identity));
+            }
+        }
+    }
+    None
+}
+
+fn bar_process_alive(pid: u32) -> bool {
+    process_alive(pid)
+        && std::fs::read(format!("/proc/{pid}/cmdline"))
+            .map(|cmdline| cmdline_is_bar(&cmdline))
+            .unwrap_or(false)
+}
+
+fn osd_process_alive(pid: u32) -> bool {
+    process_alive(pid)
+        && std::fs::read(format!("/proc/{pid}/cmdline"))
+            .map(|cmdline| cmdline_is_osd(&cmdline))
+            .unwrap_or(false)
+}
+
+fn running_bar_instance_excluding(excluded_pid: u32) -> Option<(u32, String)> {
+    let entries = std::fs::read_dir("/proc").ok()?;
+    for entry in entries.flatten() {
+        let Some(pid) = entry
+            .file_name()
+            .to_str()
+            .and_then(|name| name.parse::<u32>().ok())
+        else {
+            continue;
+        };
+        if pid == excluded_pid {
+            continue;
+        }
+        if bar_process_alive(pid) {
+            if let Some(identity) = quick_process_identity(pid) {
+                return Some((pid, identity));
+            }
+        }
+    }
+    None
+}
+
+fn running_osd_instance_excluding(excluded_pid: u32) -> Option<(u32, String)> {
+    let entries = std::fs::read_dir("/proc").ok()?;
+    for entry in entries.flatten() {
+        let Some(pid) = entry
+            .file_name()
+            .to_str()
+            .and_then(|name| name.parse::<u32>().ok())
+        else {
+            continue;
+        };
+        if pid == excluded_pid {
+            continue;
+        }
+        if osd_process_alive(pid) {
+            if let Some(identity) = quick_process_identity(pid) {
+                return Some((pid, identity));
+            }
+        }
+    }
+    None
+}
+
 fn cmdline_is_quick_settings(cmdline: &[u8]) -> bool {
     let args = cmdline
         .split(|byte| *byte == 0)
         .filter_map(|arg| std::str::from_utf8(arg).ok())
         .collect::<Vec<_>>();
     args.first().is_some_and(|arg| arg.ends_with("hyprbole-ui")) && args.contains(&"--quick")
+}
+
+fn cmdline_is_bar(cmdline: &[u8]) -> bool {
+    let args = cmdline
+        .split(|byte| *byte == 0)
+        .filter_map(|arg| std::str::from_utf8(arg).ok())
+        .collect::<Vec<_>>();
+    args.first().is_some_and(|arg| arg.ends_with("hyprbole-ui"))
+        && (args.contains(&"--bar") || args.contains(&"--layer-spike"))
+}
+
+fn cmdline_is_osd(cmdline: &[u8]) -> bool {
+    let args = cmdline
+        .split(|byte| *byte == 0)
+        .filter_map(|arg| std::str::from_utf8(arg).ok())
+        .collect::<Vec<_>>();
+    args.first().is_some_and(|arg| arg.ends_with("hyprbole-ui")) && args.contains(&"--osd")
 }
 
 struct ControlPanel {
@@ -318,7 +670,7 @@ impl eframe::App for ControlPanel {
         let mut refresh_requested = false;
         let mut control_action = None;
         let mut autostart_save = None;
-        let mut bar_setting_change = None;
+        let mut ui_setting_change = None;
         let mut theme_mode_change = None;
         let mut autostart_name = self.autostart_name.clone();
         let mut autostart_command = self.autostart_command.clone();
@@ -345,7 +697,7 @@ impl eframe::App for ControlPanel {
                                 &mut autostart_name,
                                 &mut autostart_command,
                                 &mut autostart_save,
-                                &mut bar_setting_change,
+                                &mut ui_setting_change,
                                 &mut theme_mode_change,
                             );
                             ui.add_space(12.0);
@@ -373,8 +725,8 @@ impl eframe::App for ControlPanel {
         if let Some(apps) = autostart_save {
             self.spawn_set_autostart(apps);
         }
-        if let Some((field, value)) = bar_setting_change {
-            self.spawn_set_bar_setting(field, value);
+        if let Some(change) = ui_setting_change {
+            self.spawn_set_ui_setting(change);
         }
         if let Some(mode) = theme_mode_change {
             self.spawn_set_theme_mode(mode);
@@ -420,6 +772,7 @@ enum ControlSection {
     Monitors,
     Autostart,
     Bar,
+    Osd,
     Appearance,
     Ownership,
     Diagnostics,
@@ -496,14 +849,14 @@ impl ControlPanel {
         });
     }
 
-    fn spawn_set_bar_setting(&mut self, field: String, value: String) {
+    fn spawn_set_ui_setting(&mut self, change: ControlUiSettingChange) {
         let request_id = self.begin_request();
         self.pending = true;
         self.pending_since = Some(Instant::now());
-        self.status = format!("Saving {field}...");
+        self.status = change.pending_status();
         let tx = self.tx.clone();
         thread::spawn(move || {
-            let result = set_control_bar_setting(&field, &value);
+            let result = set_control_ui_setting(change);
             let _ = tx.send(ControlMessage::Saved { request_id, result });
         });
     }
@@ -840,6 +1193,28 @@ enum ControlAction {
     ToggleDnd,
     ClearNotifications,
     Lock,
+}
+
+#[derive(Clone)]
+enum ControlUiSettingChange {
+    SetField { field: String, value: String },
+    ResetOsd,
+}
+
+impl ControlUiSettingChange {
+    fn set(field: impl Into<String>, value: impl Into<String>) -> Self {
+        Self::SetField {
+            field: field.into(),
+            value: value.into(),
+        }
+    }
+
+    fn pending_status(&self) -> String {
+        match self {
+            Self::SetField { field, .. } => format!("Saving {field}..."),
+            Self::ResetOsd => "Resetting OSD settings...".to_string(),
+        }
+    }
 }
 
 impl ControlAction {
@@ -1620,6 +1995,7 @@ fn control_sidebar(ui: &mut egui::Ui, selected: &mut ControlSection) {
             (ControlSection::Monitors, "Displays"),
             (ControlSection::Autostart, "Startup Apps"),
             (ControlSection::Bar, "Bar"),
+            (ControlSection::Osd, "OSD"),
             (ControlSection::Appearance, "Appearance"),
             (ControlSection::Ownership, "Ownership"),
             (ControlSection::Diagnostics, "Diagnostics"),
@@ -1642,7 +2018,7 @@ fn control_section_view(
     autostart_name: &mut String,
     autostart_command: &mut String,
     autostart_save: &mut Option<Vec<hyprbole_core::settings::AutostartApp>>,
-    bar_setting_change: &mut Option<(String, String)>,
+    ui_setting_change: &mut Option<ControlUiSettingChange>,
     theme_mode_change: &mut Option<ThemeMode>,
 ) {
     ui.set_min_width(CONTROL_PANE_MIN_WIDTH);
@@ -1664,7 +2040,8 @@ fn control_section_view(
             autostart_save,
             control_action,
         ),
-        ControlSection::Bar => native_bar_pane(ui, panel, bar_setting_change),
+        ControlSection::Bar => native_bar_pane(ui, panel, ui_setting_change),
+        ControlSection::Osd => native_osd_pane(ui, panel, ui_setting_change),
         ControlSection::Appearance => native_appearance_pane(ui, panel, theme_mode_change),
         ControlSection::Ownership => {
             native_ownership_pane(ui, panel, ownership_change, reconcile_request)
@@ -2264,7 +2641,7 @@ fn native_autostart_pane(
 fn native_bar_pane(
     ui: &mut egui::Ui,
     panel: &ControlPanel,
-    bar_setting_change: &mut Option<(String, String)>,
+    ui_setting_change: &mut Option<ControlUiSettingChange>,
 ) {
     native_pane_header(
         ui,
@@ -2279,6 +2656,9 @@ fn native_bar_pane(
         setting_row(ui, "Height", &format!("{} px", bar.height));
         setting_row(ui, "Margin", &format!("{} px", bar.margin));
         setting_row(ui, "Padding", &format!("{} px", bar.padding));
+        setting_row(ui, "Font", &format!("{} px bitmap", bar.font_size));
+        setting_row(ui, "Radius", &format!("{} px", bar.radius));
+        setting_row(ui, "Opacity", &format!("{}%", bar.opacity));
         setting_row(
             ui,
             "Widgets",
@@ -2301,7 +2681,7 @@ fn native_bar_pane(
                     )
                     .clicked()
                 {
-                    *bar_setting_change = Some(("bar.monitor".to_string(), value));
+                    *ui_setting_change = Some(ControlUiSettingChange::set("bar.monitor", value));
                 }
             }
         });
@@ -2315,7 +2695,7 @@ fn native_bar_pane(
                     )
                     .clicked()
                 {
-                    *bar_setting_change = Some(("bar.enabled".to_string(), value.to_string()));
+                    *ui_setting_change = Some(ControlUiSettingChange::set("bar.enabled", value));
                 }
             }
         });
@@ -2329,7 +2709,7 @@ fn native_bar_pane(
                     )
                     .clicked()
                 {
-                    *bar_setting_change = Some(("bar.edge".to_string(), edge.to_string()));
+                    *ui_setting_change = Some(ControlUiSettingChange::set("bar.edge", edge));
                 }
             }
         });
@@ -2343,7 +2723,10 @@ fn native_bar_pane(
                     )
                     .clicked()
                 {
-                    *bar_setting_change = Some(("bar.height".to_string(), height.to_string()));
+                    *ui_setting_change = Some(ControlUiSettingChange::set(
+                        "bar.height",
+                        height.to_string(),
+                    ));
                 }
             }
         });
@@ -2357,7 +2740,10 @@ fn native_bar_pane(
                     )
                     .clicked()
                 {
-                    *bar_setting_change = Some(("bar.margin".to_string(), margin.to_string()));
+                    *ui_setting_change = Some(ControlUiSettingChange::set(
+                        "bar.margin",
+                        margin.to_string(),
+                    ));
                 }
             }
         });
@@ -2371,7 +2757,61 @@ fn native_bar_pane(
                     )
                     .clicked()
                 {
-                    *bar_setting_change = Some(("bar.padding".to_string(), padding.to_string()));
+                    *ui_setting_change = Some(ControlUiSettingChange::set(
+                        "bar.padding",
+                        padding.to_string(),
+                    ));
+                }
+            }
+        });
+        ui.horizontal_wrapped(|ui| {
+            for font_size in [9_u32, 10, 11, 12, 14] {
+                let selected = bar.font_size == font_size;
+                if ui
+                    .add_enabled(
+                        panel.state.connected && !panel.pending && !selected,
+                        egui::Button::new(format!("font {font_size}px")),
+                    )
+                    .clicked()
+                {
+                    *ui_setting_change = Some(ControlUiSettingChange::set(
+                        "bar.font_size",
+                        font_size.to_string(),
+                    ));
+                }
+            }
+        });
+        ui.horizontal_wrapped(|ui| {
+            for radius in [0_u32, 6, 10, 14, 18] {
+                let selected = bar.radius == radius;
+                if ui
+                    .add_enabled(
+                        panel.state.connected && !panel.pending && !selected,
+                        egui::Button::new(format!("radius {radius}px")),
+                    )
+                    .clicked()
+                {
+                    *ui_setting_change = Some(ControlUiSettingChange::set(
+                        "bar.radius",
+                        radius.to_string(),
+                    ));
+                }
+            }
+        });
+        ui.horizontal_wrapped(|ui| {
+            for opacity in [70_u32, 84, 92, 96, 100] {
+                let selected = bar.opacity == opacity;
+                if ui
+                    .add_enabled(
+                        panel.state.connected && !panel.pending && !selected,
+                        egui::Button::new(format!("{opacity}%")),
+                    )
+                    .clicked()
+                {
+                    *ui_setting_change = Some(ControlUiSettingChange::set(
+                        "bar.opacity",
+                        opacity.to_string(),
+                    ));
                 }
             }
         });
@@ -2389,7 +2829,10 @@ fn native_bar_pane(
         {
             let mut updated = bar.clone();
             updated.reset_widgets();
-            *bar_setting_change = Some(("bar.widgets".to_string(), updated.widgets_csv()));
+            *ui_setting_change = Some(ControlUiSettingChange::set(
+                "bar.widgets",
+                updated.widgets_csv(),
+            ));
         }
         for widget in [
             BarWidget::Workspaces,
@@ -2440,8 +2883,10 @@ fn native_bar_pane(
                                 widgets,
                                 ..bar.clone()
                             };
-                            *bar_setting_change =
-                                Some(("bar.widgets".to_string(), updated.widgets_csv()));
+                            *ui_setting_change = Some(ControlUiSettingChange::set(
+                                "bar.widgets",
+                                updated.widgets_csv(),
+                            ));
                         }
                     }
                     if ui
@@ -2453,8 +2898,10 @@ fn native_bar_pane(
                     {
                         let mut updated = bar.clone();
                         if updated.move_widget(widget, WidgetMove::Down) {
-                            *bar_setting_change =
-                                Some(("bar.widgets".to_string(), updated.widgets_csv()));
+                            *ui_setting_change = Some(ControlUiSettingChange::set(
+                                "bar.widgets",
+                                updated.widgets_csv(),
+                            ));
                         }
                     }
                     if ui
@@ -2466,8 +2913,10 @@ fn native_bar_pane(
                     {
                         let mut updated = bar.clone();
                         if updated.move_widget(widget, WidgetMove::Up) {
-                            *bar_setting_change =
-                                Some(("bar.widgets".to_string(), updated.widgets_csv()));
+                            *ui_setting_change = Some(ControlUiSettingChange::set(
+                                "bar.widgets",
+                                updated.widgets_csv(),
+                            ));
                         }
                     }
                 });
@@ -2489,6 +2938,196 @@ fn bar_monitor_choices(panel: &ControlPanel) -> Vec<(String, String)> {
     choices
 }
 
+fn native_osd_pane(
+    ui: &mut egui::Ui,
+    panel: &ControlPanel,
+    ui_setting_change: &mut Option<ControlUiSettingChange>,
+) {
+    native_pane_header(
+        ui,
+        "OSD",
+        "Persisted Hyprbole-owned action feedback surface.",
+    );
+    let osd = &panel.state.settings.ui.osd;
+    native_group(ui, |ui| {
+        setting_row(ui, "Enabled", if osd.enabled { "yes" } else { "no" });
+        setting_row(ui, "Edge", &osd.edge.to_string());
+        setting_row(ui, "Size", &format!("{} x {} px", osd.width, osd.height));
+        setting_row(ui, "Margin", &format!("{} px", osd.margin));
+        setting_row(ui, "Timeout", &format!("{} ms", osd.timeout_ms));
+        setting_row(ui, "Font", &format!("{} px bitmap", osd.font_size));
+        setting_row(ui, "Radius", &format!("{} px", osd.radius));
+        setting_row(ui, "Opacity", &format!("{}%", osd.opacity));
+    });
+    native_group(ui, |ui| {
+        ui.label(RichText::new("Surface").strong().color(Palette::TEXT));
+        setting_buttons(
+            ui,
+            panel,
+            [("Enable", "on"), ("Disable", "off")],
+            |value| osd.enabled == (value == "on"),
+            "osd.enabled",
+            ui_setting_change,
+        );
+        setting_buttons(
+            ui,
+            panel,
+            [("top", "top"), ("bottom", "bottom")],
+            |value| osd.edge.to_string() == value,
+            "osd.edge",
+            ui_setting_change,
+        );
+        setting_buttons(
+            ui,
+            panel,
+            osd_width_choices(),
+            |value| osd.width.to_string() == value,
+            "osd.width",
+            ui_setting_change,
+        );
+        setting_buttons(
+            ui,
+            panel,
+            osd_height_choices(),
+            |value| osd.height.to_string() == value,
+            "osd.height",
+            ui_setting_change,
+        );
+        setting_buttons(
+            ui,
+            panel,
+            osd_margin_choices(),
+            |value| osd.margin.to_string() == value,
+            "osd.margin",
+            ui_setting_change,
+        );
+        setting_buttons(
+            ui,
+            panel,
+            osd_timeout_choices(),
+            |value| osd.timeout_ms.to_string() == value,
+            "osd.timeout_ms",
+            ui_setting_change,
+        );
+        setting_buttons(
+            ui,
+            panel,
+            osd_font_choices(),
+            |value| osd.font_size.to_string() == value,
+            "osd.font_size",
+            ui_setting_change,
+        );
+        setting_buttons(
+            ui,
+            panel,
+            osd_radius_choices(),
+            |value| osd.radius.to_string() == value,
+            "osd.radius",
+            ui_setting_change,
+        );
+        setting_buttons(
+            ui,
+            panel,
+            osd_opacity_choices(),
+            |value| osd.opacity.to_string() == value,
+            "osd.opacity",
+            ui_setting_change,
+        );
+        if ui
+            .add_enabled(
+                panel.state.connected && !panel.pending && *osd != OsdSettings::default(),
+                egui::Button::new("Reset OSD defaults"),
+            )
+            .clicked()
+        {
+            *ui_setting_change = Some(ControlUiSettingChange::ResetOsd);
+        }
+    });
+}
+
+fn setting_buttons<const N: usize>(
+    ui: &mut egui::Ui,
+    panel: &ControlPanel,
+    choices: [(&str, &str); N],
+    selected: impl Fn(&str) -> bool,
+    field: &str,
+    ui_setting_change: &mut Option<ControlUiSettingChange>,
+) {
+    ui.horizontal_wrapped(|ui| {
+        for (label, value) in choices {
+            let is_selected = selected(value);
+            if ui
+                .add_enabled(
+                    panel.state.connected && !panel.pending && !is_selected,
+                    egui::Button::new(label),
+                )
+                .clicked()
+            {
+                *ui_setting_change = Some(ControlUiSettingChange::set(field, value));
+            }
+        }
+    });
+}
+
+fn osd_width_choices() -> [(&'static str, &'static str); 4] {
+    [
+        ("320w", "320"),
+        ("420w", "420"),
+        ("560w", "560"),
+        ("640w", "640"),
+    ]
+}
+
+fn osd_height_choices() -> [(&'static str, &'static str); 4] {
+    [
+        ("72h", "72"),
+        ("96h", "96"),
+        ("112h", "112"),
+        ("140h", "140"),
+    ]
+}
+
+fn osd_margin_choices() -> [(&'static str, &'static str); 5] {
+    [
+        ("flush", "0"),
+        ("24px", "24"),
+        ("64px", "64"),
+        ("96px", "96"),
+        ("128px", "128"),
+    ]
+}
+
+fn osd_timeout_choices() -> [(&'static str, &'static str); 4] {
+    [
+        ("1.0s", "1000"),
+        ("1.8s", "1800"),
+        ("2.5s", "2500"),
+        ("4.0s", "4000"),
+    ]
+}
+
+fn osd_font_choices() -> [(&'static str, &'static str); 4] {
+    [
+        ("10px", "10"),
+        ("12px", "12"),
+        ("14px", "14"),
+        ("16px", "16"),
+    ]
+}
+
+fn osd_radius_choices() -> [(&'static str, &'static str); 4] {
+    [
+        ("square", "0"),
+        ("10px", "10"),
+        ("14px", "14"),
+        ("22px", "22"),
+    ]
+}
+
+fn osd_opacity_choices() -> [(&'static str, &'static str); 4] {
+    [("80%", "80"), ("88%", "88"), ("94%", "94"), ("100%", "100")]
+}
+
 fn native_appearance_pane(
     ui: &mut egui::Ui,
     panel: &ControlPanel,
@@ -2508,9 +3147,20 @@ fn native_appearance_pane(
         setting_row(ui, "Accent", &theme.tokens.colors.accent);
         setting_row(
             ui,
+            "Typography",
+            &format!(
+                "body {} / title {} / mono {}",
+                theme.tokens.typography.body_size,
+                theme.tokens.typography.title_size,
+                theme.tokens.typography.mono_size
+            ),
+        );
+        setting_row(
+            ui,
             "Bar density",
             &format!("{} px", theme.tokens.density.bar_height),
         );
+        setting_row(ui, "Launcher", "native app search surface");
     });
     native_group(ui, |ui| {
         ui.label(RichText::new("Theme Mode").strong().color(Palette::TEXT));
@@ -3010,19 +3660,30 @@ fn set_control_autostart(
     Ok((state, message))
 }
 
-fn set_control_bar_setting(field: &str, value: &str) -> Result<(ControlState, String), String> {
+fn set_control_ui_setting(
+    change: ControlUiSettingChange,
+) -> Result<(ControlState, String), String> {
     let client = hyprbole_core::daemon::DaemonClient::from_env()
         .map_err(|err| format!("Daemon unavailable: {err}"))?;
+    let request = match change {
+        ControlUiSettingChange::SetField { field, value } if field.starts_with("bar.") => {
+            hyprbole_core::daemon::ShellRequest::BarSettingsSetField { field, value }
+        }
+        ControlUiSettingChange::SetField { field, value } if field.starts_with("osd.") => {
+            hyprbole_core::daemon::ShellRequest::OsdSettingsSetField { field, value }
+        }
+        ControlUiSettingChange::ResetOsd => hyprbole_core::daemon::ShellRequest::OsdSettingsReset,
+        ControlUiSettingChange::SetField { field, .. } => {
+            return Err(format!("unsupported UI setting `{field}`"));
+        }
+    };
     let response = client
-        .send_shell(&hyprbole_core::daemon::ShellRequest::BarSettingsSetField {
-            field: field.to_string(),
-            value: value.to_string(),
-        })
+        .send_shell(&request)
         .map_err(|err| format!("Daemon request failed: {err}"))?;
     let message = match response {
         hyprbole_core::daemon::ShellResponse::Ok { message } => message,
         hyprbole_core::daemon::ShellResponse::Error { message } => return Err(message),
-        _ => "Saved bar settings.".to_string(),
+        _ => "Saved UI settings.".to_string(),
     };
     let state = ControlState::load()?;
     Ok((state, message))
@@ -3415,6 +4076,10 @@ impl Palette {
 mod tests {
     use super::*;
 
+    fn args(values: &[&str]) -> Vec<String> {
+        values.iter().map(|value| value.to_string()).collect()
+    }
+
     #[test]
     fn control_panel_minimum_width_fits_sidebar_and_pane() {
         assert!(control_minimum_layout_fits());
@@ -3442,6 +4107,50 @@ mod tests {
             b"/tmp/other\0hyprbole-ui\0--quick\0"
         ));
         assert!(!cmdline_is_quick_settings(b"/tmp/other\0--quick\0"));
+    }
+
+    #[test]
+    fn quick_running_scan_ignores_current_non_quick_process() {
+        assert_ne!(
+            running_quick_instance_excluding(0).map(|(pid, _)| pid),
+            Some(std::process::id())
+        );
+    }
+
+    #[test]
+    fn bar_cmdline_requires_ui_binary_and_bar_flag() {
+        assert!(cmdline_is_bar(b"/tmp/hyprbole-ui\0--bar\0"));
+        assert!(cmdline_is_bar(b"hyprbole-ui\0--layer-spike\0"));
+        assert!(!cmdline_is_bar(b"/tmp/hyprbole-ui\0--quick\0"));
+        assert!(!cmdline_is_bar(b"/tmp/other\0--bar\0"));
+    }
+
+    #[test]
+    fn osd_cmdline_requires_ui_binary_and_osd_flag() {
+        assert!(cmdline_is_osd(b"/tmp/hyprbole-ui\0--osd\0"));
+        assert!(!cmdline_is_osd(b"/tmp/hyprbole-ui\0--bar\0"));
+        assert!(!cmdline_is_osd(b"/tmp/other\0--osd\0"));
+    }
+
+    #[test]
+    fn surface_mode_flags_are_mutually_exclusive() {
+        assert!(reject_conflicting_surface_modes_from_args(&args(&["hyprbole-ui"])).is_ok());
+        assert!(
+            reject_conflicting_surface_modes_from_args(&args(&["hyprbole-ui", "--launcher-layer"]))
+                .is_ok()
+        );
+        assert!(
+            reject_conflicting_surface_modes_from_args(&args(&[
+                "hyprbole-ui",
+                "--launcher-layer",
+                "--launcher-gtk",
+            ]))
+            .is_err()
+        );
+        assert!(
+            reject_conflicting_surface_modes_from_args(&args(&["hyprbole-ui", "--bar", "--osd"]))
+                .is_err()
+        );
     }
 
     #[test]
@@ -3529,6 +4238,18 @@ mod tests {
         assert!(choices.iter().any(|(_, value)| value == "primary"));
         assert!(choices.iter().any(|(_, value)| value == "eDP-1"));
         assert!(choices.iter().any(|(_, value)| value == "HDMI-A-1"));
+    }
+
+    #[test]
+    fn osd_choice_helpers_include_defaults() {
+        assert!(osd_width_choices().iter().any(|(_, value)| *value == "420"));
+        assert!(osd_height_choices().iter().any(|(_, value)| *value == "96"));
+        assert!(osd_margin_choices().iter().any(|(_, value)| *value == "64"));
+        assert!(
+            osd_timeout_choices()
+                .iter()
+                .any(|(_, value)| *value == "1800")
+        );
     }
 
     #[test]
